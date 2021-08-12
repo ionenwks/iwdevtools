@@ -23,6 +23,9 @@ usage() {
 		                           Always: dev-lang/perl,dev-lang/python
 		  (packages that provide no shared libraries are always excluded)
 
+		  -r, --remove-excludes    Remove all excludes including "Always:" above.
+		                           Should be passed first if needed.
+
 		  -D, --depend             Check against DEPEND rather than RDEPEND.
 		                           Virtuals will still use RDEPEND.
 
@@ -76,7 +79,7 @@ OPT[confirm]=false
 OPT[ignore-uninstalled]=false
 OPT[color]=true
 
-eval set -- $(getopt -o hsboxe:uDWc -l help,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color -- "$@" || die "invalid arguments")
+eval set -- $(getopt -o hsboxer:DWuc -l help,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,remove-excludes,depend,confirm,ignore-uninstalled,no-color -- "$@" || die "invalid arguments")
 while [[ $# != 0 ]]; do
 	case ${1} in
 		-h|--help) usage;;
@@ -87,6 +90,11 @@ while [[ $# != 0 ]]; do
 		-e|--exclude) OPT[exclude]+=,$2; shift;;
 		   --exclude-bind) OPT[exclude-bind]+=,$2; shift;;
 		   --exclude-extra) OPT[exclude-extra]+=,$2; shift;;
+		-r|--remove-excludes)
+			OPT[exclude]=
+			OPT[exclude-bind]=
+			OPT[exclude-extra]=
+		;;
 		-D|--depend) OPT[depend]=DEPEND;;
 		-W|--confirm) OPT[confirm]=true;;
 		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
