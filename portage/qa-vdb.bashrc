@@ -23,14 +23,9 @@
 qa-vdb_post_pkg_postinst() {
 	[[ ${QA_VDB} == y ]] || return
 
-	if ! type "${QA_VDB_CMD}" &>/dev/null; then
-		eerror "${FUNCNAME[0]}: command '${QA_VDB_CMD}' was not found"
-		return
-	fi
-
 	local output
 	output=$("${QA_VDB_CMD}" ${CATEGORY}/${PF} "$@" ${QA_VDB_ARGS} 2>&1) || \
-		eerror "${FUNCNAME[0]}: qa-vdb exited abnormally"
+		eerror "${FUNCNAME[0]}: running command '${QA_VDB_CMD}' failed"
 
 	[[ ${output} ]] && "${QA_VDB_LOG}" "${output}"
 }
