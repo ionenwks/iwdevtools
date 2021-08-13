@@ -5,7 +5,7 @@
 #		qa-vdb_post_pkg_postinst
 #	}
 
-# The following environment variables can be set in the
+# The following environment variables can be set in make.conf,
 # bashrc, command-line, or package.env as needed:
 
 # Set to 'y' to run qa-vdb, anything else to skip
