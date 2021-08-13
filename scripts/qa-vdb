@@ -40,10 +40,8 @@ usage() {
 		<atom> can be the exact vdb entry, or anything portage accepts
 		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
 
-		Can be integrated with portage through /etc/portage/bashrc by adding:
-		  post_pkg_postinst() {
-		      ${0##*/} \${CATEGORY}/\${PF}
-		  }
+		Can be integrated with portage through /etc/portage/bashrc, see
+		provided portage/qa-vdb.bashrc for details and options.
 
 		Output is not a hard indication that something needs fixing (especially
 		with seemingly unused deps) and needs a human to interpret it.
