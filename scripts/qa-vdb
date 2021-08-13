@@ -20,7 +20,7 @@ usage() {
 		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind.
 		                           Always: dev-qt/*
 		      --exclude-extra=LIST Like --exclude but to selectively --no-extra.
-		                           Always: dev-lang/perl,dev-lang/python
+		                           Always: dev-lang/perl,dev-lang/python and others
 		  (packages that provide no shared libraries are always excluded)
 
 		  -r, --remove-excludes    Remove all excludes including "Always:" above.
@@ -69,7 +69,7 @@ OPT[overbind]=true
 OPT[extra]=true
 OPT[exclude]="*/gcc,*/glibc,*/musl,virtual/perl-*"
 OPT[exclude-bind]="dev-qt/*"
-OPT[exclude-extra]="dev-lang/perl,dev-lang/python"
+OPT[exclude-extra]="dev-lang/perl,dev-lang/python,virtual/tmpfiles"
 OPT[depend]=RDEPEND
 OPT[confirm]=false
 OPT[ignore-uninstalled]=false
