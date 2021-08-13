@@ -52,10 +52,8 @@ usage() {
 }
 
 MAINPID=$$
-ERRPFX=' * '; MSGPFX=${ERRPFX}; WRNPFX=${ERRPFX}
-die() { echo "${ERRPFX}Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
-msg() { local IFS=$'\n'; set -- ${*}; printf "${MSGPFX}%s\n" "${@}" >&2; }
-wrn() { local MSGPFX=${WRNPFX}; msg "${@}"; }
+die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
+msg() { local IFS=$'\n'; set -- ${*}; printf "%s\n" "${@}" >&2; }
 trap 'exit 1' USR1
 
 # Requires:
@@ -143,8 +141,8 @@ vdb-get_entry() {
 		|| die "portageq match failed for '${match}'"
 
 	if [[ ${match} == *$'\n'* ]]; then
-		wrn "Multiple vdb entries for '${1}':"
-		wrn "${match}"
+		msg "Multiple vdb entries for '${1}':"
+		msg "${match}"
 		die "specific match required"
 	fi
 
@@ -420,7 +418,7 @@ vdb-print_libdiff() {
 	[[ $? != 2 ]] || die "diff failed for ${1}"
 
 	if [[ ${diff} ]]; then
-		wrn "QA: mismatch between ${OPT[depend]} and REQUIRES (${1})"
+		msg "QA: mismatch between ${OPT[depend]} and REQUIRES (${1})"
 
 		local IFS=$'\n' line
 		for line in ${diff#*@@$'\n'}; do
@@ -430,9 +428,9 @@ vdb-print_libdiff() {
 				*) color=90;;
 			esac
 			if ${OPT[color]}; then
-				wrn $(echo -e "\e[${color}m${line}\e[0m")
+				msg $(echo -e "\e[${color}m${line}\e[0m")
 			else
-				wrn "${line}"
+				msg "${line}"
 			fi
 		done
 	elif ${OPT[confirm]}; then
@@ -452,16 +450,6 @@ vdb-set_exclude() {
 	ex=${ex//,/|}
 
 	OPT[${1}]=${ex}
-}
-
-# vdb-set_colors
-#   Set some colors for messages
-vdb-set_colors() {
-	if ${OPT[color]}; then
-		ERRPFX=$(echo -e "\e[91m${ERRPFX}\e[0m")
-		MSGPFX=$(echo -e "\e[92m${MSGPFX}\e[0m")
-		WRNPFX=$(echo -e "\e[93m${WRNPFX}\e[0m")
-	fi
 }
 
 # vdb-set_ldcache
@@ -492,7 +480,6 @@ vdb-set_vdb() {
 #	Init various settings
 vdb-init() {
 	vdb-set_vdb
-	vdb-set_colors
 	vdb-set_ldcache
 	vdb-set_exclude exclude
 	vdb-set_exclude exclude-bind
