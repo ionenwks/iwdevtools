@@ -18,7 +18,7 @@ usage() {
 		                           exclude, can also be specified multiple times
 		                           (always: */gcc,*/glibc,*/musl,virtual/perl-*)
 		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
-		                           (always: dev-qt/*,sys-libs/zlib)
+		                           (always: dev-qt/*,sys-libs/zlib or * if QA_PREBUILT)
 		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
 		                           (always: dev-lang/perl,dev-lang/python and others)
 		  (packages that provide no shared libraries are always excluded)
@@ -154,19 +154,22 @@ vdb-get_entry() {
 	echo ${match}
 }
 
-# vdb-get_expected_slot <CATEGORY/PN> <SLOT> <SUBSLOT>
+# vdb-get_expected_slot <CATEGORY/PN> <SLOT> <SUBSLOT> [prebuilt]
 #	Echos :SLOT= string that'd be expected in dependencies.
 #	- if slot is non-zero, should have a :N
 #	- if subslot is non-zero, should (usually) have :=
 #	 (dev-qt/* notable exception to the above)
 #	- if both are 0, this returns nothing
+#   - prebuilt cause a special exclusion for binding operators
+#     TODO: maybe it should show exact subslots?
 vdb-get_expected_slot() {
 	local slot=${2} subslot=${3}
 
 	${OPT[slot]} || slot=0
 	${OPT[bind]} || subslot=0
 
-	if [[ ${subslot} != 0 ]] && ! vdb-is_excluded_bind ${1}; then
+	if [[ ${subslot} != 0 ]] && \
+		! vdb-is_excluded_bind ${1} && [[ ${4:-} != prebuilt ]]; then
 		echo :${slot#0}=
 	elif [[ ${slot} != 0 ]]; then
 		echo :${slot}
@@ -180,6 +183,9 @@ vdb-get_expected_slot() {
 vdb-get_libdeps() {
 	# get vdb-get_libneed for multiple comparison (for *-extra)
 	local need=$(vdb-get_libneed ${1})
+
+	local prebuilt=
+	vdb-is_prebuilt ${1} && prebuilt=prebuilt
 
 	local IFS=$'\n' provides rdep vrdep
 	for rdep in $(vdb-get_deps "${1}"); do
@@ -215,7 +221,7 @@ vdb-get_libdeps() {
 			[[ ${need} == *${rdep[1]}* ]] || continue
 		fi
 
-		echo "${rdep[1]}$(vdb-get_expected_slot ${rdep[1]} ${rdep[2]} ${rdep[3]})"
+		echo "${rdep[1]}$(vdb-get_expected_slot ${rdep[1]} ${rdep[2]} ${rdep[3]} ${prebuilt})"
 	done
 }
 
@@ -234,6 +240,9 @@ vdb-get_libneed() {
 }
 _vdb-get_libneed() {
 	[[ -e ${VDB}/${1}/REQUIRES ]] || return # no libs
+
+	local prebuilt=
+	vdb-is_prebuilt ${1} && prebuilt=prebuilt
 
 	# read REQUIRES with stripped 'x86_64: ' and then use qfile to
 	# find the matching installed package
@@ -273,7 +282,7 @@ _vdb-get_libneed() {
 			fi
 		fi
 
-		echo "${dep}$(vdb-get_expected_slot ${dep} ${slot} ${subslot})"
+		echo "${dep}$(vdb-get_expected_slot ${dep} ${slot} ${subslot} ${prebuilt})"
 	done | sort | uniq
 }
 
@@ -389,6 +398,13 @@ vdb-is_excluded_extra() {
 	[[ ${OPT[exclude-extra]} ]] || return 1
 
 	eval "[[ \${1%:*} =~ ^(${OPT[exclude-extra]})$ ]]"
+}
+
+# vdb-is_prebuilt <CATEGORY/PF>
+#	Return true if QA_PREBUILT is set at all
+#	TODO: verify contents/regexes for partially prebuilt situations
+vdb-is_prebuilt() {
+	[[ -e ${VDB}/${1}/QA_PREBUILT ]]
 }
 
 # vdb-is_providing <CATEGORY/PF>
