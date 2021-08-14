@@ -94,7 +94,7 @@ sed-get_errno() {
 }
 
 sed-is_defined_phase() {
-	[[ ${OPT[func]} ]] || return # assume yes if nothing to compare
+	[[ ${OPT[func]} ]] || return 0 # assume yes if nothing to compare
 
 	local def func
 	def=" ${DEFINED_PHASES:-} " # exported by portage
