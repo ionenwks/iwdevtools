@@ -7,8 +7,8 @@ use tracked here for whomever might want to use.
 Nothing here had that much care given to it and is sloppily
 written, but should (I hope) still be mostly functional.
 
-qa-vdb
-------
+qa-vdb, qa-vdb.bashrc
+---------------------
 Dependencies: portage (portageq), portage-utils (qatom qfile qlist)
 
 Tries to find issues based on information provided by VDB (/var/db/pkg).
@@ -31,8 +31,8 @@ Example output::
 
 Run ``qa-vdb --help`` for details, and see ``qa-vdb.bashrc`` for portage.
 
-qa-sed
-------
+qa-sed, qa-sed.bashrc
+---------------------
 Wrapper for sed that will notify if files were unmodified by the expression.
 Primarily intended to be integrated with portage than used directly.
 
@@ -40,7 +40,7 @@ Example output from portage::
 
     * Messages for package app-arch/gzip-1.10:
 
-    * QA: following sed did not cause any changes:
+    * QA: following sed did not cause any changes
     *     sed -e "s:${EPREFIX}/usr:${EPREFIX}:" -i "${ED}"/bin/gunzip || die
 
 Run ``qa-sed --help`` for details, and see ``qa-sed.bashrc`` for portage.
