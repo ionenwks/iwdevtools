@@ -15,19 +15,19 @@ usage() {
 		  (using all --no-* or -sbx will limit to entirely missing deps)
 
 		  -e, --exclude=LIST       Comma separated list of category/package to
-		                           exclude, can also be specified multiple times.
-		                           Always: */gcc,*/glibc,*/musl,virtual/perl-*
-		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind.
-		                           Always: dev-qt/*
-		      --exclude-extra=LIST Like --exclude but to selectively --no-extra.
-		                           Always: dev-lang/perl,dev-lang/python and others
+		                           exclude, can also be specified multiple times
+		                           (always: */gcc,*/glibc,*/musl,virtual/perl-*)
+		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
+		                           (always: dev-qt/*)
+		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
+		                           (always: dev-lang/perl,dev-lang/python and others)
 		  (packages that provide no shared libraries are always excluded)
 
-		  -r, --remove-excludes    Remove all excludes including "Always:" above.
-		                           Should be passed first if needed.
+		  -r, --remove-excludes    Remove all excludes including "always:" above
+		                           (should be passed first if needed)
 
-		  -D, --depend             Check against DEPEND rather than RDEPEND.
-		                           Virtuals will still use RDEPEND.
+		  -D, --depend             Check against DEPEND rather than RDEPEND
+		                           (virtuals will still use RDEPEND)
 
 		  -W, --confirm            Show confirmation if no issues rather than silence
 
@@ -37,11 +37,13 @@ usage() {
 
 		  -c, --no-color           Disable use of colors
 
+		  -h, --help               Display usage information
+
 		<atom> can be the exact vdb entry, or anything portage accepts
 		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
 
 		Can be integrated with portage through /etc/portage/bashrc, see
-		provided portage/qa-vdb.bashrc for details and options.
+		provided qa-vdb.bashrc for details and options.
 
 		Output is not a hard indication that something needs fixing (especially
 		with seemingly unused deps) and needs a human to interpret it.
@@ -49,7 +51,7 @@ usage() {
 	exit
 }
 
-MAINPID=$$
+MAINPID=${$}
 die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
 msg() { local IFS=$'\n'; set -- ${*}; printf "%s\n" "${@}" >&2; }
 trap 'exit 1' USR1
@@ -75,17 +77,20 @@ OPT[confirm]=false
 OPT[ignore-uninstalled]=false
 OPT[color]=true
 
-eval set -- $(getopt -o hsboxer:DWuc -l help,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,remove-excludes,depend,confirm,ignore-uninstalled,no-color -- "$@" || die "invalid arguments")
-while [[ $# != 0 ]]; do
+eval set -- $(getopt \
+	-o hsboxer:DWuc \
+	-l help,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,remove-excludes,depend,confirm,ignore-uninstalled,no-color \
+	-- "${@}" || die "invalid arguments")
+while [[ ${#} != 0 ]]; do
 	case ${1} in
 		-h|--help) usage;;
 		-s|--no-slot) OPT[slot]=false;;
 		-b|--no-bind) OPT[bind]=false;;
 		-o|--no-overbind) OPT[overbind]=false;;
 		-x|--no-extra) OPT[extra]=false;;
-		-e|--exclude) OPT[exclude]+=,$2; shift;;
-		   --exclude-bind) OPT[exclude-bind]+=,$2; shift;;
-		   --exclude-extra) OPT[exclude-extra]+=,$2; shift;;
+		-e|--exclude) OPT[exclude]+=,${2}; shift;;
+		   --exclude-bind) OPT[exclude-bind]+=,${2}; shift;;
+		   --exclude-extra) OPT[exclude-extra]+=,${2}; shift;;
 		-r|--remove-excludes)
 			OPT[exclude]=
 			OPT[exclude-bind]=
@@ -99,7 +104,7 @@ while [[ $# != 0 ]]; do
 	esac
 	shift
 done
-[[ $# == 1 ]] || usage
+[[ ${#} == 1 ]] || usage
 
 # vdb-get_atomf <format> <atom>
 #	Echos <atom> based on <format> using qatom -F.
@@ -281,7 +286,7 @@ _vdb-get_libneed() {
 #   - if *DEPEND is set, match against it rather than ${OPT[depend]}
 vdb-get_deps() {
 	local deptype=${OPT[depend]}
-	[[ $# -ge 3 ]] && deptype=${3}
+	[[ ${#} -ge 3 ]] && deptype=${3}
 
 	[[ -e ${VDB}/${1}/${deptype} ]] || return
 
@@ -303,7 +308,7 @@ vdb-get_deps() {
 
 		# check for [glob] against atom
 		# note: would prefer to do this post-qatom but this gets slow
-		[[ $# -ge 2 && ${2} != - ]] && eval "[[ \${rdep} != *${2}* ]] && continue"
+		[[ ${#} -ge 2 && ${2} != - ]] && eval "[[ \${rdep} != *${2}* ]] && continue"
 
 		# find vdb entry for dep
 		entry=$(vdb-get_dep2entry "${rdep}")
@@ -413,7 +418,7 @@ vdb-is_providing() {
 vdb-print_libdiff() {
 	local color diff
 	diff=$(diff -U9999 <(vdb-get_libdeps ${1}) <(vdb-get_libneed ${1}))
-	[[ $? != 2 ]] || die "diff failed for ${1}"
+	[[ ${?} != 2 ]] || die "diff failed for ${1}"
 
 	if [[ ${diff} ]]; then
 		msg "QA: mismatch between ${OPT[depend]} and REQUIRES (${1})"
@@ -436,7 +441,7 @@ vdb-print_libdiff() {
 	fi
 }
 
-# vdb-set_exclude <exclude|exclude-bind>
+# vdb-set_exclude <exclude|exclude-bind|exclude-extra>
 #   Prepare ${OPT[exclude]} for use
 vdb-set_exclude() {
 	local ex=${OPT[${1}]}
