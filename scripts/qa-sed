@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+# warning: this must not output anything to stdout except for sed-run() once
+set -u
+usage() {
+	cat <<-EOF
+		Usage: ${0##*/} [sed options] [--qa-sed-args] [options]
+
+		sed wrapper that reports when files were unmodified to help with
+		detection of outdated constructs similarly to a failing patch.
+
+		Options:
+			      --qa-sed-args Allows other options to be used and not passed to sed
+
+			  -A, --all         By default (if --func is provided) sed commands not ran
+			                    directly in defined phase functions are ignored to suppress
+			                    noise from eclasses, this forces to show everything.
+
+			      --func=NAME   Function name sed command was called from
+			      --source=FILE Path to the source file calling sed
+			      --lineno=NUM  Line number that called sed (for referencing)
+
+			  -X, --error-on-qa Return exit code >128 if QA issues rather than sed's own
+			                    (will trigger \`|| die\` in ebuilds)
+
+			  -h, --help        Display usage information
+
+		This is primarily meant to be integrated with portage rather than used
+		on its own, and is only split so this isn't saved in vdb's environment.
+		See provided qa-sed.bashrc for that purpose.
+
+		Caveats:
+		- can't do detection if stdin/stdout is used and isn't a file
+		  e.g. \`cat file | sed\` rather than \`sed < file\` (latter is fine)
+		- can't handle multiple files being combined into a single file
+		- can't detect if only one expression out of many is failing
+		- does not know if a sed only replaces under specific conditions
+		  e.g. 's|/usr|\${EPREFIX}/usr|', or 's|lib|\$(get_libdir)|'
+
+		Using this wrapper should, in theory, not break sed usage
+		as it ultimately call sed with same arguments even on error.
+		But use with caution nonetheless, not for production.
+	EOF
+	exit
+}
+
+# split sed's and our own arguments
+SED_ARGV=()
+while [[ ${#} != 0 ]]; do
+	if [[ ${1} == --qa-sed-args ]]; then
+		shift
+		break
+	fi
+	SED_ARGV+=("${1}")
+	shift
+done
+
+sed-run() { sed "${SED_ARGV[@]}"; }
+sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
+die() { echo "Error (${0##*/}): ${*}" >&2; sed-run_exit; }
+
+# Requires:
+#	sys-apps/util-linux (getopt)
+#	sys-apps/sed (sed)
+type getopt sed &>/dev/null || die "missing dependencies"
+
+declare -A OPT
+OPT[all]=false
+OPT[func]=
+OPT[lineno]=
+OPT[source]=
+OPT[error-on-qa]=false
+
+eval set -- $(getopt -o hAX -l help,all,func:,source:,lineno:,error-on-qa -- "${@}")
+while [[ ${#} != 0 ]]; do
+	case ${1} in
+		-h|--help) usage;;
+		-A|--all) OPT[all]=true;;
+		   --func) OPT[func]=${2}; shift;;
+		   --source) OPT[source]=${2}; shift;;
+		   --lineno) OPT[lineno]=${2//[^0-9]/}; shift;;
+		-X|--error-on-qa) OPT[error-on-qa]=true;;
+		--) break;;
+	esac
+	shift
+done
+
+QA_ERRNO=
+sed-get_errno() {
+	if ${OPT[error-on-qa]} && [[ ${QA_ERRNO} ]]; then
+		echo ${QA_ERRNO}
+	else
+		echo ${1}
+	fi
+}
+
+sed-is_defined_phase() {
+	[[ ${OPT[func]} ]] || return # assume yes if nothing to compare
+
+	local def func
+	def=" ${DEFINED_PHASES:-} " # exported by portage
+	func=${OPT[func]#src_}
+	func=${func#pkg_}
+
+	[[ ${def} == *\ ${func}\ * ]]
+}
+
+sed-qa() {
+	QA_ERRNO=${1}
+	shift
+
+	echo "QA: ${*}" >&2
+
+	if [[ ${OPT[source]} && ${OPT[lineno]} ]]; then
+		# display sed line(s) from source file
+		local IFS= line
+		local -i c=0
+		while read -r line; do
+			(( ++c < ${OPT[lineno]} )) && continue
+
+			echo "${line}" >&2
+
+			# support multi-line sed but the environment file won't have these
+			[[ "${line}" =~ \\$ ]] || break
+		done < "${OPT[source]}" || die "failed to read '${OPT[source]}"
+	else
+		# if no source, display rough expanded arguments
+		echo "sed ${SED_ARGV[*]}" >&2
+	fi
+}
+
+# ignore if (probably) called from an eclass
+# TODO: find a better way and not ignore non-eclass functions
+! ${OPT[all]} && ! sed-is_defined_phase && sed-run_exit
+
+# Need to construct a file list from arguments given to sed. For this,
+# check for known GNU sed options with arguments to recognize it as not
+# being a file. This is not explicitely necessary due to the read test
+# (see below), but is an added safety (notably for --file).
+eval opts=(
+	$(getopt -q \
+		-o hie:f:l: \
+		-l help,in-place,expression:,file:,line-length: \
+		-- "${SED_ARGV[@]}"))
+in=()
+inplace=false
+endofopts=false
+declare -i c
+for ((c=0; c < ${#opts[@]}; c++)); do
+	if ! ${endofopts}; then
+		case "${opts[c]}" in
+			-h|--help) usage;; # assume it was meant for us
+			-i|--in-place)
+				inplace=true
+				continue
+			;;
+			--)
+				endofopts=true
+				continue
+			;;
+			-*)
+				c+=1
+				continue
+			;;
+		esac
+	fi
+
+	# if not readable, assume it's a sed expression without -e
+	[[ -r ${opts[c]} ]] && in+=("${opts[c]}")
+done
+
+# keep a copy of current files in memory (avoids temporary files)
+for ((c=0; c < ${#in[@]}; c++)); do
+	copy[c]=$(<"${in[c]}") || die "failed reading '${in[c]}'"
+done
+
+# check if stdin is pointing to a real file
+stdin=$(readlink -m /proc/self/fd/0) || die "readlink failed"
+[[ -f ${stdin} ]] || stdin=
+
+if ${inplace}; then
+	if [[ ${stdin} ]]; then
+		# `sed -i < file` doesn't make sense, warn about it
+		# unfortunately, also checking for `sed -i > file` is unreliable
+		sed-qa 130 "following sed uses -i with stdin"
+		sed-run_exit
+	fi
+
+	sed-run || exit ${?}
+	errno=${?}
+
+	# compare all files
+	for ((c=0; c < ${#in[@]}; c++)); do
+		in[c]=$(<"${in[c]}") || die "failed reading '${in[c]}'"
+		[[ ${in[c]} != "${copy[c]}" ]] && exit ${errno} # changes found
+	done
+
+	sed-qa 129 "following sed did not cause any changes"
+	exit $(sed-get_errno ${errno})
+else
+	# ignore situations can't handle easily
+	if [[ ${stdin} && ! -r ${stdin} ]]		|| # stdin not readable
+		[[ ! ${stdin} && ${#in[@]} == 0 ]]	|| # no input files, or `cat | sed`
+		[[ ${stdin} && ${#in[@]} != 0 ]]	|| # sed file1 < file2 > file3
+		[[ ${#in[@]} -gt 1 ]]; then			   # sed file1 file2 > file3
+		sed-run_exit
+	fi
+
+	# do a dummy run to compare with stdout
+	if [[ ${stdin} ]]; then
+		copy[0]=$(<"${stdin}") || die "failed reading '${stdin}'"
+		copy[1]=$(sed-run < "${stdin}") || die "'sed-run < ${stdin}' failed"
+	else
+		copy[1]=$(sed-run) || die "sed-run failed"
+	fi
+
+	if [[ ${copy[0]} == "${copy[1]}" ]]; then
+		sed-qa 129 "following sed did not cause any changes"
+	fi
+
+	sed-run_exit
+fi
+
+# vim: ts=4
