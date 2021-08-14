@@ -38,9 +38,26 @@ Primarily intended to be integrated with portage than used directly.
 
 Example output from portage::
 
-    * Messages for package app-arch/gzip-1.10:
+    * Messages for package app-arch/gzip-1.10
 
     * QA: following sed did not cause any changes
     *     sed -e "s:${EPREFIX}/usr:${EPREFIX}:" -i "${ED}"/bin/gunzip || die
 
 Run ``qa-sed --help`` for details, and see ``qa-sed.bashrc`` for portage.
+
+filelist-diff.bashrc
+--------------------
+Dependencies: portage-utils (qatom qlist)
+
+Show filelist differences with a replaced package post-emerge.
+Ignores versions in filenames to tries and produce a shorter
+list that can be quickly inspected.
+
+Example output from portage after adding USE=caps::
+
+    * Messages for package sys-apps/util-linux-2.37.1-r1:
+
+    * Filelist diff:
+    * +/usr/bin/setpriv
+    * +/usr/share/bash-completion/completions/setpriv
+    * +/usr/share/man/man1/setpriv.1.zst
