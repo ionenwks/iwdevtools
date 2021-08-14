@@ -4,8 +4,6 @@ ionen-dev-scripts
 Inspired by mgorny-dev-scripts, keeping scripts I happen to
 use tracked here for whomever might want to use.
 
-Currently just one, but should increase as I slowly rework them.
-
 Nothing here had that much care given to it and is sloppily
 written, but should (I hope) still be mostly functional.
 
@@ -21,14 +19,28 @@ checks can optionally be disabled).
 Example output::
 
     $ qa-vdb xmms2
-    * QA: mismatch between RDEPEND and REQUIRES (media-sound/xmms2-0.8_p20161122-r8)
-    * -dev-db/sqlite
-    * -dev-libs/glib
-    * +dev-libs/glib:2
-    * +media-libs/libogg
-    *  media-libs/opus
-    *  media-libs/opusfile
-    * +sys-libs/readline:=
-    *  virtual/jack
+    QA: mismatch between RDEPEND and REQUIRES (media-sound/xmms2-0.8_p20161122-r8)
+    -dev-db/sqlite
+    -dev-libs/glib
+    +dev-libs/glib:2
+    +media-libs/libogg
+     media-libs/opus
+     media-libs/opusfile
+    +sys-libs/readline:=
+     virtual/jack
 
-Run ``qa-vdb --help`` for details
+Run ``qa-vdb --help`` for details, and see ``qa-vdb.bashrc`` for portage.
+
+qa-sed
+------
+Wrapper for sed that will notify if files were unmodified by the expression.
+Primarily intended to be integrated with portage than used directly.
+
+Example output from portage::
+
+    * Messages for package app-arch/gzip-1.10:
+
+    * QA: following sed did not cause any changes:
+    *     sed -e "s:${EPREFIX}/usr:${EPREFIX}:" -i "${ED}"/bin/gunzip || die
+
+Run ``qa-sed --help`` for details, and see ``qa-sed.bashrc`` for portage.
