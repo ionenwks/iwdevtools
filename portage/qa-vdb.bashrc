@@ -25,7 +25,7 @@ qa-vdb_post_pkg_postinst() {
 
 	local output
 	output=$("${QA_VDB_CMD}" ${CATEGORY}/${PF} "$@" ${QA_VDB_ARGS} 2>&1) || \
-		eerror "${FUNCNAME[0]}: running command '${QA_VDB_CMD}' failed"
+		eerror "qa-vdb: running '${QA_VDB_CMD}' failed (disable with QA_VDB=n)"
 
 	[[ ${output} ]] && "${QA_VDB_LOG}" "${output}"
 }
