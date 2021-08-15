@@ -5,10 +5,12 @@ project('ionen-dev-scripts',
 prefix = get_option('prefix')
 bindir = get_option('bindir')
 datadir = get_option('datadir') / meson.project_name()
+
 docdir = get_option('docdir')
 if docdir == ''
-	docdir = get_option('datadir') / 'doc' / meson.project_name()
+	docdir = meson.project_name()
 endif
+docdir = get_option('datadir') / 'doc' / docdir
 
 sed = find_program('sed')
 custom_target('bashrc',
