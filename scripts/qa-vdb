@@ -259,7 +259,7 @@ vdb-get_libneed() {
 	[[ ${VDB_LIBNEED[${1}]} ]] && echo "${VDB_LIBNEED[${1}]}"
 }
 _vdb-get_libneed() {
-	[[ -e ${VDB}/${1}/REQUIRES ]] || return # no libs
+	[[ -e ${VDB}/${1}/REQUIRES ]] || return 0 # no libs
 
 	local prebuilt=
 	vdb-is_prebuilt ${1} && prebuilt=prebuilt
@@ -318,7 +318,7 @@ vdb-get_deps() {
 	local deptype=${OPT[depend]}
 	[[ ${#} -ge 3 ]] && deptype=${3}
 
-	[[ -e ${VDB}/${1}/${deptype} ]] || return
+	[[ -e ${VDB}/${1}/${deptype} ]] || return 0
 
 	local atom entry rdep IFS=' '
 	local -i group=0
