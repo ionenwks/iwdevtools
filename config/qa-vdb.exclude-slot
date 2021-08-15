@@ -1,3 +1,6 @@
 # category/package for which to ignore missing explicit slot definitions
 
-media-libs/fontconfig	# been slot 1.0 since 2002 and never meant anything
+dev-libs/libpcre	# been slot 3 since 2002 and never meant anything
+dev-libs/libxml2	# same with other similar cases
+media-libs/fontconfig
+media-libs/freetype

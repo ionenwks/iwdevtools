@@ -2,4 +2,5 @@
 
 dev-qt/*		# only matters when private API is used
 
-sys-libs/zlib		# stable and subslot hasn't served a real purpose
+app-arch/bzip2		# subslot despite long-time stable interface
+sys-libs/zlib
