@@ -23,7 +23,7 @@
 # Message log command to use (use einfo for less noise)
 : ${FILELIST_DIFF_LOG:=ewarn}
 
-filelist-diff-post_pkg_preinst() {
+filelist-diff_post_pkg_preinst() {
 	[[ ${FILELIST_DIFF} == y ]] || return
 	FILELIST_DIFF_LIST=
 
@@ -37,7 +37,7 @@ filelist-diff-post_pkg_preinst() {
 	)
 }
 
-filelist-diff-post_pkg_postinst() {
+filelist-diff_post_pkg_postinst() {
 	[[ ${FILELIST_DIFF_LIST} ]] || return
 
 	local output=$(
