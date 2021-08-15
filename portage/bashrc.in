@@ -1,0 +1,17 @@
+# symlink, copy, or source using /etc/portage/bashrc to load all features
+
+if \
+	. "%DATADIR%/filelist-diff.bashrc" &&
+	. "%DATADIR%/qa-sed.bashrc" &&
+	. "%DATADIR%/qa-vdb.bashrc"; then
+	post_pkg_preinst() {
+		filelist-diff_post_pkg_preinst
+	}
+
+	post_pkg_postinst() {
+		filelist-diff_post_pkg_postinst
+		qa-vdb_post_pkg_postinst
+	}
+fi
+
+# vim: ts=4 ft=ebuild
