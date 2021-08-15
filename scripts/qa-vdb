@@ -7,6 +7,9 @@ usage() {
 		Perform basic QA checks based on vdb's contents, currently
 		supports comparing RDEPEND with REQUIRES.
 
+		<atom> can be the exact vdb entry, or anything portage accepts
+		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
+
 		Options:
 		  -s, --no-slot            Exclude slots (e.g. needing :3 on gtk+, or :*)
 		  -b, --no-bind            Exclude binding operators (implies --no-overbind)
@@ -16,15 +19,10 @@ usage() {
 
 		  -e, --exclude=LIST       Comma separated list of category/package to
 		                           exclude, can also be specified multiple times
-		                           (always: */gcc,*/glibc,*/musl,virtual/perl-*)
+		                           (example: dev-python/*,sys-libs/glibc,*/gcc)
 		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
-		                           (always: dev-qt/*,sys-libs/zlib or * if QA_PREBUILT)
 		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
-		                           (always: dev-lang/perl,dev-lang/python and others)
 		  (packages that provide no shared libraries are always excluded)
-
-		  -r, --remove-excludes    Remove all excludes including "always:" above
-		                           (should be passed first if needed)
 
 		  -D, --depend             Check against DEPEND rather than RDEPEND
 		                           (virtuals will still use RDEPEND)
@@ -37,11 +35,13 @@ usage() {
 
 		  -c, --no-color           Disable use of colors
 
+		  -r, --no-default-exclude Ignore configuration files for excludes
+		      --confdir=PATH       Configuration dir to use instead of defaults
+		                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/iwdevtools)
+		                           Note: portage will use a different \$HOME
+
 		  -h, --help               Display usage information and exit
 		      --version            Display version information and exit
-
-		<atom> can be the exact vdb entry, or anything portage accepts
-		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
 
 		Can be integrated with portage through /etc/portage/bashrc, see
 		provided qa-vdb.bashrc for details and options.
@@ -71,17 +71,21 @@ OPT[slot]=true
 OPT[bind]=true
 OPT[overbind]=true
 OPT[extra]=true
-OPT[exclude]="*/gcc,*/glibc,*/musl,virtual/perl-*"
-OPT[exclude-bind]="dev-qt/*,sys-libs/zlib"
-OPT[exclude-extra]="dev-lang/perl,dev-lang/python,virtual/tmpfiles"
+OPT[exclude]=
+OPT[exclude-bind]=
+OPT[exclude-extra]=
 OPT[depend]=RDEPEND
 OPT[confirm]=false
 OPT[ignore-uninstalled]=false
 OPT[color]=true
+OPT[default-exclude]=true
+OPT[confdir]=
+OPT[sysconfdir]="@confdir@"
+OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/iwdevtools"
 
 eval set -- $(getopt \
 	-o hsboxer:DWuc \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,remove-excludes,depend,confirm,ignore-uninstalled,no-color \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while [[ ${#} != 0 ]]; do
 	case ${1} in
@@ -94,15 +98,12 @@ while [[ ${#} != 0 ]]; do
 		-e|--exclude) OPT[exclude]+=,${2}; shift;;
 		   --exclude-bind) OPT[exclude-bind]+=,${2}; shift;;
 		   --exclude-extra) OPT[exclude-extra]+=,${2}; shift;;
-		-r|--remove-excludes)
-			OPT[exclude]=
-			OPT[exclude-bind]=
-			OPT[exclude-extra]=
-		;;
 		-D|--depend) OPT[depend]=DEPEND;;
 		-W|--confirm) OPT[confirm]=true;;
 		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
 		-c|--no-colors) OPT[color]=false;;
+		-r|--no-default-exclude) OPT[default-exclude]=false;;
+		   --confdir) OPT[confdir]=${2}; shift;;
 		--) shift; break;;
 	esac
 	shift
@@ -460,18 +461,30 @@ vdb-print_libdiff() {
 	fi
 }
 
-# vdb-set_exclude <exclude|exclude-bind|exclude-extra>
-#   Prepare ${OPT[exclude]} for use
+# vdb-set_exclude <exclude*>
+#   Load exclude configs and prepare supplied ${OPT[exclude*]} for use
 vdb-set_exclude() {
-	local ex=${OPT[${1}]}
+    local -a conf=()
+	if ${OPT[default-exclude]}; then
+		if [[ ${OPT[confdir]} ]]; then
+			[[ -r ${OPT[confdir]}/qa-vdb.${1} ]] && conf=("${OPT[confdir]}/qa-vdb.${1}")
+		else
+			[[ -r ${OPT[sysconfdir]}/qa-vdb.${1} ]] && conf=("${OPT[sysconfdir]}/qa-vdb.${1}")
+			[[ -r ${OPT[userconfdir]}/qa-vdb.${1} ]] && conf+=("${OPT[userconfdir]}/qa-vdb.${1}")
+		fi
 
-	ex=${ex//[^A-Za-z0-9_\+\-\*\/,]/}
-	ex=${ex//+/\\+}
-	ex=${ex//\*/.*}
-	ex=${ex#,}
-	ex=${ex//,/|}
+		if [[ ${conf[*]} ]]; then
+			OPT[${1}]+=,$(sed 's/#.*//' "${conf[@]}" | tr '\r\n' ',,' \
+				|| die "failed reading configuration files")
+		fi
+	fi
 
-	OPT[${1}]=${ex}
+	# create a simple a|b|c, escape +, and * -> .*
+	OPT[${1}]=$(sed \
+		-e 's/[^A-Za-z0-9_/+*,-]//g' \
+		-e 's/,,*/|/g;s/^|//;s/|$//' \
+		-e 's/+/\\+/g;s/\*/.*/g' \
+		<<< "${OPT[${1}]}") || die "sed failed"
 }
 
 # vdb-set_ldcache
