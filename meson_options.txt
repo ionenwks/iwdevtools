@@ -1,2 +1,2 @@
 option('docdir', type : 'string', value : '',
-	description : 'Documentation installation subdirectory name or full path')
+	description : 'Path for installing documentation')
