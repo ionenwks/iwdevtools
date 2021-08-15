@@ -1,0 +1,5 @@
+# category/package to exclude entirely from checks
+
+*/gcc			# core libraries (* includes cross-*)
+*/glibc
+*/musl

@@ -1,0 +1,8 @@
+# category/package to ignore even if they seem superfluous
+
+dev-lang/perl		# provides libraries but typically not linked with
+virtual/perl-*
+
+dev-lang/python
+
+virtual/tmpfiles	# full systemd has not-related libraries
