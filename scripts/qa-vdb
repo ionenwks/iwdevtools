@@ -58,13 +58,15 @@ die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; 
 msg() { local IFS=$'\n'; set -- ${*}; printf "%s\n" "${@}" >&2; }
 trap 'exit 1' USR1
 
-# Requires:
-#	app-portage/portage-utils (qatom qfile qlist)
+# Dependencies:
+#	app-portage/portage-utils (qatom,qfile,qlist)
+#	sys-apps/coreutils (sort,tr,uniq)
 #	sys-apps/diffutils (diff)
 #	sys-apps/portage (portageq)
+#	sys-apps/sed (sed)
 #	sys-apps/util-linux (getopt)
-#	sys-libs/glibc (ldconfig, optional)
-type diff getopt portageq qatom qfile qlist &>/dev/null || die "missing dependencies"
+#	sys-libs/glibc (ldconfig) [optional]
+type diff getopt portageq qatom qfile qlist sed sort tr uniq >/dev/null || die "missing dependencies"
 
 declare -A OPT
 OPT[slot]=true

@@ -61,10 +61,11 @@ sed-run() { sed "${SED_ARGV[@]}"; }
 sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
 die() { echo "Error (${0##*/}): ${*}" >&2; sed-run_exit; }
 
-# Requires:
-#	sys-apps/util-linux (getopt)
+# Dependencies:
+#	sys-apps/coreutils (readlink)
 #	sys-apps/sed (sed)
-type getopt sed &>/dev/null || die "missing dependencies"
+#	sys-apps/util-linux (getopt)
+type getopt readlink sed >/dev/null || die "missing dependencies"
 
 declare -A OPT
 OPT[all]=false
