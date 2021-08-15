@@ -1,8 +1,6 @@
-scripts = files(
+foreach script : [
 	'qa-sed',
-	'qa-vdb'
-)
-foreach script : scripts
+	'qa-vdb']
 	configure_file(
 		install : true,
 		install_dir : bindir,

@@ -1,15 +1,13 @@
-bashrcs = files(
-	'bashrc',
+configure_file(
+	install : true,
+	install_dir : datadir,
+	input : 'bashrc',
+	output : '@PLAINNAME@',
+	configuration : conf
+)
+
+install_data([
 	'filelist-diff.bashrc',
 	'qa-sed.bashrc',
-	'qa-vdb.bashrc'
-)
-foreach bashrc : bashrcs
-	configure_file(
-		install : true,
-		install_dir : datadir,
-		input : bashrc,
-		output : '@PLAINNAME@',
-		configuration : conf
-	)
-endforeach
+	'qa-vdb.bashrc'],
+	install_dir : datadir)
