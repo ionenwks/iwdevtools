@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# warning: this must not output anything to stdout except for sed-run() once
-set -u
+version() { echo "${0##*/} @version@"; exit; }
 usage() {
 	cat <<-EOF
 		Usage: ${0##*/} [sed options] [--qa-sed-args] [options]
@@ -22,7 +21,8 @@ usage() {
 			  -X, --error-on-qa Return exit code >128 if QA issues rather than sed's own
 			                    (will trigger \`|| die\` in ebuilds)
 
-			  -h, --help        Display usage information
+			  -h, --help        Display usage information and exit
+			      --version     Display version information and exit
 
 		This is primarily meant to be integrated with portage rather than used
 		on its own, and is only split so this isn't saved in vdb's environment.
@@ -43,6 +43,8 @@ usage() {
 	exit
 }
 
+set -u
+
 # split sed's and our own arguments
 SED_ARGV=()
 while [[ ${#} != 0 ]]; do
@@ -54,6 +56,7 @@ while [[ ${#} != 0 ]]; do
 	shift
 done
 
+# warning: this must not output anything to stdout if sed-run() is being ran
 sed-run() { sed "${SED_ARGV[@]}"; }
 sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
 die() { echo "Error (${0##*/}): ${*}" >&2; sed-run_exit; }
@@ -70,10 +73,11 @@ OPT[lineno]=
 OPT[source]=
 OPT[error-on-qa]=false
 
-eval set -- $(getopt -o hAX -l help,all,func:,source:,lineno:,error-on-qa -- "${@}")
+eval set -- $(getopt -o hAX -l help,version,all,func:,source:,lineno:,error-on-qa -- "${@}")
 while [[ ${#} != 0 ]]; do
 	case ${1} in
 		-h|--help) usage;;
+		   --version) version;;
 		-A|--all) OPT[all]=true;;
 		   --func) OPT[func]=${2}; shift;;
 		   --source) OPT[source]=${2}; shift;;
@@ -139,7 +143,7 @@ sed-qa() {
 eval opts=(
 	$(getopt -q \
 		-o hie:f:l: \
-		-l help,in-place,expression:,file:,line-length: \
+		-l help,version,in-place,expression:,file:,line-length: \
 		-- "${SED_ARGV[@]}"))
 in=()
 inplace=false
@@ -149,6 +153,7 @@ for ((c=0; c < ${#opts[@]}; c++)); do
 	if ! ${endofopts}; then
 		case "${opts[c]}" in
 			-h|--help) usage;; # assume it was meant for us
+			   --version) version;;
 			-i|--in-place)
 				inplace=true
 				continue

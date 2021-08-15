@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+version() { echo "${0##*/} @version@"; exit; }
 usage() {
 	cat <<-EOF
 		Usage: ${0##*/} [options] <atom>
@@ -37,7 +37,8 @@ usage() {
 
 		  -c, --no-color           Disable use of colors
 
-		  -h, --help               Display usage information
+		  -h, --help               Display usage information and exit
+		      --version            Display version information and exit
 
 		<atom> can be the exact vdb entry, or anything portage accepts
 		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
@@ -51,6 +52,7 @@ usage() {
 	exit
 }
 
+set -uo pipefail
 MAINPID=${$}
 die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
 msg() { local IFS=$'\n'; set -- ${*}; printf "%s\n" "${@}" >&2; }
@@ -79,11 +81,12 @@ OPT[color]=true
 
 eval set -- $(getopt \
 	-o hsboxer:DWuc \
-	-l help,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,remove-excludes,depend,confirm,ignore-uninstalled,no-color \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,remove-excludes,depend,confirm,ignore-uninstalled,no-color \
 	-- "${@}" || die "invalid arguments")
 while [[ ${#} != 0 ]]; do
 	case ${1} in
 		-h|--help) usage;;
+		   --version) version;;
 		-s|--no-slot) OPT[slot]=false;;
 		-b|--no-bind) OPT[bind]=false;;
 		-o|--no-overbind) OPT[overbind]=false;;
