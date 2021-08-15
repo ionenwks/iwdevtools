@@ -462,6 +462,11 @@ vdb-print_libdiff() {
 				msg "${line}"
 			fi
 		done
+
+		if ! [[ ${OPT[exclude-all]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} ]] &&
+			${OPT[default-exclude]}; then
+			msg "Note: no exclusions set (e.g. glibc/gcc), please verify configuration files"
+		fi
 	elif ${OPT[confirm]}; then
 		msg "QA: ${OPT[depend]} and REQUIRES match, no issues here (${1})"
 	fi
