@@ -88,7 +88,7 @@ OPT[sysconfdir]="@confdir@"
 OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/iwdevtools"
 
 eval set -- $(getopt \
-	-o hsboxer:DWuc \
+	-o hsboxe:rDWuc \
 	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while [[ ${#} != 0 ]]; do
