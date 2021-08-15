@@ -1,9 +1,9 @@
 # symlink, copy, or source using /etc/portage/bashrc to load all features
 
 if \
-	. "%DATADIR%/filelist-diff.bashrc" &&
-	. "%DATADIR%/qa-sed.bashrc" &&
-	. "%DATADIR%/qa-vdb.bashrc"; then
+	. "@datadir@/filelist-diff.bashrc" &&
+	. "@datadir@/qa-sed.bashrc" &&
+	. "@datadir@/qa-vdb.bashrc"; then
 	post_pkg_preinst() {
 		filelist-diff_post_pkg_preinst
 	}
