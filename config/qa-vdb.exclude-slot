@@ -1,0 +1,3 @@
+# category/package for which to ignore missing explicit slot definitions
+
+media-libs/fontconfig	# been slot 1.0 since 2002 and never meant anything
