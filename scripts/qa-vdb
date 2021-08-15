@@ -20,6 +20,7 @@ usage() {
 		  -e, --exclude=LIST       Comma separated list of category/package to
 		                           exclude, can also be specified multiple times
 		                           (example: dev-python/*,sys-libs/glibc,*/gcc)
+		      --exclude-slot=LIST  Like --exclude but to selectively --no-slot
 		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
 		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
 		  (packages that provide no shared libraries are always excluded)
@@ -74,6 +75,7 @@ OPT[bind]=true
 OPT[overbind]=true
 OPT[extra]=true
 OPT[exclude]=
+OPT[exclude-slot]=
 OPT[exclude-bind]=
 OPT[exclude-extra]=
 OPT[depend]=RDEPEND
@@ -87,7 +89,7 @@ OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/iwdevtools"
 
 eval set -- $(getopt \
 	-o hsboxer:DWuc \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while [[ ${#} != 0 ]]; do
 	case ${1} in
@@ -98,6 +100,7 @@ while [[ ${#} != 0 ]]; do
 		-o|--no-overbind) OPT[overbind]=false;;
 		-x|--no-extra) OPT[extra]=false;;
 		-e|--exclude) OPT[exclude]+=,${2}; shift;;
+		   --exclude-slot) OPT[exclude-slot]+=,${2}; shift;;
 		   --exclude-bind) OPT[exclude-bind]+=,${2}; shift;;
 		   --exclude-extra) OPT[exclude-extra]+=,${2}; shift;;
 		-D|--depend) OPT[depend]=DEPEND;;
@@ -171,11 +174,14 @@ vdb-get_entry() {
 vdb-get_expected_slot() {
 	local slot=${2} subslot=${3}
 
-	${OPT[slot]} || slot=0
-	${OPT[bind]} || subslot=0
+	if ! ${OPT[slot]} || vdb-is_excluded_slot ${1}; then
+		 slot=0
+	fi
+	if ! ${OPT[bind]} || vdb-is_excluded_bind ${1} || [[ ${4:-} == prebuilt ]]; then
+		subslot=0
+	fi
 
-	if [[ ${subslot} != 0 ]] && \
-		! vdb-is_excluded_bind ${1} && [[ ${4:-} != prebuilt ]]; then
+	if [[ ${subslot} != 0 ]]; then
 		echo :${slot#0}=
 	elif [[ ${slot} != 0 ]]; then
 		echo :${slot}
@@ -390,6 +396,15 @@ vdb-is_excluded() {
 	eval "[[ \${1%:*} =~ ^(${OPT[exclude]})$ ]]"
 }
 
+# vdb-is_excluded_extra <CATEGORY/PN>
+#	Return true if should ignore unspecified slots
+vdb-is_excluded_slot() {
+	[[ ${OPT[exclude-slot]} ]] || return 1
+
+	eval "[[ \${1%:*} =~ ^(${OPT[exclude-slot]})$ ]]"
+}
+
+
 # vdb-is_excluded_bind <CATEGORY/PN>
 #	Return true if should exclude binding operators based on --exclude-bind
 vdb-is_excluded_bind() {
@@ -519,6 +534,7 @@ vdb-init() {
 	vdb-set_vdb
 	vdb-set_ldcache
 	vdb-set_exclude exclude
+	vdb-set_exclude exclude-slot
 	vdb-set_exclude exclude-bind
 	vdb-set_exclude exclude-extra
 }
