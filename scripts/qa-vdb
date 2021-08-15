@@ -133,9 +133,11 @@ vdb-get_pf2pn() {
 vdb-get_dep2entry() {
 	local dep
 
-	# qlist understands slots and ranges, but can't handle subslots and USE
+	# qlist understands slots/ranges, but can't handle subslots, :*, and [use]
+	# not using qatom due to how it strips wildcards from versions
 	dep=${1%\[*}
 	dep=${dep%=}
+	dep=${dep%:\**}
 	[[ ${dep} == */*/* ]] && dep=${dep%/*}
 
 	# don't check for failure as it's normal if dep is not installed,
