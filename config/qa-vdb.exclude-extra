@@ -6,3 +6,5 @@ virtual/perl-*
 dev-lang/python
 
 virtual/tmpfiles	# full systemd has not-related libraries
+
+app-portage/iwdevtools = sys-apps/util-linux # we only use getopt

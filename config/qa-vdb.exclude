@@ -2,9 +2,7 @@
 # - see other qa-vdb.exclude-* for more specific type of exclusions
 # - simple wildcards can be used
 # - can optionally exclude only when checking a specific package
-#   e.g. package is known to /not/ use openssl libraries but still uses the
-#        openssl binary, then in .exclude-extra (no wildcards on left side):
-#        category/my-package = dev-libs/openssl
+#   e.g. category/my-package = dev-libs/openssl (no wildcards on left side)
 
 */gcc			# core libraries (* includes cross-*)
 */glibc
