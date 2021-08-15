@@ -113,7 +113,7 @@ while [[ ${#} != 0 ]]; do
 	esac
 	shift
 done
-[[ ${#} == 1 ]] || usage
+[[ ${#} == 1 ]] || die "no atom specified, see \`${0##*/} --help\`"
 
 # vdb-get_atomf <format> <atom>
 #	Echos <atom> based on <format> using qatom -F.
