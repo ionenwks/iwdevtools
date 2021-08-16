@@ -1,6 +1,7 @@
 # category/package for which to ignore missing binding := operators
 
 dev-qt/*		# only matters when private API is used
+kde-frameworks/*
 
 app-arch/bzip2		# subslot despite long-time stable interface
 sys-libs/zlib
