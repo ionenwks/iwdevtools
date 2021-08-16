@@ -4,6 +4,7 @@
 # - can optionally exclude only when checking a specific package
 #   e.g. category/my-package = dev-libs/openssl (no wildcards on left side)
 
-*/gcc			# core libraries (* includes cross-*)
+# implicit core libraries (* used to include cross-*)
+*/gcc
 */glibc
 */musl

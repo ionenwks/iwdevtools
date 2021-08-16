@@ -1,6 +1,7 @@
 # category/package for which to ignore missing explicit slot definitions
 
-dev-libs/libpcre	# been slot 3 since 2002 and never meant anything
-dev-libs/libxml2	# same with other similar cases
+# packages where slot being non-zero never really meant anything
+dev-libs/libpcre
+dev-libs/libxml2
 media-libs/fontconfig
 media-libs/freetype
