@@ -24,8 +24,8 @@
 : ${FILELIST_DIFF_LOG:=ewarn}
 
 filelist-diff_post_pkg_preinst() {
-	[[ ${FILELIST_DIFF} == y ]] || return
 	FILELIST_DIFF_LIST=
+	[[ ${FILELIST_DIFF} == y ]] || return
 
 	local ver best=$(best_version ${CATEGORY}/${PN})
 	[[ ${best} ]] || return
