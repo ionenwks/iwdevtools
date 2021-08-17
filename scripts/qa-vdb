@@ -430,9 +430,12 @@ vdb-is_providing() {
 		[[ ${provided} == *.so* ]] || continue
 
 		if [[ ${LDCACHE} ]]; then
-			[[ ${LDCACHE} == *$'\n'${provided%.so*}.so$'\n'* ]] && return
+			[[ ${LDCACHE} == *$'\n'${provided%.so*}.so$'\n'* ]] && return 0
+
+			# special exception for haskell as it doesn't use linker path
+			[[ ${provided} == *-ghc* ]] && return 0
 		else
-			return # ignore missing cache
+			return 0 # ignore missing cache
 		fi
 	done
 	return 1
