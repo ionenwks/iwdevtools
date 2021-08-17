@@ -8,4 +8,5 @@ virtual/perl-* # resolves as dev-lang/perl
 virtual/tmpfiles # systemd provider has libraries
 
 # per-package exceptions
+app-portage/iwdevtools = sys-apps/file # we don't use libmagic
 app-portage/iwdevtools = sys-apps/util-linux # we only use getopt
