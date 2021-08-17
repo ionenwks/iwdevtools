@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-0.1.1 (2021-08-17)
+-----------------------------
+
+- qa-sed: fix broken opts parsing leading to misdetection
+
 iwdevtools-0.1.0 (2021-08-17)
 -----------------------------
 
