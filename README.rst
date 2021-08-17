@@ -65,6 +65,10 @@ Example output from portage after adding USE=caps::
 scrub-patch
 -----------
 Perhaps copying the ``sed`` from the `devmanual`_ was too much of a hassle?
-Well this is the script for you! May possibly do a bit more...
+Well this is the script for you!
 
 .. _devmanual: https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html
+
+May possibly do a bit more...
+
+Run ``scrub-patch --help`` for details.
