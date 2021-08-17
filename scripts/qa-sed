@@ -141,7 +141,7 @@ sed-qa() {
 # check for known GNU sed options with arguments to recognize it as not
 # being a file. This is not explicitely necessary due to the read test
 # (see below), but is an added safety (notably for --file).
-opts=(eval $(getopt -q \
+eval opts=($(getopt -q \
 		-o hie:f:l: \
 		-l help,version,in-place,expression:,file:,line-length: \
 		-- "${SED_ARGV[@]}"))
