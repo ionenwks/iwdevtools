@@ -1,6 +1,7 @@
 foreach script : [
 	'qa-sed',
-	'qa-vdb']
+	'qa-vdb',
+	'scrub-patch']
 	configure_file(
 		install : true,
 		install_dir : bindir,

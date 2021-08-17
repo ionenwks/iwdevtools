@@ -61,3 +61,10 @@ Example output from portage after adding USE=caps::
     * +/usr/bin/setpriv
     * +/usr/share/bash-completion/completions/setpriv
     * +/usr/share/man/man1/setpriv.1.zst
+
+scrub-patch
+-----------
+Perhaps copying the ``sed`` from the `devmanual`_ was too much of a hassle?
+Well this is the script for you! May possibly do a bit more...
+
+.. _devmanual: https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html
