@@ -61,13 +61,13 @@ trap 'exit 1' USR1
 
 # Dependencies:
 #	app-portage/portage-utils (qatom,qfile,qlist)
-#	sys-apps/coreutils (sort,tr,uniq)
+#	sys-apps/coreutils (cat,sort,tr,uniq)
 #	sys-apps/diffutils (diff)
 #	sys-apps/portage (portageq)
 #	sys-apps/sed (sed)
 #	sys-apps/util-linux (getopt)
 #	sys-libs/glibc (ldconfig) [optional]
-type diff getopt portageq qatom qfile qlist sed sort tr uniq >/dev/null || die "missing dependencies"
+type cat diff getopt portageq qatom qfile qlist sed sort tr uniq >/dev/null || die "missing dependencies"
 
 declare -A OPT
 OPT[slot]=true
@@ -330,11 +330,11 @@ vdb-get_deps() {
 		# Handle ( ) and || ( ) deps loosely (allow missing deps within a group)
 		[[ ${rdep} == '||' ]] && continue
 		if [[ ${rdep} == '(' ]]; then
-			let group++
+			(( group++ ))
 			continue
 		fi
 		if [[ ${rdep} == ')' ]]; then
-			let group--
+			(( group-- ))
 			continue
 		fi
 
@@ -509,7 +509,7 @@ vdb-set_exclude() {
 vdb-set_ldcache() {
 	local ldconfig IFS=$'\n'
 	ldconfig=($(type -P ldconfig /sbin/ldconfig /usr/sbin/ldconfig 2>/dev/null))
-	if [[ ! ${ldconfig} ]]; then
+	if [[ ${#ldconfig[@]} == 0 ]]; then
 		LDCACHE=
 		return
 	fi

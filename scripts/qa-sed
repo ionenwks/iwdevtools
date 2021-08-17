@@ -62,10 +62,10 @@ sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
 die() { echo "Error (${0##*/}): ${*}" >&2; sed-run_exit; }
 
 # Dependencies:
-#	sys-apps/coreutils (readlink)
+#	sys-apps/coreutils (cat,readlink)
 #	sys-apps/sed (sed)
 #	sys-apps/util-linux (getopt)
-type getopt readlink sed >/dev/null || die "missing dependencies"
+type cat getopt readlink sed >/dev/null || die "missing dependencies"
 
 declare -A OPT
 OPT[all]=false
@@ -120,7 +120,7 @@ sed-qa() {
 		local IFS= line
 		local -i c=0
 		while read -r line; do
-			(( ++c < ${OPT[lineno]} )) && continue
+			(( ++c < OPT[lineno] )) && continue
 
 			echo "${line}" >&2
 
@@ -141,8 +141,7 @@ sed-qa() {
 # check for known GNU sed options with arguments to recognize it as not
 # being a file. This is not explicitely necessary due to the read test
 # (see below), but is an added safety (notably for --file).
-eval opts=(
-	$(getopt -q \
+opts=(eval $(getopt -q \
 		-o hie:f:l: \
 		-l help,version,in-place,expression:,file:,line-length: \
 		-- "${SED_ARGV[@]}"))
