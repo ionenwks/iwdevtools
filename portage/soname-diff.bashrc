@@ -21,7 +21,7 @@
 # bashrc, command-line, or package.env as needed:
 
 # Set to 'y' to perform the filelist diff, anything else to skip
-: ${SONAME_DIFF:=y}
+: ${SONAME_DIFF:=${IWDT_ALL:=y}}
 
 # Command to to use to generate the diff
 : ${SONAME_DIFF_CMD:=diff --color=always -U0}

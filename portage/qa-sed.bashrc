@@ -9,7 +9,7 @@
 # bashrc, command-line, or package.env as needed:
 
 # Set to 'y' to run qa-sed, anything else to skip
-: ${QA_SED:=y}
+: ${QA_SED:=${IWDT_ALL:=y}}
 
 # Path to qa-sed command if not in PATH
 : ${QA_SED_CMD:=qa-sed}

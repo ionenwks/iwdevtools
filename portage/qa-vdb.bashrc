@@ -12,7 +12,7 @@
 # bashrc, command-line, or package.env as needed:
 
 # Set to 'y' to run qa-vdb, anything else to skip
-: ${QA_VDB:=y}
+: ${QA_VDB:=${IWDT_ALL:=y}}
 
 # Path to qa-vdb command if not in PATH
 : ${QA_VDB_CMD:=qa-vdb}

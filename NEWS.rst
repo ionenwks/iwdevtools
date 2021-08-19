@@ -4,6 +4,8 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- new IWDT_ALL envvar (default =y) to enable/disable all bashrc at once
+
 - soname-diff.bashrc: new bashrc to show SONAME changes
 
 iwdevtools-0.1.1 (2021-08-17)
