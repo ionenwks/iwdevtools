@@ -4,6 +4,9 @@
 #	post_pkg_postinst() {
 #		qa-vdb_post_pkg_postinst
 #	}
+#
+# Dependencies:
+#	app-portage/iwdevtools (qa-vdb)
 
 # The following environment variables can be set in make.conf,
 # bashrc, command-line, or package.env as needed:

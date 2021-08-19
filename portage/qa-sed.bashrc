@@ -1,6 +1,9 @@
 # Intended for use in /etc/portage/bashrc by, for example, adding:
 #
 #	source /path/to/qa-sed.bashrc
+#
+# Dependencies:
+#	app-portage/iwdevtools (qa-sed)
 
 # The following environment variables can be set in make.conf,
 # bashrc, command-line, or package.env as needed:

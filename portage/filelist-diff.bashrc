@@ -10,6 +10,12 @@
 #   post_pkg_postinst() {
 #       filelist-diff_post_pkg_postinst
 #   }
+#
+# Dependencies:
+#	app-portage/portage-utils (qatom,qlist)
+#	sys-apps/coreutils (sort)
+#	sys-apps/grep (grep)
+#	sys-apps/sed (sed)
 
 # The following environment variables can be set in make.conf,
 # bashrc, command-line, or package.env as needed:
