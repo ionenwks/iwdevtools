@@ -244,7 +244,7 @@ vdb-get_libdeps() {
 		fi
 
 		echo "${rdep[1]}$(vdb-get_expected_slot ${rdep[1]} ${rdep[2]} ${rdep[3]} ${pkg} ${prebuilt})"
-	done
+	done | sort
 }
 
 # vdb-get_libneed <CATEGORY/PF>
