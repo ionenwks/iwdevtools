@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- soname-diff.bashrc: new bashrc to show SONAME changes
+
 iwdevtools-0.1.1 (2021-08-17)
 -----------------------------
 

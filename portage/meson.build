@@ -8,6 +8,7 @@ configure_file(
 
 install_data([
 	'filelist-diff.bashrc',
+	'soname-diff.bashrc',
 	'qa-sed.bashrc',
 	'qa-vdb.bashrc'],
 	install_dir : datadir)

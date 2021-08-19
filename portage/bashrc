@@ -2,14 +2,17 @@
 
 if \
 	. "@datadir@/filelist-diff.bashrc" &&
+	. "@datadir@/soname-diff.bashrc" &&
 	. "@datadir@/qa-sed.bashrc" &&
 	. "@datadir@/qa-vdb.bashrc"; then
 	post_pkg_preinst() {
 		filelist-diff_post_pkg_preinst
+		soname-diff_post_pkg_preinst
 	}
 
 	post_pkg_postinst() {
 		filelist-diff_post_pkg_postinst
+		soname-diff_post_pkg_postinst
 		qa-vdb_post_pkg_postinst
 	}
 fi
