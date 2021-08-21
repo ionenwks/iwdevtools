@@ -460,7 +460,7 @@ vdb-print_libdiff() {
 				*) color=90;;
 			esac
 			if ${OPT[color]}; then
-				msg $(echo -e "\e[${color}m${line}\e[0m")
+				msg $(printf "\e[${color}m%s\e[0m" "${line}")
 			else
 				msg "${line}"
 			fi
