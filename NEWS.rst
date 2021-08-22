@@ -4,9 +4,11 @@ Release Notes
 iwdevtools-next
 ---------------
 
-- new IWDT_ALL envvar (default =y) to enable/disable all bashrc at once
+- qa-cmp(+rc): new tool for comparing installed files from images / system
 
-- soname-diff.bashrc: new bashrc to show SONAME changes
+- filename-diff.bashrc: removed in favor of qa-cmp.bashrc
+
+- new IWDT_ALL envvar (default =y) to enable/disable all bashrc at once
 
 iwdevtools-0.1.1 (2021-08-17)
 -----------------------------
