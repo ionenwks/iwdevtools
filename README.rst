@@ -102,23 +102,6 @@ Example output from portage after adding USE=caps::
     * +/usr/share/bash-completion/completions/setpriv
     * +/usr/share/man/man1/setpriv.1.zst
 
-soname-diff.bashrc
-------------------
-Dependencies: pax-utils (scanelf), portage-utils (qlist)
-
-Similar to filelist-diff but looks at SONAME (using ``scanelf -S``) rather
-than filenames, and shows the difference (if any). filelist-diff would
-usually also show these, but this one does not ignore versions in names
-and allows for some emphasis or using individually.
-
-Example output from portage::
-
-    * Messages for package media-libs/libid3tag-0.16.1-r1:
-
-    * DT_SONAME diff:
-    * -libid3tag.so.0
-    * +libid3tag.so.0.16.1
-
 scrub-patch
 -----------
 Perhaps copying the ``sed`` from the `devmanual`_ was too much of a hassle?
