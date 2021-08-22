@@ -1,25 +1,28 @@
 iwdevtools
 ==========
 
-Inspired by mgorny-dev-scripts, keeping scripts I happen to
+Inspired by `mgorny-dev-scripts`_, keeping scripts I happen to
 use tracked here for whomever might want to use.
 
 Nothing here had that much care given to it and is sloppily
 written, but should (I hope) still be mostly functional.
+
+.. _mgorny-dev-scripts: https://github.com/mgorny/mgorny-dev-scripts
 
 qa-vdb, qa-vdb.bashrc
 ---------------------
 Dependencies: portage (portageq), portage-utils (qatom qfile qlist)
 
 Tries to find issues based on information provided by VDB (/var/db/pkg).
-Currently this compares RDEPEND and DT_NEEDED (i.e. from ``scanelf -n``),
-tries to find missing missing deps, missing binding operators, and
-unspecified slots (some checks can optionally be disabled).
+Currently this compares RDEPEND and DT_NEEDED (i.e. from ``scanelf -n``)
+for missing missing dependencies, looks for missing binding operators or
+unspecified slots, then suggest changes with a -/+ diff output (some
+checks can optionally be disabled).
 
 Example output::
 
     $ qa-vdb xmms2
-    QA: mismatch between RDEPEND and DT_NEEDED (media-sound/xmms2-0.8_p20161122-r8)
+    QA: detected possibly incorrect RDEPEND (media-sound/xmms2-0.8_p20161122-r8)
     -dev-db/sqlite
     -dev-libs/glib
     +dev-libs/glib:2
