@@ -4,8 +4,9 @@ usage() {
 	cat <<-EOF
 		Usage: ${0##*/} [options] <atom>
 
-		Perform basic QA checks based on vdb's contents (/var/db/pkg), currently
-		supports comparing RDEPEND with DT_NEEDED (i.e. from \`scanelf -n\`).
+		Perform basic QA checks based on vdb's contents (/var/db/pkg). Currently
+		supports comparing RDEPEND with DT_NEEDED (i.e. from \`scanelf -n\`), and
+		doing simple verification of binding operators / slots.
 
 		<atom> can be the exact vdb entry, or anything portage accepts
 		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
@@ -450,7 +451,7 @@ vdb-print_libdiff() {
 	[[ ${?} != 2 ]] || die "diff failed for ${1}"
 
 	if [[ ${diff} ]]; then
-		msg "QA: mismatch between ${OPT[depend]} and DT_NEEDED (${1})"
+		msg "QA: detected possibly incorrect ${OPT[depend]} (${1})"
 
 		local IFS=$'\n' line
 		for line in ${diff#*@@$'\n'}; do
@@ -471,7 +472,7 @@ vdb-print_libdiff() {
 			msg "Note: no exclusions set (e.g. glibc/gcc), please verify configuration files"
 		fi
 	elif ${OPT[confirm]}; then
-		msg "QA: ${OPT[depend]} and DT_NEEDED match, no issues here (${1})"
+		msg "QA: ${OPT[depend]} is as expected, no issues here (${1})"
 	fi
 }
 
