@@ -1,0 +1,781 @@
+#!/usr/bin/env bash
+version() { echo "${0##*/} @version@"; exit; }
+usage() {
+	cat <<-EOF
+		Usage: ${0##*/} <atom|image> [atom2|image2]
+
+		Compares an installation image (i.e. \${PORTAGE_TMPDIR}/[...]/image/),
+		with either another image or the currently installed system copy.
+
+		Arguments can either be a path to the image, or an atom representing it.
+		If atom is imprecise (i.e. no version), or only one is given, then will
+		guess the right versions based on timestamps (older with newest).
+
+		Options:
+		  -f, --no-filelist   Do not print filelist differences
+		  -s, --no-soname     Do not print SONAME differences
+		  -a, --no-abidiff    Do not print per-libraries abidiff
+		  -z, --no-size       Do not print size differences when above threshold
+		  -r, --no-report     Do not report statistics at the end
+		  (unless -r, report will also have statitics for disabled options)
+
+		  -T, --size-thres=%  Size difference percentage at which to display it
+		                      (default: 10, 0 to always display)
+
+		  -B, --full-abidiff  Show complete abidiff output
+		  -d, --quiet-nodebug Do not warn if missing debug for abidiff (unless -W)
+
+		  -I, --image-only    When guessing what to compare, ignore system's copy.
+		                      (simplifies comparing two images by specifying only one)
+
+		  -M, --allow-missing Do nothing and exit normally if lacking a 2nd image
+		                      (intended for automated scripts)
+
+		  -W, --confirm       Show all statistics even if no changes as confirmation
+
+		  -c, --no-color      Disable use of colors
+
+		  -h, --help          Display usage information and exit
+		      --version       Display version information and exit
+
+		abidiff notes:
+		* requires debug symbols (FEATURES=splitdebug and -g)
+		* if likely to have found a problem, will show a clear '[BREAKING]',
+		  but minor changes could also be an issue and need verification
+		* order matters, downgrading will more often report broken ABI
+
+		Can be integrated with portage through /etc/portage/bashrc, see
+		provided qa-cmp.bashrc for details and options.
+	EOF
+	exit
+}
+
+set -uo pipefail
+shopt -s nullglob
+MAINPID=${$}
+end() { kill -USR2 ${MAINPID}; exit 0; }
+die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
+msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}" >&2; }
+trap 'exit 1' USR1
+trap 'exit 0' USR2
+
+# Dependencies:
+#	app-misc/pax-utils (scanelf)
+#	app-portage/portage-utils (qatom,qlist)
+#	dev-util/libabigail (abidiff) [optional]
+#	sys-apps/coreutils (basename,cat,cut,dirname,du,head,readlink,sort,tail,uniq)
+#	sys-apps/diffutils (diff)
+#	sys-apps/grep (grep)
+#	sys-apps/portage (portageq)
+#	sys-apps/util-linux (getopt)
+type basename cat cut diff dirname du getopt grep head portageq \
+	qatom qlist readlink scanelf sort tail uniq >/dev/null || die "missing dependencies"
+
+declare -A OPT
+OPT[filelist-diff]=true
+OPT[soname-diff]=true
+OPT[abi-diff]=true
+OPT[size-diff]=true
+OPT[report]=true
+OPT[size-thres]=10
+OPT[full-abidiff]=false
+OPT[warn-debug]=true
+OPT[image-only]=false
+OPT[allow-missing]=false
+OPT[confirm]=false
+OPT[color]=true
+
+eval set -- $(getopt \
+	-o hfsazrT:BdIMWc \
+	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,no-color \
+	-- "$@" || die "invalid arguments")
+while [[ ${#} != 0 ]]; do
+	case ${1} in
+		-h|--help) usage;;
+		   --version) version;;
+		-f|--no-filelist) OPT[filelist-diff]=false;;
+		-s|--no-soname) OPT[soname-diff]=false;;
+		-a|--no-abidiff) OPT[abi-diff]=false;;
+		-z|--no-size) OPT[size-diff]=false;;
+		-r|--no-report) OPT[report]=false;;
+		-T|--size-thres)
+			printf -v 'OPT[size-thres]' '%d' "${2}" 2>/dev/null
+			shift
+		;;
+		-B|--full-abidiff) OPT[full-abidiff]=true;;
+		-d|--quiet-nodebug) OPT[warn-debug]=false;;
+		-I|--image-only) OPT[image-only]=true;;
+		-M|--allow-missing) OPT[allow-missing]=true;;
+		-W|--confirm) OPT[confirm]=true;;
+		-c|--no-color) OPT[color]=false;;
+		--) shift; break;;
+	esac
+	shift
+done
+[[ ${#} -ge 1 ]] || die "no atom/image specified, see \`${0##*/} --help\`"
+[[ ${#} -le 2 ]] || die "too many atom/image given, see \`${0##*/} --help\`"
+
+# cmp-get_atom2catpn <atom>
+#	Echoes ${CATEGORY}/${PN} for <atom>
+cmp-get_atom2catpn() {
+	if [[ ${1} == */* ]]; then
+		catpn=${1}
+	else
+		# ${CATEGORY} is missing, ask portageq
+		catpn=$(cmp-get_visible "${1}")
+	fi
+
+	cmp-get_atomf "%{CATEGORY}/%{PN}" "${catpn}"
+}
+
+# cmp-get_atomf <format> <atom>
+#   Echos <atom> based on <format> using qatom -F.
+cmp-get_atomf() {
+    qatom -CqF "${@}" || die "q command failed: qatom -CqF ${*}"
+}
+
+# cmp-get_buildtime <CATEGORY/PF>
+#	Echoes unix timestamp from VDB's BUILD_TIME
+cmp-get_buildtime() {
+	local -i ts
+
+	ts=$(<"$(cmp-get_vdb)/${1}"/BUILD_TIME) \
+		|| die "failed to read '$(cmp-get_vdb)/${1}/BUILD_TIME'"
+
+	echo ${ts}
+}
+
+# cmp-get_compare2readable <compare>
+#	Echoes a cmp-get_tocompare converted value to be more readable
+cmp-get_compare2readable() {
+	if [[ ${1} =~ .*/([^/]*/[^/]*/image) ]]; then
+		# this may not always be category/version but is a fair to be shorter
+		echo "${BASH_REMATCH[1]}"
+	else
+		echo "${1}"
+	fi
+}
+
+# cmp-get_filelist <compare>
+#	Echoes sorted filelist from a cmp-get_tocompare value
+#	First two lines are specially set to 1. ${PVR} 2. prefix/
+#	usr/lib/debug/ excluded for simplification
+cmp-get_filelist() {
+	if [[ ${1:0:1} == = ]]; then
+		echo $(cmp-get_atomf "%{PVR}" "${1}")
+		echo /
+		qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort \
+			|| die "qlist failed for '${1}'"
+	else
+		# images may not have any information about what they are, but if used
+		# normally the path will have ${CATEGORY}/${PF} given by image2atomf
+		local pv=$(cmp-get_image2atomf "%{PVR}" "${1}")
+		if [[ ! ${pv} ]]; then
+			# version is an annoyance mostly with docdir, try to check if there
+			local dirs=("${1}"/usr/share/doc/*)
+			if [[ ${#dirs[@]} != 0 ]]; then
+				pv=$(cmp-get_atomf "%{PVR}" "${dirs[0]##*/}")
+			else
+				pv="<unset>"
+			fi
+		fi
+		echo ${pv}
+		echo "${1}/"
+		find "${1}" -path "${1}/usr/lib/debug" -prune -o -not -type d -printf '%P\n' | sort \
+			|| die "find failed for '${1}'"
+	fi
+}
+
+# cmp-get_image2atomf <format> <normalized-image>
+#	Echoes cmp-get_atomf for an image returned by cmp-get_normalized_image()
+#	Returns false and an empty string if not contained within it
+cmp-get_image2atomf() {
+	local img=${2}
+
+	[[ -d ${img} ]] || return 1
+
+	img=${img#$(cmp-get_tmp)/}
+	img=${img%/image}
+
+	if [[ ${img} =~ ^[^/]*/[^/]*$ ]]; then
+		cmp-get_atomf "${1}" "${img}"
+		return
+	fi
+
+	return 1
+}
+
+# cmp-get_images <CATEGORY/PN>
+#	Echos 1-3 images full path and/or installed =CATEGORY/PF from newest to older
+cmp-get_images() {
+	{
+		local cat pn dir match
+		local -i ts
+
+		cat=${1%%/*}
+		pn=$(cmp-get_atomf "%{PN}" "${1}")
+
+		if ! ${OPT[image-only]}; then
+			match=$(cmp-get_installed "${1}")
+			[[ ${match} ]] && echo "$(cmp-get_buildtime ${match}) =${match}"
+		fi
+
+		for dir in "$(cmp-get_tmp)/${cat}"/*; do
+			# need to atomf the directory too, ${PN} can contain -
+			match=$(cmp-get_atomf "%{PN}" "${cat}/${dir##*/}")
+			[[ ${pn} == "${match}" ]] || continue
+
+			ts=$(<"${dir}"/build-info/BUILD_TIME) \
+				|| die "failed to read '${dir}/build-info/BUILD_TIME'"
+
+			dir+=/image
+			[[ -d "${dir}" ]] || die "found unusable image at '${dir}'"
+
+			echo "${ts} ${dir}"
+		done
+	} | sort -nr | head -n 3 | cut -d' ' -f2- || die "failed to get images for '${1}'"
+}
+
+# cmp-get_installed <atom>
+#	Echoes CATEGORY/PF best match for installed atom, or empty string if none
+declare -A CMP_INSTALLED=() CMP_INSTALLED_SET=()
+cmp-get_installed() {
+	if [[ ! ${CMP_INSTALLED_SET[${1}]+x} ]]; then
+		# note: unlike best_visible, does not return false if no match
+		CMP_INSTALLED[${1}]=$(portageq match "${EROOT:-${ROOT:-/}}" "${1}" | tail -n 1) \
+			|| die "portageq match failed for '${1}'"
+		CMP_INSTALLED_SET[${1}]=y
+	fi
+
+	echo "${CMP_INSTALLED[${1}]}"
+}
+
+# cmp-get_makereport <format> <stat> <color> <current-report>
+#	Echos report entry if non-zero (or if --confirm) using <format>/<color>
+#	If stat is >=, format can have %d to display <stat>
+#	If stat is -1, close report
+cmp-get_makereport() {
+	if [[ ${2} == -1 ]]; then
+		if [[ ${4} ]] || ${OPT[confirm]}; then
+			if ${OPT[color]}; then
+				printf -- "\e[${3}m${1}(\e[0m%s\e[${3}m)\e[0m\n" "${4}"
+			else
+				printf -- "${1}(%s)\n" "${4}"
+			fi
+		fi
+	elif [[ ${2} != 0 ]] || ${OPT[confirm]}; then
+		if [[ ${4} ]]; then
+			if ${OPT[color]}; then
+				printf -- "%s\e[90m,\e[0m" "${4}"
+			else
+				printf -- "%s," "${4}"
+			fi
+		fi
+		if ${OPT[color]}; then
+			printf -- "\e[${3}m${1}\e[0m" "${2}"
+		else
+			printf -- "${1}" "${2}"
+		fi
+	else
+		printf -- "%s" "${4}"
+	fi
+}
+
+# cmp-get_normalized_image <atom|image>
+#	Echoes image full path for an exact image or atom
+#	Returns 1 and an empty string if could not find an exact match
+#	Returns 2 if argument may have been intended as an atom
+cmp-get_normalized_image() {
+	local image=${1} atom=0
+
+	if [[ -d ${image} ]]; then
+		image=$(readlink -e "${image}" || die "readlink -e failed for '${image}'")
+	elif [[ -d $(cmp-get_tmp)/${image#=} ]]; then
+		image=$(cmp-get_tmp)/${image#=} # exact tmp dir match
+		atom=2
+	elif [[ ${image:0:1} == = && ${image} != */* ]]; then
+		# likely supplied a mostly-exact =package-0.0.0 without category, ask portageq
+		image=$(cmp-get_tmp)/$(cmp-get_visible "${1}")
+		[[ -d ${image} ]] || return 1
+		atom=2
+	else
+		return 1
+	fi
+
+	# hopefully image itself does not have this dir
+	[[ -d ${image}/image ]] && image+=/image
+
+	echo "${image}"
+	return ${atom}
+}
+
+# cmp-get_tmp
+#	Echos portage's tmpdir or die if basic sanity checks (intended to
+#	give less confusing errors) failed
+#
+#	Not set on init given this may not always be needed, e.g. if image
+#	directories are in ${HOME} then ${PORTAGE_TMPDIR} doesn't matter
+CMP_TMP=
+cmp-get_tmp() {
+	# cache given portageq invocation is not the fastest thing
+	if [[ ${CMP_TMP} ]]; then
+		echo "${CMP_TMP}"
+		return
+	fi
+
+	if [[ ${PORTAGE_TMPDIR:-} ]]; then
+		CMP_TMP=${PORTAGE_TMPDIR}
+	else
+		CMP_TMP=$(portageq envvar PORTAGE_TMPDIR || die "portageq failed to return PORTAGE_TMPDIR")
+	fi
+	[[ ${CMP_TMP} ]] || die "could not determine PORTAGE_TMPDIR"
+
+	CMP_TMP+=/portage
+
+	[[ -d ${CMP_TMP} ]] || die "'${CMP_TMP}' is not a directory"
+
+	# use readlink to normalize (no symlinks, double //, etc..)
+	CMP_TMP=$(readlink -e "${CMP_TMP}" || die "readlink -e failed for '${CMP_TMP}'")
+
+	# portage often uses 700 for tmp/cat/pkg which can lead to confusing errors,
+	# e.g. -d tmp/cat/pkg/image not being a directory
+	local dirs=("${CMP_TMP}"/*/*)
+	if [[ ${#dirs[@]} != 0 && ! -r ${dirs[0]} ]]; then
+		die "permission denied for image dirs under '${CMP_TMP}'"
+	fi
+
+	echo "${CMP_TMP}"
+}
+
+# cmp-get_tocompare <atom|image> [atom2|image2]
+#	Echos what to compare based on rough arguments, first line being
+#	oldest, and 2nd line the newest to compare with
+#	Will either be a full path to the image, or =CATEGORY/PF if installed
+cmp-get_tocompare() {
+	local -a i1 i2=()
+	local IFS=$'\n'
+
+	# Given allow user to specify all sort of things (atom, image path,
+	# specific versions or not), need to do a bit of messy guesswork to
+	# find what to compare. Optimally would be two arguments where
+	# cmp-get_normalized_image returned the exact match.
+	i1[0]=$(cmp-get_normalized_image "${1}")
+	case ${?} in
+		1)	# no match, fallback to cat/pn search
+			i1=($(cmp-get_images $(cmp-get_atom2catpn "${1}")))
+		;;
+		2)	# matched but if ${2} is same then one of them is meant
+			# to match system (can't tell which), discard and search
+			if [[ ${1} == ${2:-} ]]; then
+				shift
+				i1=($(cmp-get_images $(cmp-get_atom2catpn "${1}")))
+			fi
+		;;
+	esac
+
+	if [[ ${#i1[@]} == 0 ]]; then
+		if ${OPT[allow-missing]}; then
+			end
+		else
+			die "cannot determine what to compare, not installed or no matching image?"
+		fi
+	fi
+
+	if [[ ${#} == 2 ]]; then
+		i2[0]=$(cmp-get_normalized_image "${2}")
+		[[ ${?} == 1 ]] && i2=($(cmp-get_images $(cmp-get_atom2catpn "${2}")))
+	elif [[ ${#i1[@]} -ge 2 ]]; then
+		# use first image as newest (in i2), and 2nd as older (in i1)
+		i2[0]=${i1[0]}
+		i1[0]=${i1[1]}
+	else
+		# last hope to try to find something to compare with by using
+		# category/pn in the image path and checking if installed
+		local catpn=$(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")
+		[[ ${catpn} ]] && i2=($(cmp-get_images "${catpn}"))
+	fi
+
+	# shift i1 until i1[0] != i2[0]
+	if [[ ${#i2[@]} != 0 ]]; then
+		while [[ ${#i1[@]} != 0 && ${i1[0]} == "${i2[0]}" ]]; do
+			i1=("${i1[@]:1}")
+		done
+		# if exausted options, check if i2 has the extra to offer
+		[[ ${#i1[@]} == 0 && ${#i2[@]} -ge 2 ]] && i1[0]=${i2[1]}
+	fi
+
+	if [[ ${#i1[@]} == 0 || ${#i2[@]} == 0 ]]; then
+		if ${OPT[allow-missing]}; then
+			end
+		else
+			die "cannot determine what to compare, not installed or no matching image?"
+		fi
+	fi
+
+	echo "${i1[0]}"
+	echo "${i2[0]}"
+}
+
+# cmp-get_vdb
+#	Echos portage's vdb path (similar to cmp-get_tmp)
+CMP_VDB=
+cmp-get_vdb() {
+	if [[ ! ${CMP_VDB} ]]; then
+		CMP_VDB=$(portageq vdb_path) || die "portageq vdb_path failed"
+		[[ -d ${CMP_VDB} ]] || die "portageq returned '${CMP_VDB}' as VDB path which does not appear usable"
+	fi
+	echo "${CMP_VDB}"
+}
+
+# cmp-get_visible <atom>
+#	Echoes CATEGORY/PF best visible for atom, or die if none
+declare -A CMP_VISIBLE=() CMP_VISIBLE_SET=()
+cmp-get_visible() {
+	if [[ ! ${CMP_VISIBLE_SET[${1}]+x} ]]; then
+		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-${ROOT:-/}}" "${1}" | tail -n 1) \
+			|| die "portageq best_visible failed for '${1}'"
+		# empty string shouldn't happen as it returns false, but check anyway
+		[[ ${CMP_VISIBLE[${1}]} ]] || die "portageq best_visible returned an empty string for '${1}'"
+		CMP_VISIBLE_SET[${1}]=y
+	fi
+
+	echo "${CMP_VISIBLE[${1}]}"
+}
+
+# cmp-output_abi_diff
+#	Add to OUTPUT abi differences between libraries of LIST_OLD and LIST_NEW
+#	that share the same SONAME, requires to have run cmp-output_soname_diff
+cmp-output_abi_diff() {
+	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
+		cmp-output_abi_diff_issue "N/A" 0 # no libraries
+		return
+	fi
+
+	# create list of files that exist in both (aka unchanged soname)
+	# SONAME_* entries are "soname.so.0 /path/to/file"
+	local -i i j
+	local -a old=() new=()
+	for ((i=0; i < ${#SONAME_OLD[@]}; i++)); do
+		for ((j=0; j < ${#SONAME_NEW[@]}; j++)); do
+			if [[ ${SONAME_OLD[i]%% *} == "${SONAME_NEW[j]%% *}" ]]; then
+				old+=("${SONAME_OLD[i]#* }")
+				new+=("${SONAME_NEW[j]#* }")
+			fi
+		done
+	done
+
+	if [[ ${#old[@]} == 0 && ${#new[@]} == 0 ]]; then
+		cmp-output_abi_diff_issue "---" 0 # all sonames changed
+		return
+	fi
+
+	if ! type abidiff &>/dev/null; then
+		# if no abidiff, assume unwanted -- make this a semi-hidden warning
+		cmp-output_abi_diff_issue "no abidiff" 0
+		return
+	fi
+
+	# abidiff has a tendency to output nothing and return 0 if no debug
+	# info and --fail-no-debug-info doesn't change this last checked, but
+	# --stats should always output something /if/ debug info was usable
+	local debugold=${LIST_OLD[1]}usr/lib/debug
+	local debugnew=${LIST_NEW[1]}usr/lib/debug
+	for ((i=0; i < ${#old[@]}; i++)); do
+		output=$(abidiff --stats --fail-no-debug-info \
+			--d1 "${debugold}" \
+			--d2 "${debugnew}" \
+			"${old[i]}" "${new[i]}" 2>&1)
+
+		# ABIDIFF_ERROR = 1
+		# ABIDIFF_USAGE_ERROR = 2
+		# ABIDIFF_ABI_CHANGE = 4
+		# ABIDIFF_ABI_INCOMPATIBLE_CHANGE = 8
+		if (( ${?} & 3 )); then
+			# give message for troubleshooting, but don't || die
+			msg "${output} (${FUNCNAME[0]})"
+			cmp-output_abi_diff_issue "FAIL" 1
+			return
+		fi
+
+		if [[ ! ${output} ]]; then
+			if ${OPT[warn-debug]}; then
+				# Is tracking down missing debug an issue or is this unnecessary?
+				# msg "Warning: ${old[i]} or ${new[i]} missing debug info (${FUNCNAME[0]})"
+				cmp-output_abi_diff_issue "missing debug" 1
+			else
+				cmp-output_abi_diff_issue "missing debug" 0
+			fi
+			return
+		fi
+	done
+
+	local IFS=$'\n' errno line output report
+	local -i add=0 chg=0 del=0 brk=0
+	for ((i=0; i < ${#old[@]}; i++)); do
+		output=$(abidiff \
+			--d1 "${debugold}" \
+			--d2 "${debugnew}" \
+			"${old[i]}" "${new[i]}" 2>&1)
+		errno=${?}
+		if (( errno & 3 )); then
+			msg "${output} (${FUNCNAME[0]})"
+			cmp-output_abi_diff_issue "FAIL" 1
+			return
+		fi
+
+		(( errno & 12 )) || continue # no changes
+
+		if [[ ${output} =~ .*:\ ([0-9]+)\ Removed.*,\ ([0-9]+)\ Changed.*,\ ([0-9]+)\ Added.*:\ ([0-9]+)\ Removed.*,\ ([0-9]+)\ Changed.*,\ ([0-9]+)\ Added.* ]]; then
+			add+=${BASH_REMATCH[1]}
+			chg+=${BASH_REMATCH[2]}
+			del+=${BASH_REMATCH[3]}
+			add+=${BASH_REMATCH[4]}
+			chg+=${BASH_REMATCH[5]}
+			del+=${BASH_REMATCH[6]}
+			(( errno & 8 )) && brk+=1
+
+			if ${OPT[abi-diff]}; then
+				if ${OPT[color]}; then
+					OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]##*/}")
+				else
+					OUTPUT+="   ABI:${old[i]##*/}"
+				fi
+				report=$(cmp-get_makereport "+%d" ${BASH_REMATCH[1]} 32 "")
+				report=$(cmp-get_makereport "~%d" ${BASH_REMATCH[2]} 33 "${report}")
+				report=$(cmp-get_makereport "-%d" ${BASH_REMATCH[3]} 31 "${report}")
+				report=$(cmp-get_makereport "func" -1 94 "${report}")
+				[[ ${report} ]] && OUTPUT+=" ${report}"
+				report=$(cmp-get_makereport "+%d" ${BASH_REMATCH[4]} 32 "")
+				report=$(cmp-get_makereport "~%d" ${BASH_REMATCH[5]} 33 "${report}")
+				report=$(cmp-get_makereport "-%d" ${BASH_REMATCH[6]} 31 "${report}")
+				report=$(cmp-get_makereport "vars" -1 94 "${report}")
+				[[ ${report} ]] && OUTPUT+=" ${report}"
+				if (( errno & 8 )); then
+					if ${OPT[color]}; then
+						OUTPUT+=$(printf " \e[31m%s\e[0m" "[BREAKING]")
+					else
+						OUTPUT+=" [BREAKING]"
+					fi
+				fi
+				OUTPUT+=$'\n'
+			fi
+
+			${OPT[full-abidiff]} && OUTPUT+="${output}"$'\n'
+		else
+			# shouldn't(?) happen unless a libabigail bump changed things around
+			cmp-output_abi_diff_issue "parse error" 1
+			return
+		fi
+	done
+
+	report=$(cmp-get_makereport "+%d" ${add} 32 "")
+	report=$(cmp-get_makereport "~%d" ${chg} 33 "${report}")
+	report=$(cmp-get_makereport "-%d" ${del} 31 "${report}")
+	(( brk )) && report=$(cmp-get_makereport ">B<" 1 31 "${report}")
+	report=$(cmp-get_makereport "ABI" -1 90 "${report}")
+	[[ ${report} ]] && REPORT+=" ${report}"
+}
+
+# cmp-output_abi_diff_issue <shortmsg> <showissue>
+#	Add to REPORT for a cmp-output_abi_diff issue using <shortmsg>
+#	If showissue is 0, will only show with --confirm, or always if 1
+cmp-output_abi_diff_issue() {
+	local report
+	report=$(cmp-get_makereport "${1}" ${2} 31 "")
+	report=$(cmp-get_makereport "ABI" -1 90 "${report}")
+	[[ ${report} ]] && REPORT+=" ${report}"
+}
+
+# cmp-output_filelist_diff
+#	Add to OUTPUT differences between LIST_OLD and LIST_NEW while omitting
+#	changes to version in filenames (replaced by literal ${PV})
+cmp-output_filelist_diff() {
+	local -a old=("${LIST_OLD[@]:2}") new=("${LIST_NEW[@]:2}")
+	local output report
+
+	if [[ ${#old[@]} == 0 && ${#new[@]} == 0 ]]; then
+		# this is rather unlikely
+		report=$(cmp-get_makereport "N/A" 0 31 "")
+		report=$(cmp-get_makereport "FILES" -1 90 "${report}")
+		[[ ${report} ]] && REPORT+=" ${report}"
+		return
+	fi
+
+	# strip both ${PVR} and ${PV} as plaintext ${PV}
+	old=("${old[@]//${LIST_OLD[0]}/\$\{PV\}}")
+	old=("${old[@]//${LIST_OLD[0]%-r[0-9]*}/\$\{PV\}}")
+	new=("${new[@]//${LIST_NEW[0]}/\$\{PV\}}")
+	new=("${new[@]//${LIST_NEW[0]%-r[0-9]*}/\$\{PV\}}")
+
+	output=$(
+		diff -U0 \
+			<(printf "%s\n" "${old[@]}") \
+			<(printf "%s\n" "${new[@]}") \
+			| grep -v '@@\|---\|+++'
+		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "failed comparing lists"
+	)
+
+	local IFS=$'\n' color line
+	local -i add=0 del=0
+	for line in ${output}; do
+		case ${line:0:1} in
+			+) color=32; add+=1;;
+			-) color=31; del+=1;;
+			*) color=90;; # unused unless increase -U*
+        esac
+
+		if ${OPT[filelist-diff]}; then
+			if ${OPT[color]}; then
+				OUTPUT+=$(printf " \e[90mFILES:\e[${color}m%s\e[0m" "${line}")$'\n'
+			else
+				OUTPUT+=" FILES:${line}"$'\n'
+			fi
+		fi
+	done
+
+	report=$(cmp-get_makereport "+%d" ${add} 32 "")
+	report=$(cmp-get_makereport "-%d" ${del} 31 "${report}")
+	report=$(cmp-get_makereport "FILES" -1 90 "${report}")
+	[[ ${report} ]] && REPORT+=" ${report}"
+}
+
+# cmp-output_size_diff
+#	Add to OUTPUT difference in size
+cmp-output_size_diff() {
+	local -a old=("${LIST_OLD[@]:2}") new=("${LIST_NEW[@]:2}")
+
+	# don't bail on errors since permission denied on 1-2 files may be frequent
+	local errmark1= errmark2=
+	local -i sold snew errno
+	sold=$(du -cb "${old[@]/#/${LIST_OLD[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark1='~'
+	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark2='~'
+
+	local sper=$((100 - 100 * sold / snew))
+
+	if ${OPT[size-diff]} && [[ ${sper#-} -ge ${OPT[size-thres]} ]]; then
+		local c1= c2= cn=
+		if ${OPT[color]}; then
+			c1=$(echo -e "\e[90m")
+			c2=$(echo -e "\e[33m")
+			cn=$(echo -e "\e[0m")
+		fi
+		OUTPUT+=$(
+			printf "  ${c1}SIZE: ${c2}%s%.2fMiB${c1} -> ${c2}%s%.2fMiB${c1}, ${c2}%d${c1} -> ${c2}%d files${cn}\n" \
+				"${errmark1}" \
+				$((10**2 * sold / 1024**2))e-2 \
+				"${errmark2}" \
+				$((10**2 * snew / 1024**2))e-2 \
+				${#old[@]} \
+				${#new[@]})$'\n'
+	fi
+
+	if ${OPT[confirm]} || [[ ${sper#-} -ge ${OPT[size-thres]} ]]; then
+		printf -v sper "%.2f" $((10**4 - 10**4 * sold / snew))e-2
+		if (( snew >= sold )); then
+			report=$(cmp-get_makereport "+${sper}%%" 1 32 "")
+		else
+			report=$(cmp-get_makereport "${sper}%%" 1 31 "")
+		fi
+		report=$(cmp-get_makereport "SIZE" -1 90 "${report}")
+		[[ ${report} ]] && REPORT+=" ${report}"
+	fi
+}
+
+# cmp-output_soname_diff
+#	Add to OUTPUT differences between LIST_OLD and LIST_NEW but only
+#	for SONAME changes
+cmp-output_soname_diff() {
+	local -a old=() new=()
+	local elem output report
+
+	# only .so isn't /necessary/ as scanelf will discard, but it's less i/o
+	for elem in "${LIST_OLD[@]:2}"; do
+		[[ ${elem} == *.so* ]] && old+=("${LIST_OLD[1]}${elem}")
+	done
+	for elem in "${LIST_NEW[@]:2}"; do
+		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
+	done
+
+	# replace lists with scanelf output (save to be re-used by cmp-output_abi_diff)
+	local IFS=$'\n'
+	[[ ${#old[@]} != 0 ]] && \
+		SONAME_OLD=($(scanelf -qF'%S' "${old[@]}" | sort | uniq -f2 || die "scanelf failed"))
+	[[ ${#new[@]} != 0 ]] && \
+		SONAME_NEW=($(scanelf -qF'%S' "${new[@]}" | sort | uniq -f2 || die "scanelf failed"))
+	unset IFS
+
+	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
+		report=$(cmp-get_makereport "N/A" 0 31 "")
+		report=$(cmp-get_makereport "SONAME" -1 90 "${report}")
+		[[ ${report} ]] && REPORT+=" ${report}"
+		return # nothing to compare
+	fi
+
+	output=$(
+		diff -U0 \
+			<(printf "%s\n" "${SONAME_OLD[@]%% *}") \
+			<(printf "%s\n" "${SONAME_NEW[@]%% *}") \
+			| grep -v '@@\|---\|+++'
+		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "failed comparing lists"
+	)
+
+	local color line IFS=$'\n'
+	local -i add=0 del=0
+	for line in ${output}; do
+		case ${line:0:1} in
+			+) color=36; add+=1;;
+			-) color=33; del+=1;;
+			*) color=90;; # unused unless increase -U*
+        esac
+
+		if ${OPT[soname-diff]}; then
+			if ${OPT[color]}; then
+				OUTPUT+=$(printf "\e[90mSONAME:\e[${color}m%s\e[0m" "${line}")$'\n'
+			else
+				OUTPUT+="SONAME:${line}"$'\n'
+			fi
+		fi
+	done
+
+	report=$(cmp-get_makereport "+%d" ${add} 36 "")
+	report=$(cmp-get_makereport "-%d" ${del} 33 "${report}")
+	report=$(cmp-get_makereport "SONAME" -1 90 "${report}")
+	[[ ${report} ]] && REPORT+=" ${report}"
+}
+
+# cmp-print_header <compare1> <compare2>
+#	Print what is being compared using values from cmp-get_tocompare
+cmp-print_header() {
+	local old=$(cmp-get_compare2readable "${1}")
+	local new=$(cmp-get_compare2readable "${2}")
+	echo "QA: comparing ${old} with ${new}"
+}
+
+# normalize arguments to something we can use
+IFS=$'\n'
+set -- $(cmp-get_tocompare "$@")
+unset IFS
+
+# init globals used by cmp-output_*
+OUTPUT=
+REPORT=
+declare -a LIST_OLD=($(cmp-get_filelist "${1}"))
+declare -a LIST_NEW=($(cmp-get_filelist "${2}"))
+declare -a SONAME_OLD=()
+declare -a SONAME_NEW=()
+
+cmp-output_filelist_diff
+cmp-output_soname_diff
+cmp-output_abi_diff
+cmp-output_size_diff
+
+if [[ ${OUTPUT} ]]; then
+	cmp-print_header "$@"
+	msg "${OUTPUT%$'\n'}"
+	${OPT[report]} && msg "------>${REPORT}"
+elif [[ ${REPORT} ]] && ${OPT[report]}; then
+	cmp-print_header "$@"
+	msg "------>${REPORT}"
+fi
+
+# vim: ts=4

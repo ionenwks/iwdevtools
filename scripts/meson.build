@@ -1,4 +1,5 @@
 foreach script : [
+	'qa-cmp',
 	'qa-sed',
 	'qa-vdb',
 	'scrub-patch']
