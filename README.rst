@@ -85,23 +85,6 @@ Additional output using ``abidiff`` for `bug #616054`_ with two images::
 
 Run ``qa-cmp --help`` for details, and see ``qa-cmp.bashrc`` for portage.
 
-filelist-diff.bashrc
---------------------
-Dependencies: portage-utils (qatom qlist)
-
-Show filelist differences with a replaced package post-emerge.
-Ignores versions in filenames to tries and produce a shorter
-list that can be quickly inspected.
-
-Example output from portage after adding USE=caps::
-
-    * Messages for package sys-apps/util-linux-2.37.1-r1:
-
-    * Filelist diff:
-    * +/usr/bin/setpriv
-    * +/usr/share/bash-completion/completions/setpriv
-    * +/usr/share/man/man1/setpriv.1.zst
-
 scrub-patch
 -----------
 Perhaps copying the ``sed`` from the `devmanual`_ was too much of a hassle?

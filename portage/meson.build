@@ -7,7 +7,6 @@ configure_file(
 )
 
 install_data([
-	'filelist-diff.bashrc',
 	'qa-cmp.bashrc',
 	'qa-sed.bashrc',
 	'qa-vdb.bashrc'],
