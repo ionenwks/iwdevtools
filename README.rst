@@ -56,25 +56,29 @@ Will display added and removed files, DT_SONAME changes, ABI changes on
 libraries without a new DT_SONAME (requires ``abidiff`` and debug symbols),
 and size difference if above a certain threshold.
 
-Example output with a DT_SONAME change and forced size display::
+Example output from portage (bashrc) while 0.15.1b-r4 is installed::
 
-    $ qa-cmp libid3tag --size-thres=0
-    QA: comparing media-libs/libid3tag-0.15.1b-r4/image with =media-libs/libid3tag-0.16.1-r1
-     FILES:-usr/lib64/libid3tag.so.0.3.0
-     FILES:+usr/lib64/cmake/id3tag/id3tagConfig.cmake
-     FILES:+usr/lib64/cmake/id3tag/id3tagConfigVersion.cmake
-     FILES:+usr/lib64/cmake/id3tag/id3tagTargets-gentoo.cmake
-     FILES:+usr/lib64/cmake/id3tag/id3tagTargets.cmake
-     FILES:+usr/lib64/libid3tag.so
-     FILES:+usr/lib64/libid3tag.so.${PV}
-    SONAME:-libid3tag.so.0
-    SONAME:+libid3tag.so.0.16.1
-      SIZE: 0.11MiB -> 0.11MiB, 7 -> 12 files
-    ------> FILES(+6,-1) SONAME(+1,-1) SIZE(+0.04%)
+    # emerge -1 =libid3tag-0.16.1-r1
+    [...]
+    * QA: comparing =media-libs/libid3tag-0.15.1b-r4 with media-libs/libid3tag-0.16.1-r1/image
+    *  FILES:+usr/lib64/cmake/id3tag/id3tagConfig.cmake
+    *  FILES:+usr/lib64/cmake/id3tag/id3tagConfigVersion.cmake
+    *  FILES:+usr/lib64/cmake/id3tag/id3tagTargets-gentoo.cmake
+    *  FILES:+usr/lib64/cmake/id3tag/id3tagTargets.cmake
+    *  FILES:-usr/lib64/libid3tag.so.0
+    *  FILES:-usr/lib64/libid3tag.so.0.3.0
+    *  FILES:+usr/lib64/libid3tag.so.${PV}
+    * SONAME:-libid3tag.so.0
+    * SONAME:+libid3tag.so.0.16.1
+    * ------> FILES(+5,-2) SONAME(+1,-1)
 
-Additional output using ``abidiff`` for `bug #616054`_ with two images::
+It can pick the two latest ``ebuild install`` for a package and ignore
+the system's copy with ``-I/--image-only``, so for a direct-use qa-cmp
+example that's also using ``abidiff`` for `bug #616054`_::
 
-    $ qa-cmp libcdio-paranoia --image-only
+    # ebuild libcdio-paranoia-0.93_p1-r1.ebuild clean install
+    # ebuild libcdio-paranoia-0.94_p1.ebuild clean install
+    # qa-cmp -I libcdio-paranoia
     QA: comparing dev-libs/libcdio-paranoia-0.93_p1-r1/image with dev-libs/libcdio-paranoia-0.94_p1/image
      FILES:-usr/share/doc/libcdio-paranoia-${PV}/README.zst
      FILES:+usr/share/doc/libcdio-paranoia-${PV}/README.md.zst
