@@ -748,7 +748,7 @@ cmp-output_soname_diff() {
 cmp-print_header() {
 	local old=$(cmp-get_compare2readable "${1}")
 	local new=$(cmp-get_compare2readable "${2}")
-	echo "QA: comparing ${old} with ${new}"
+	msg "QA: comparing ${old} with ${new}"
 }
 
 # normalize arguments to something we can use
