@@ -40,8 +40,8 @@ usage() {
 
 		abidiff notes:
 		* requires debug symbols (FEATURES=splitdebug and -g)
-		* if likely to have found a problem, will show a clear '[BREAKING]',
-		  but minor changes could also be an issue and need verification
+		* report saying '[BREAKING]' doesn't necessarily mean it's breaking
+		  revdeps, but it warrants testing them while built against old version
 		* order matters, downgrading will more often report broken ABI
 
 		Can be integrated with portage through /etc/portage/bashrc, see
