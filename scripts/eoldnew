@@ -2,17 +2,15 @@
 version() { echo "${0##*/} @version@"; exit; }
 usage() {
 	cat <<-EOF
-	${0##*/} [2-9][-] <atom> [emerge options]
+		${0##*/} [2-9][-] <atom> [emerge options]
 
-		Helper for using \`qa-cmp\` which emerges the package defined
-		by <atom> but by first emerging its previous (visible) version
-		if not already installed.
+		Helper for using \`qa-cmp\` which emerges the package defined by <atom> but
+		by first emerging its previous (visible) version if not already installed.
 
-		If [2-9] is provided as first argument, go back N versions
-		instead of first previous.
+		If [2-9] is provided as first argument, go back N versions.
 
-		If \`-\` is specified (e.g. ${0##*/} -\` or \`${0##*/} 2-\`),
-		will only emerge previous and not the newest.
+		If \`-\` is specified (e.g. \`${0##*/} -\` or \`${0##*/} 2-\`), will only
+		emerge the previous and not the newest.
 
 		Any options after <package> are passed to emerge as-is.
 
@@ -20,7 +18,7 @@ usage() {
 		  EOLDNEW_EMERGE_CMD=emerge
 		  EOLDNEW_EMERGE_ARGS=
 
-		Note: exports IWDT_ALL=y
+		Note: this exports IWDT_ALL=y
 	EOF
 	exit
 }
