@@ -686,7 +686,7 @@ cmp-output_size_diff() {
 
 	local sper=$((100 - 100 * sold / snew))
 
-	if ${OPT[size-diff]} && [[ ${sper#-} -ge ${OPT[size-thres]} ]]; then
+	if ${OPT[size-diff]} && [[ ${sper#-} -gt ${OPT[size-thres]} ]]; then
 		local c1= c2= cn=
 		if ${OPT[color]}; then
 			c1=$(echo -e "\e[90m")
