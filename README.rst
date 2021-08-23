@@ -94,6 +94,8 @@ Run ``qa-cmp --help`` for details, and see ``qa-cmp.bashrc`` for portage.
 
 eoldnew
 -------
+Dependencies: portage (portageq), portage-utils (qatom)
+
 Helper for using ``qa-cmp`` which emerges a package for a given atom but
 by first emerging its previous (visible) version if not already installed.
 
