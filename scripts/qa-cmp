@@ -46,7 +46,7 @@ usage() {
 		      --version         Display version information and exit
 
 		abidiff notes:
-		* requires debug symbols (FEATURES=splitdebug and -g)
+		* requires debug symbols for full report (FEATURES=splitdebug and -g)
 		* report saying '[BREAKING]' doesn't necessarily mean it's breaking
 		  revdeps, but it warrants testing them while built against old version
 		* order matters, downgrading will more often report broken ABI
@@ -505,17 +505,19 @@ cmp-output_abi_diff() {
 
 	if ! type abidiff &>/dev/null; then
 		# if no abidiff, assume unwanted -- make this a semi-hidden warning
-		cmp-output_abi_diff_issue "no abidiff" 0
+		cmp-output_abi_diff_issue "no-abidiff" 0
 		return
 	fi
 
 	# abidiff has a tendency to output nothing and return 0 if no debug
 	# info and --fail-no-debug-info doesn't change this last checked, but
-	# --stats should always output something /if/ debug info was usable
+	# --stats should always output something /if/ it's going to work
+	# (this include a few changes it can find without debug info)
+	# TODO?: do own check for debug to inform report may be incomplete
 	local debugold=${LIST_OLD[1]}usr/lib/debug
 	local debugnew=${LIST_NEW[1]}usr/lib/debug
 	for ((i=0; i < ${#old[@]}; i++)); do
-		output=$(abidiff --stats --fail-no-debug-info \
+		output=$(abidiff --stats \
 			--d1 "${debugold}" \
 			--d2 "${debugnew}" \
 			"${old[i]}" "${new[i]}" 2>&1)
@@ -533,11 +535,9 @@ cmp-output_abi_diff() {
 
 		if [[ ! ${output} ]]; then
 			if ${OPT[warn-debug]}; then
-				# Is tracking down missing debug an issue or is this unnecessary?
-				# msg "Warning: ${old[i]} or ${new[i]} missing debug info (${FUNCNAME[0]})"
-				cmp-output_abi_diff_issue "missing debug" 1
+				cmp-output_abi_diff_issue "nodebug" 1
 			else
-				cmp-output_abi_diff_issue "missing debug" 0
+				cmp-output_abi_diff_issue "nodebug" 0
 			fi
 			return
 		fi
@@ -545,6 +545,7 @@ cmp-output_abi_diff() {
 
 	local IFS=$'\n' errno line output report
 	local -i add=0 chg=0 del=0 brk=0
+	local -i fr fc fa vr vc va
 	for ((i=0; i < ${#old[@]}; i++)); do
 		output=$(abidiff \
 			--d1 "${debugold}" \
@@ -559,47 +560,58 @@ cmp-output_abi_diff() {
 
 		(( errno & 12 )) || continue # no changes
 
-		if [[ ${output} =~ .*:\ ([0-9]+)\ Removed.*,\ ([0-9]+)\ Changed.*,\ ([0-9]+)\ Added.*:\ ([0-9]+)\ Removed.*,\ ([0-9]+)\ Changed.*,\ ([0-9]+)\ Added.* ]]; then
-			add+=${BASH_REMATCH[1]}
-			chg+=${BASH_REMATCH[2]}
-			del+=${BASH_REMATCH[3]}
-			add+=${BASH_REMATCH[4]}
-			chg+=${BASH_REMATCH[5]}
-			del+=${BASH_REMATCH[6]}
-			(( errno & 8 )) && brk+=1
-
-			if ${OPT[abi-diff]}; then
-				if ${OPT[color]}; then
-					OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]##*/}")
-				else
-					OUTPUT+="   ABI:${old[i]##*/}"
-				fi
-				report=$(cmp-get_makereport "+%d" ${BASH_REMATCH[1]} 32 "")
-				report=$(cmp-get_makereport "~%d" ${BASH_REMATCH[2]} 33 "${report}")
-				report=$(cmp-get_makereport "-%d" ${BASH_REMATCH[3]} 31 "${report}")
-				report=$(cmp-get_makereport "func" -1 94 "${report}")
-				[[ ${report} ]] && OUTPUT+=" ${report}"
-				report=$(cmp-get_makereport "+%d" ${BASH_REMATCH[4]} 32 "")
-				report=$(cmp-get_makereport "~%d" ${BASH_REMATCH[5]} 33 "${report}")
-				report=$(cmp-get_makereport "-%d" ${BASH_REMATCH[6]} 31 "${report}")
-				report=$(cmp-get_makereport "vars" -1 94 "${report}")
-				[[ ${report} ]] && OUTPUT+=" ${report}"
-				if (( errno & 8 )); then
-					if ${OPT[color]}; then
-						OUTPUT+=$(printf " \e[31m%s\e[0m" "[BREAKING]")
-					else
-						OUTPUT+=" [BREAKING]"
-					fi
-				fi
-				OUTPUT+=$'\n'
-			fi
-
-			${OPT[full-abidiff]} && OUTPUT+="${output}"$'\n'
+		if [[ ${output} =~ .*:\ ([0-9]+)\ Removed[^:]*,\ ([0-9]+)\ Changed[^:]*,\ ([0-9]+)\ Added.*:\ ([0-9]+)\ Removed[^:]*,\ ([0-9]+)\ Changed[^:]*,\ ([0-9]+)\ Added ]]; then
+			fr=${BASH_REMATCH[1]}
+			fc=${BASH_REMATCH[2]}
+			fa=${BASH_REMATCH[3]}
+			vr=${BASH_REMATCH[4]}
+			vc=${BASH_REMATCH[5]}
+			va=${BASH_REMATCH[6]}
 		else
 			# shouldn't(?) happen unless a libabigail bump changed things around
-			cmp-output_abi_diff_issue "parse error" 1
+			cmp-output_abi_diff_issue "parse-error" 1
 			return
 		fi
+
+		if [[ ${output} =~ .*:\ ([0-9]+)\ Removed[^:]*,\ ([0-9]+)\ Added[^:]*'not referenced by debug info'.*:\ ([0-9]+)\ Removed[^:]*,\ ([0-9]+)\ Added ]]; then
+			fr+=${BASH_REMATCH[1]}
+			fa+=${BASH_REMATCH[2]}
+			vr+=${BASH_REMATCH[3]}
+			va+=${BASH_REMATCH[4]}
+		fi
+
+		(( add+=fa+va ))
+		(( del+=fr+vr ))
+		(( chg+=fc+vc ))
+		(( errno & 8 )) && brk+=1
+
+		if ${OPT[abi-diff]}; then
+			if ${OPT[color]}; then
+				OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]##*/}")
+			else
+				OUTPUT+="   ABI:${old[i]##*/}"
+			fi
+			report=$(cmp-get_makereport "+%d" ${fa} 32 "")
+			report=$(cmp-get_makereport "~%d" ${fc} 33 "${report}")
+			report=$(cmp-get_makereport "-%d" ${fr} 31 "${report}")
+			report=$(cmp-get_makereport "func" -1 94 "${report}")
+			[[ ${report} ]] && OUTPUT+=" ${report}"
+			report=$(cmp-get_makereport "+%d" ${va} 32 "")
+			report=$(cmp-get_makereport "~%d" ${vc} 33 "${report}")
+			report=$(cmp-get_makereport "-%d" ${vr} 31 "${report}")
+			report=$(cmp-get_makereport "vars" -1 94 "${report}")
+			[[ ${report} ]] && OUTPUT+=" ${report}"
+			if (( errno & 8 )); then
+				if ${OPT[color]}; then
+					OUTPUT+=$(printf " \e[31m%s\e[0m" "[BREAKING]")
+				else
+					OUTPUT+=" [BREAKING]"
+				fi
+			fi
+			OUTPUT+=$'\n'
+		fi
+
+		${OPT[full-abidiff]} && OUTPUT+="${output}"$'\n'
 	done
 
 	report=$(cmp-get_makereport "+%d" ${add} 32 "")

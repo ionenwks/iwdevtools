@@ -56,8 +56,8 @@ Dependencies: pax-utils (scanelf), portage (portageq), portage-utils
 Compares an image (i.e. ``/var/tmp/portage/<category>/<package>/image``) with
 either another image or installed files, then consolidates differences.
 Will display added and removed files, DT_SONAME changes, ABI changes on
-libraries without a new DT_SONAME (requires ``abidiff`` and debug symbols),
-and size difference if above a certain threshold.
+libraries without a new DT_SONAME (requires ``abidiff`` and debug symbols
+for proper checks), and size difference if above a certain threshold.
 
 Example output from portage (bashrc) while 0.15.1b-r4 is installed::
 
