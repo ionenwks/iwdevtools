@@ -92,6 +92,23 @@ example that's also using ``abidiff`` for `bug #616054`_::
 
 Run ``qa-cmp --help`` for details, and see ``qa-cmp.bashrc`` for portage.
 
+eoldnew
+-------
+Helper for using ``qa-cmp`` which emerges a package for a given atom but
+by first emerging its previous (visible) version if not already installed.
+
+Example usage::
+
+    $ eoldnew iwdevtools --quiet --pretend
+    old: app-portage/iwdevtools-0.1.1
+    new: app-portage/iwdevtools-0.2.0
+    running: emerge =app-portage/iwdevtools-0.1.1 --quiet --pretend
+    [ebuild  N    ] app-portage/iwdevtools-0.1.1
+    running: emerge iwdevtools --quiet --pretend
+    [ebuild  N    ] app-portage/iwdevtools-0.2.0
+
+Run ``eoldnew --help`` for details.
+
 scrub-patch
 -----------
 Perhaps copying the ``sed`` from the `devmanual`_ was too much of a hassle?

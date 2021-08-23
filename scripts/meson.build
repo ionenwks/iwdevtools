@@ -1,4 +1,5 @@
 foreach script : [
+	'eoldnew',
 	'qa-cmp',
 	'qa-sed',
 	'qa-vdb',

@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+version() { echo "${0##*/} @version@"; exit; }
+usage() {
+	cat <<-EOF
+	${0##*/} [2-9][-] <atom> [emerge options]
+
+		Helper for using \`qa-cmp\` which emerges the package defined
+		by <atom> but by first emerging its previous (visible) version
+		if not already installed.
+
+		If [2-9] is provided as first argument, go back N versions
+		instead of first previous.
+
+		If \`-\` is specified (e.g. ${0##*/} -\` or \`${0##*/} 2-\`),
+		will only emerge previous and not the newest.
+
+		Any options after <package> are passed to emerge as-is.
+
+		Environment variables:
+		  EOLDNEW_EMERGE_CMD=emerge
+		  EOLDNEW_EMERGE_ARGS=
+
+		Note: exports IWDT_ALL=y
+	EOF
+	exit
+}
+
+set -u
+die() { echo "Error (${0##*/}): ${*}" >&2; exit 1; }
+
+# Dependencies:
+#	app-portage/portage-utils (qatom)
+#	sys-apps/portage (portageq)
+type portageq qatom >/dev/null || die "missing dependencies"
+
+# do crude option parsing not to have to figure out emerge's options
+skip_new=
+skip_old=
+declare -i old=1
+if [[ ${#} != 0 ]]; then
+	if [[ ${1} == [1-9]* ]]; then
+		old=${1%-}
+		[[ ${1} == *- ]] && skip_new=y
+		shift
+	elif [[ ${1} == - ]]; then
+		skip_new=y
+		shift
+	elif [[ ${1} == -h || ${1} == --help ]]; then
+		usage
+	elif [[ ${1} == --version ]]; then
+		version
+	fi
+fi
+[[ ${#} -ge 1 ]] || die "no atom specified, see \`${0##*/} --help\`"
+
+# reduce atom to category/pn (or just pn) so we can get all vers
+atom=$(qatom -CqF '%[CATEGORY]%{PN}' "${1}") || die "qatom failed for '${1}'"
+
+# could use pkgcore's smarter version but portageq's is enough
+IFS=$'\n'
+vers=($(portageq pquery "${atom}")) \
+	|| die "portageq pquery failed for '${atom}'"
+unset IFS
+
+# requested atom may not necessarily be latest, resolve it to know its position
+atom=$(portageq best_visible "${EROOT:-${ROOT:-/}}" "${1}") \
+	|| die "portageq best_visible failed for '${1}'"
+
+usevers=()
+for ver in "${vers[@]}"; do
+	[[ ${ver} == ${atom} ]] && break
+	usevers+=("${ver}")
+done
+
+[[ ${#usevers[@]} == 0 ]] && die "failed to find an older version than '${1}'"
+
+old=$((${#usevers[@]} - old))
+(( old < 0 )) && old=0 # use oldest
+
+portageq has_version "${EROOT:-${ROOT:-/}}" "${usevers[old]}" && skip_old=y
+
+[[ -v skip_old || -v skip_new ]] || die "nothing to do"
+
+echo "old: ${usevers[old]}${skip_old/y/ (skipped)}" >&2
+echo "new: ${atom}${skip_new/y/ (skipped)}" >&2
+
+export IWDT_ALL=y
+
+: ${EOLDNEW_EMERGE_CMD:=emerge}
+: ${EOLDNEW_EMERGE_ARGS:=""}
+
+if [[ ! ${skip_old} ]]; then
+	cmd=("${EOLDNEW_EMERGE_CMD}" "=${usevers[old]}" "${@:2}" ${EOLDNEW_EMERGE_ARGS})
+	echo "running: ${cmd[*]}"
+	"${cmd[@]}" || exit $?
+fi
+
+if [[ ! ${skip_new} ]]; then
+	cmd=("${EOLDNEW_EMERGE_CMD}" "${@}" ${EOLDNEW_EMERGE_ARGS})
+	echo "running: ${cmd[*]}"
+	"${cmd[@]}"
+fi
+
+# vim: ts=4
