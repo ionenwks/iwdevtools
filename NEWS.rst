@@ -4,6 +4,8 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- qa-cmp: provide --single-* options to display lists for a single image
+
 - eoldnew: new helper tool for using qa-cmp that emerges old version then new
 
 iwdevtools-0.2.0 (2021-08-22)

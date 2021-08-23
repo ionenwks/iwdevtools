@@ -12,31 +12,38 @@ usage() {
 		guess the right versions based on timestamps (older with newest).
 
 		Options:
-		  -f, --no-filelist   Do not print filelist differences
-		  -s, --no-soname     Do not print SONAME differences
-		  -a, --no-abidiff    Do not print per-libraries abidiff
-		  -z, --no-size       Do not print size differences when above threshold
-		  -r, --no-report     Do not report statistics at the end
+		  -f, --no-filelist     Do not print filelist differences
+		  -s, --no-soname       Do not print SONAME differences
+		  -a, --no-abidiff      Do not print per-libraries abidiff
+		  -z, --no-size         Do not print size differences when above threshold
+		  -r, --no-report       Do not report statistics at the end
 		  (unless -r, report will also have statitics for disabled options)
 
-		  -T, --size-thres=%  Size difference percentage at which to display it
-		                      (default: 10, 0 to always display)
+		  -T, --size-thres=%    Size difference percentage at which to display it
+		                        (default: 10, 0 to always display)
 
-		  -B, --full-abidiff  Show complete abidiff output
-		  -d, --quiet-nodebug Do not warn if missing debug for abidiff (unless -W)
+		  -B, --full-abidiff    Show complete abidiff output
+		  -d, --quiet-nodebug   Do not warn if missing debug for abidiff (unless -W)
 
-		  -I, --image-only    When guessing what to compare, ignore system's copy.
-		                      (simplifies comparing two images by specifying only one)
+		  -I, --image-only      When guessing what to compare, ignore system's copy.
+		                        (simplifies comparing two images)
 
-		  -M, --allow-missing Do nothing and exit normally if lacking a 2nd image
-		                      (intended for automated scripts)
+		  -M, --allow-missing   Do nothing and exit normally if lacking a 2nd image
+		                        (intended for automated scripts)
 
-		  -W, --confirm       Show all statistics even if no changes as confirmation
+		  -W, --confirm         Show all statistics even if no changes as confirmation
 
-		  -c, --no-color      Disable use of colors
+		  -F, --single-filelist Show full filelist for latest
+		  -S, --single-soname	Show full soname list for latest
+		  -Z, --single-size     Show size for latest
+		  -L, --single-all      Short for --single-{filelist,soname,size}
+		  -U, --single-auto     Auto-disable specified --single-* if two images
+		                        (--single-* options can function with a single image)
 
-		  -h, --help          Display usage information and exit
-		      --version       Display version information and exit
+		  -c, --no-color        Disable use of colors
+
+		  -h, --help            Display usage information and exit
+		      --version         Display version information and exit
 
 		abidiff notes:
 		* requires debug symbols (FEATURES=splitdebug and -g)
@@ -83,11 +90,16 @@ OPT[warn-debug]=true
 OPT[image-only]=false
 OPT[allow-missing]=false
 OPT[confirm]=false
+OPT[single]=false
+OPT[single-filelist]=false
+OPT[single-soname]=false
+OPT[single-size]=false
+OPT[single-auto]=false
 OPT[color]=true
 
 eval set -- $(getopt \
-	-o hfsazrT:BdIMWc \
-	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,no-color \
+	-o hfsazrT:BdIMWFSZLUc \
+	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
 	-- "$@" || die "invalid arguments")
 while [[ ${#} != 0 ]]; do
 	case ${1} in
@@ -107,6 +119,15 @@ while [[ ${#} != 0 ]]; do
 		-I|--image-only) OPT[image-only]=true;;
 		-M|--allow-missing) OPT[allow-missing]=true;;
 		-W|--confirm) OPT[confirm]=true;;
+		-F|--single-filelist) OPT[single-filelist]=true;;
+		-S|--single-soname) OPT[single-soname]=true;;
+		-Z|--single-size) OPT[single-size]=true;;
+		-L|--single-all)
+			OPT[single-filelist]=true
+			OPT[single-soname]=true
+			OPT[single-size]=true
+		;;
+		-U|--single-auto) OPT[single-auto]=true;;
 		-c|--no-color) OPT[color]=false;;
 		--) shift; break;;
 	esac
@@ -114,6 +135,9 @@ while [[ ${#} != 0 ]]; do
 done
 [[ ${#} -ge 1 ]] || die "no atom/image specified, see \`${0##*/} --help\`"
 [[ ${#} -le 2 ]] || die "too many atom/image given, see \`${0##*/} --help\`"
+
+${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
+	&& OPT[single]=true
 
 # cmp-get_atom2catpn <atom>
 #	Echoes ${CATEGORY}/${PN} for <atom>
@@ -377,7 +401,7 @@ cmp-get_tocompare() {
 		if ${OPT[allow-missing]}; then
 			end
 		else
-			die "cannot determine what to compare, not installed or no matching image?"
+			die "cannot determine what to compare, not installed and no matching image?"
 		fi
 	fi
 
@@ -405,10 +429,20 @@ cmp-get_tocompare() {
 	fi
 
 	if [[ ${#i1[@]} == 0 || ${#i2[@]} == 0 ]]; then
+		if ${OPT[single]}; then
+			if [[ ${#i1[@]} != 0 ]]; then
+				echo "${i1[0]}"
+				return
+			elif [[ ${#i2[@]} != 0 ]]; then
+				echo "${i2[0]}"
+				return
+			fi
+		fi
+
 		if ${OPT[allow-missing]}; then
 			end
 		else
-			die "cannot determine what to compare, not installed or no matching image?"
+			die "nothing to compare with, did you mean to use --single-*?"
 		fi
 	fi
 
@@ -646,7 +680,7 @@ cmp-output_size_diff() {
 
 	# don't bail on errors since permission denied on 1-2 files may be frequent
 	local errmark1= errmark2=
-	local -i sold snew errno
+	local -i sold snew
 	sold=$(du -cb "${old[@]/#/${LIST_OLD[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark1='~'
 	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark2='~'
 
@@ -751,6 +785,78 @@ cmp-print_header() {
 	msg "QA: comparing ${old} with ${new}"
 }
 
+# cmp-print_filelist <compare1>
+#	Print filelist for 1 value from cmp-get_tocompare
+#	Simplified version of cmp-output_filelist_diff
+cmp-print_filelist() {
+	${OPT[single-filelist]} || return
+
+	local line output=
+	for line in "${LIST_NEW[@]:2}"; do
+		if ${OPT[color]}; then
+			output+=$(printf " \e[90mFILES: \e[32m%s\e[0m" "${line}")$'\n'
+		else
+			output+=" FILES: ${line}"$'\n'
+		fi
+	done
+
+	[[ ${output} ]] && msg "${output%$'\n'}"
+}
+
+# cmp-print_size <compare1>
+#	Print size and filecount for 1 value from cmp-get_tocompare
+#	Simplified version of cmp-output_size_diff
+cmp-print_size() {
+	${OPT[single-size]} || return
+
+	local -a new=("${LIST_NEW[@]:2}")
+
+	local errmark=
+	local -i snew
+	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark='~'
+
+	local c1= c2= cn=
+	if ${OPT[color]}; then
+		c1=$(echo -e "\e[90m")
+		c2=$(echo -e "\e[33m")
+		cn=$(echo -e "\e[0m")
+	fi
+	local output=$(printf "  ${c1}SIZE: ${c2}%s%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
+		"${errmark}" $((10**2 * snew / 1024**2))e-2 ${#new[@]})
+
+	msg "${output}"
+}
+
+# cmp-print_soname <compare>
+#	Print soname list for 1 value from cmp-get_tocompare
+#	Simplified version of cmp-output_soname_diff
+cmp-print_soname() {
+	${OPT[single-soname]} || return
+
+	local -a new=()
+	local elem
+
+	for elem in "${LIST_NEW[@]:2}"; do
+		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
+	done
+
+	local IFS=$'\n'
+	[[ ${#new[@]} != 0 ]] && \
+		new=($(scanelf -qF'%S#F' "${new[@]}" | sort | uniq || die "scanelf failed"))
+	unset IFS
+
+	local line output=
+	for line in "${new[@]}"; do
+		if ${OPT[color]}; then
+			output+=$(printf "\e[90mSONAME: \e[36m%s\e[0m" "${line}")$'\n'
+		else
+			output+="SONAME: ${line}"$'\n'
+		fi
+	done
+
+	[[ ${output} ]] && msg "${output%$'\n'}"
+}
+
 # normalize arguments to something we can use
 IFS=$'\n'
 set -- $(cmp-get_tocompare "$@")
@@ -759,23 +865,36 @@ unset IFS
 # init globals used by cmp-output_*
 OUTPUT=
 REPORT=
-declare -a LIST_OLD=($(cmp-get_filelist "${1}"))
-declare -a LIST_NEW=($(cmp-get_filelist "${2}"))
+if [[ ${#} == 2 ]]; then
+	declare -a LIST_OLD=($(cmp-get_filelist "${1}"))
+	declare -a LIST_NEW=($(cmp-get_filelist "${2}"))
+	${OPT[single-auto]} && OPT[single]=false
+else
+	declare -a LIST_NEW=($(cmp-get_filelist "${1}"))
+fi
 declare -a SONAME_OLD=()
 declare -a SONAME_NEW=()
 
-cmp-output_filelist_diff
-cmp-output_soname_diff
-cmp-output_abi_diff
-cmp-output_size_diff
+if ${OPT[single]}; then
+	cmp-print_filelist
+	cmp-print_soname
+	cmp-print_size
+fi
 
-if [[ ${OUTPUT} ]]; then
-	cmp-print_header "$@"
-	msg "${OUTPUT%$'\n'}"
-	${OPT[report]} && msg "------>${REPORT}"
-elif [[ ${REPORT} ]] && ${OPT[report]}; then
-	cmp-print_header "$@"
-	msg "------>${REPORT}"
+if [[ ${#} == 2 ]]; then
+	cmp-output_filelist_diff
+	cmp-output_soname_diff
+	cmp-output_abi_diff
+	cmp-output_size_diff
+
+	if [[ ${OUTPUT} ]]; then
+		cmp-print_header "$@"
+		msg "${OUTPUT%$'\n'}"
+		${OPT[report]} && msg "------>${REPORT}"
+	elif [[ ${REPORT} ]] && ${OPT[report]}; then
+		cmp-print_header "$@"
+		msg "------>${REPORT}"
+	fi
 fi
 
 # vim: ts=4
