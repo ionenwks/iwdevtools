@@ -785,6 +785,12 @@ cmp-print_header() {
 	msg "QA: comparing ${old} with ${new}"
 }
 
+# cmp-print_header_single <compare>
+#	Print single image being checked using values from cmp-get_tocompare
+cmp-print_header_single() {
+	msg "QA: listing $(cmp-get_compare2readable "${1}") info"
+}
+
 # cmp-print_filelist <compare1>
 #	Print filelist for 1 value from cmp-get_tocompare
 #	Simplified version of cmp-output_filelist_diff
@@ -876,6 +882,7 @@ declare -a SONAME_OLD=()
 declare -a SONAME_NEW=()
 
 if ${OPT[single]}; then
+	cmp-print_header_single "${2:-${1}}"
 	cmp-print_filelist
 	cmp-print_soname
 	cmp-print_size
