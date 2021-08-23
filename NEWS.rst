@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- eoldnew: new helper tool for using qa-cmp that emerges old version then new
+
 iwdevtools-0.2.0 (2021-08-22)
 -----------------------------
 
