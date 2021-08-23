@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.2.0 (2021-08-22)
+-----------------------------
 
 - qa-cmp(+rc): new tool for comparing installed files from images / system
 
