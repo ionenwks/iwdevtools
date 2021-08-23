@@ -164,7 +164,7 @@ cmp-get_buildtime() {
 	local -i ts
 
 	ts=$(<"$(cmp-get_vdb)/${1}"/BUILD_TIME) \
-		|| die "failed to read '$(cmp-get_vdb)/${1}/BUILD_TIME'"
+		|| die "failed to read '$(cmp-get_vdb)/${1}/BUILD_TIME', failed build image?"
 
 	echo ${ts}
 }
