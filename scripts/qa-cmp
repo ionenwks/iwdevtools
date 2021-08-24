@@ -250,7 +250,7 @@ cmp-get_images() {
 			[[ ${pn} == "${match}" ]] || continue
 
 			ts=$(<"${dir}"/build-info/BUILD_TIME) \
-				|| die "failed to read '${dir}/build-info/BUILD_TIME'"
+				|| die "failed to read '${dir}/build-info/BUILD_TIME', failed build image?"
 
 			dir+=/image
 			[[ -d "${dir}" ]] || die "found unusable image at '${dir}'"
