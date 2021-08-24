@@ -71,8 +71,8 @@ Example output from portage (bashrc) while 0.15.1b-r4 is installed::
     *  FILES:-usr/lib64/libid3tag.so.0
     *  FILES:-usr/lib64/libid3tag.so.0.3.0
     *  FILES:+usr/lib64/libid3tag.so.${PV}
-    * SONAME:-libid3tag.so.0
-    * SONAME:+libid3tag.so.0.16.1
+    * SONAME:-libid3tag.so.0(64)
+    * SONAME:+libid3tag.so.0.16.1(64)
     * ------> FILES(+5,-2) SONAME(+1,-1)
 
 It can pick the two latest ``ebuild install`` for a package and ignore
@@ -85,8 +85,9 @@ example that's also using ``abidiff`` for `bug #616054`_::
     QA: comparing dev-libs/libcdio-paranoia-0.93_p1-r1/image with dev-libs/libcdio-paranoia-0.94_p1/image
      FILES:-usr/share/doc/libcdio-paranoia-${PV}/README.zst
      FILES:+usr/share/doc/libcdio-paranoia-${PV}/README.md.zst
-       ABI: libcdio_cdda.so func(+12,-25) vars(+3) [BREAKING]
-    ------> FILES(+1,-1) ABI(+15,-25,>B<)
+       ABI: libcdio_cdda.so.2(64) func(+12,-25) vars(+3) [BREAKING]
+       ABI: libcdio_paranoia.so.2(64) func(+47,-10) vars(+3,-1) [BREAKING]
+    ------> FILES(+1,-1) ABI(+65,-36,>B<)
 
 .. _bug #616054: https://bugs.gentoo.org/616054
 
