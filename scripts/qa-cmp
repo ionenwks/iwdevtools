@@ -498,8 +498,8 @@ cmp-output_abi_diff() {
 	for ((i=0; i < ${#SONAME_OLD[@]}; i++)); do
 		for ((j=0; j < ${#SONAME_NEW[@]}; j++)); do
 			if [[ ${SONAME_OLD[i]%% *} == "${SONAME_NEW[j]%% *}" ]]; then
-				old+=("${SONAME_OLD[i]#* }")
-				new+=("${SONAME_NEW[j]#* }")
+				old+=("${SONAME_OLD[i]}")
+				new+=("${SONAME_NEW[j]}")
 			fi
 		done
 	done
@@ -526,7 +526,7 @@ cmp-output_abi_diff() {
 		output=$(abidiff --stats \
 			--d1 "${debugold}" \
 			--d2 "${debugnew}" \
-			"${old[i]}" "${new[i]}" 2>&1)
+			"${old[i]#* }" "${new[i]#* }" 2>&1)
 
 		# ABIDIFF_ERROR = 1
 		# ABIDIFF_USAGE_ERROR = 2
@@ -556,7 +556,7 @@ cmp-output_abi_diff() {
 		output=$(abidiff \
 			--d1 "${debugold}" \
 			--d2 "${debugnew}" \
-			"${old[i]}" "${new[i]}" 2>&1)
+			"${old[i]#* }" "${new[i]#* }" 2>&1)
 		errno=${?}
 		if (( errno & 3 )); then
 			msg "${output} (${FUNCNAME[0]})"
@@ -593,7 +593,7 @@ cmp-output_abi_diff() {
 
 		if ${OPT[abi-diff]}; then
 			if ${OPT[color]}; then
-				OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]##*/}")
+				OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]%% *}")
 			else
 				OUTPUT+="   ABI:${old[i]##*/}"
 			fi
