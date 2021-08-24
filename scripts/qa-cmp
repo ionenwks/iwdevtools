@@ -742,13 +742,30 @@ cmp-output_soname_diff() {
 		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
 	done
 
-	# replace lists with scanelf output (save to be re-used by cmp-output_abi_diff)
+	# replace lists with scanelf output
 	local IFS=$'\n'
 	[[ ${#old[@]} != 0 ]] && \
-		SONAME_OLD=($(scanelf -qF'%S' "${old[@]}" | sort | uniq -f2 || die "scanelf failed"))
+		old=($(scanelf -qF'%S' "${old[@]}" | sort || die "scanelf failed"))
 	[[ ${#new[@]} != 0 ]] && \
-		SONAME_NEW=($(scanelf -qF'%S' "${new[@]}" | sort | uniq -f2 || die "scanelf failed"))
+		new=($(scanelf -qF'%S' "${new[@]}" | sort || die "scanelf failed"))
 	unset IFS
+
+	# need uniq on field1, and 2+ can have spaces (`rev | uniq -f1` unsafe),
+	# do manually (also save to SCANELF_* to be re-used by cmp-output_abi_diff)
+	local -A uniq=()
+	for elem in "${old[@]}"; do
+		if [[ ! ${uniq[${elem%% *}]:-} ]]; then
+			uniq[${elem%% *}]=:
+			SONAME_OLD+=("${elem}")
+		fi
+	done
+	uniq=()
+	for elem in "${new[@]}"; do
+		if [[ ! ${uniq[${elem%% *}]:-} ]]; then
+			uniq[${elem%% *}]=:
+			SONAME_NEW+=("${elem}")
+		fi
+	done
 
 	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
 		report=$(cmp-get_makereport "N/A" 0 31 "")

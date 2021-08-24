@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-cmp: fix soname difference list so it doesn't miss entries
+
 iwdevtools-0.3.0 (2021-08-23)
 -----------------------------
 
