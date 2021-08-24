@@ -85,8 +85,8 @@ example that's also using ``abidiff`` for `bug #616054`_::
     QA: comparing dev-libs/libcdio-paranoia-0.93_p1-r1/image with dev-libs/libcdio-paranoia-0.94_p1/image
      FILES:-usr/share/doc/libcdio-paranoia-${PV}/README.zst
      FILES:+usr/share/doc/libcdio-paranoia-${PV}/README.md.zst
-       ABI: libcdio_cdda.so.2.0.0 func(+25,-12) vars(-3) [BREAKING]
-    ------> FILES(+1,-1) ABI(+25,-15,>B<)
+       ABI: libcdio_cdda.so func(+12,-25) vars(+3) [BREAKING]
+    ------> FILES(+1,-1) ABI(+15,-25,>B<)
 
 .. _bug #616054: https://bugs.gentoo.org/616054
 
