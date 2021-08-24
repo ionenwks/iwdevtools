@@ -47,7 +47,7 @@ set -u
 
 # split sed's and our own arguments
 SED_ARGV=()
-while [[ ${#} != 0 ]]; do
+while (( ${#} )); do
 	if [[ ${1} == --qa-sed-args ]]; then
 		shift
 		break
@@ -75,7 +75,7 @@ OPT[source]=
 OPT[error-on-qa]=false
 
 eval set -- $(getopt -o hAX -l help,version,all,func:,source:,lineno:,error-on-qa -- "${@}")
-while [[ ${#} != 0 ]]; do
+while (( ${#} )); do
 	case ${1} in
 		-h|--help) usage;;
 		   --version) version;;
@@ -206,7 +206,7 @@ else
 	if [[ ${stdin} && ! -r ${stdin} ]]		|| # stdin not readable
 		[[ ! ${stdin} && ${#in[@]} == 0 ]]	|| # no input files, or `cat | sed`
 		[[ ${stdin} && ${#in[@]} != 0 ]]	|| # sed file1 < file2 > file3
-		[[ ${#in[@]} -gt 1 ]]; then			   # sed file1 file2 > file3
+		(( ${#in[@]} >= 1 )); then			   # sed file1 file2 > file3
 		sed-run_exit
 	fi
 

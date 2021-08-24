@@ -92,7 +92,7 @@ eval set -- $(getopt \
 	-o hsboxe:rDWuc \
 	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
-while [[ ${#} != 0 ]]; do
+while (( ${#} )); do
 	case ${1} in
 		-h|--help) usage;;
 		   --version) version;;
@@ -114,7 +114,7 @@ while [[ ${#} != 0 ]]; do
 	esac
 	shift
 done
-[[ ${#} == 1 ]] || die "no atom specified, see \`${0##*/} --help\`"
+(( ${#} == 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
 # vdb-get_atomf <format> <atom>
 #	Echos <atom> based on <format> using qatom -F.
@@ -319,7 +319,7 @@ _vdb-get_libneed() {
 #   - if *DEPEND is set, match against it rather than ${OPT[depend]}
 vdb-get_deps() {
 	local deptype=${OPT[depend]}
-	[[ ${#} -ge 3 ]] && deptype=${3}
+	(( ${#} >= 3 )) && deptype=${3}
 
 	[[ -e ${VDB}/${1}/${deptype} ]] || return 0
 
@@ -347,7 +347,7 @@ vdb-get_deps() {
 		entry=$(vdb-get_dep2entry "${rdep}")
 
 		if [[ ! ${entry} ]]; then
-			[[ ${group} == 0 ]] || continue
+			(( group )) && continue
 			${OPT[ignore-uninstalled]} && continue
 			die "failed to find an installed provider in vdb for '${rdep}'"
 		fi
@@ -510,7 +510,7 @@ vdb-set_exclude() {
 vdb-set_ldcache() {
 	local ldconfig IFS=$'\n'
 	ldconfig=($(type -P ldconfig /sbin/ldconfig /usr/sbin/ldconfig 2>/dev/null))
-	if [[ ${#ldconfig[@]} == 0 ]]; then
+	if (( ! ${#ldconfig[@]} )); then
 		LDCACHE=
 		return
 	fi

@@ -101,7 +101,7 @@ eval set -- $(getopt \
 	-o hfsazrT:BdIMWFSZLUc \
 	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
 	-- "$@" || die "invalid arguments")
-while [[ ${#} != 0 ]]; do
+while (( ${#} )); do
 	case ${1} in
 		-h|--help) usage;;
 		   --version) version;;
@@ -133,8 +133,8 @@ while [[ ${#} != 0 ]]; do
 	esac
 	shift
 done
-[[ ${#} -ge 1 ]] || die "no atom/image specified, see \`${0##*/} --help\`"
-[[ ${#} -le 2 ]] || die "too many atom/image given, see \`${0##*/} --help\`"
+(( ${#} >= 1 )) || die "no atom/image specified, see \`${0##*/} --help\`"
+(( ${#} <= 2 )) || die "too many atom/image given, see \`${0##*/} --help\`"
 
 ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 	&& OPT[single]=true
@@ -197,7 +197,7 @@ cmp-get_filelist() {
 		if [[ ! ${pv} ]]; then
 			# version is an annoyance mostly with docdir, try to check if there
 			local dirs=("${1}"/usr/share/doc/*)
-			if [[ ${#dirs[@]} != 0 ]]; then
+			if (( ${#dirs[@]} )); then
 				pv=$(cmp-get_atomf "%{PVR}" "${dirs[0]##*/}")
 			else
 				pv="<unset>"
@@ -287,7 +287,7 @@ cmp-get_makereport() {
 				printf -- "${1}(%s)\n" "${4}"
 			fi
 		fi
-	elif [[ ${2} != 0 ]] || ${OPT[confirm]}; then
+	elif (( ${2} )) || ${OPT[confirm]}; then
 		if [[ ${4} ]]; then
 			if ${OPT[color]}; then
 				printf -- "%s\e[90m,\e[0m" "${4}"
@@ -403,7 +403,7 @@ cmp-get_tocompare() {
 		;;
 	esac
 
-	if [[ ${#i1[@]} == 0 ]]; then
+	if (( ! ${#i1[@]} )); then
 		if ${OPT[allow-missing]}; then
 			end
 		else
@@ -411,10 +411,10 @@ cmp-get_tocompare() {
 		fi
 	fi
 
-	if [[ ${#} == 2 ]]; then
+	if (( ${#} == 2 )); then
 		i2[0]=$(cmp-get_normalized_image "${2}")
-		[[ ${?} == 1 ]] && i2=($(cmp-get_images $(cmp-get_atom2catpn "${2}")))
-	elif [[ ${#i1[@]} -ge 2 ]]; then
+		(( ${?} == 1 )) && i2=($(cmp-get_images $(cmp-get_atom2catpn "${2}")))
+	elif (( ${#i1[@]} >= 2 )); then
 		# use first image as newest (in i2), and 2nd as older (in i1)
 		i2[0]=${i1[0]}
 		i1[0]=${i1[1]}
@@ -426,20 +426,20 @@ cmp-get_tocompare() {
 	fi
 
 	# shift i1 until i1[0] != i2[0]
-	if [[ ${#i2[@]} != 0 ]]; then
+	if (( ${#i2[@]} )); then
 		while [[ ${#i1[@]} != 0 && ${i1[0]} == "${i2[0]}" ]]; do
 			i1=("${i1[@]:1}")
 		done
 		# if exausted options, check if i2 has the extra to offer
-		[[ ${#i1[@]} == 0 && ${#i2[@]} -ge 2 ]] && i1[0]=${i2[1]}
+		(( ! ${#i1[@]} && ${#i2[@]} >= 2 )) && i1[0]=${i2[1]}
 	fi
 
-	if [[ ${#i1[@]} == 0 || ${#i2[@]} == 0 ]]; then
+	if ! (( ${#i1[@]} && ${#i2[@]} )); then
 		if ${OPT[single]}; then
-			if [[ ${#i1[@]} != 0 ]]; then
+			if (( ${#i1[@]} )); then
 				echo "${i1[0]}"
 				return
-			elif [[ ${#i2[@]} != 0 ]]; then
+			elif (( ${#i2[@]} )); then
 				echo "${i2[0]}"
 				return
 			fi
@@ -486,7 +486,7 @@ cmp-get_visible() {
 #	Add to OUTPUT abi differences between libraries of LIST_OLD and LIST_NEW
 #	that share the same SONAME, requires to have run cmp-output_soname_diff
 cmp-output_abi_diff() {
-	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
+	if ! (( ${#SONAME_OLD[@]} || ${#SONAME_NEW[@]} )); then
 		cmp-output_abi_diff_issue "N/A" 0 # no libraries
 		return
 	fi
@@ -504,7 +504,7 @@ cmp-output_abi_diff() {
 		done
 	done
 
-	if [[ ${#old[@]} == 0 && ${#new[@]} == 0 ]]; then
+	if ! (( ${#old[@]} || ${#new[@]} )); then
 		cmp-output_abi_diff_issue "---" 0 # all sonames changed
 		return
 	fi
@@ -645,7 +645,7 @@ cmp-output_filelist_diff() {
 	local -a old=("${LIST_OLD[@]:2}") new=("${LIST_NEW[@]:2}")
 	local output report
 
-	if [[ ${#old[@]} == 0 && ${#new[@]} == 0 ]]; then
+	if ! (( ${#old[@]} || ${#new[@]} )); then
 		# this is rather unlikely
 		report=$(cmp-get_makereport "N/A" 0 31 "")
 		report=$(cmp-get_makereport "FILES" -1 90 "${report}")
@@ -704,7 +704,7 @@ cmp-output_size_diff() {
 
 	local sper=$((100 - 100 * sold / snew))
 
-	if ${OPT[size-diff]} && [[ ${sper#-} -gt ${OPT[size-thres]} ]]; then
+	if ${OPT[size-diff]} && (( ${sper#-} > OPT[size-thres] )); then
 		local c1= c2= cn=
 		if ${OPT[color]}; then
 			c1=$(echo -e "\e[90m")
@@ -721,7 +721,7 @@ cmp-output_size_diff() {
 				${#new[@]})$'\n'
 	fi
 
-	if ${OPT[confirm]} || [[ ${sper#-} -ge ${OPT[size-thres]} ]]; then
+	if ${OPT[confirm]} || (( ${sper#-} > OPT[size-thres] )); then
 		printf -v sper "%.2f" $((10**4 - 10**4 * sold / snew))e-2
 		if (( snew >= sold )); then
 			report=$(cmp-get_makereport "+${sper}%%" 1 32 "")
@@ -921,7 +921,7 @@ unset IFS
 # init globals used by cmp-output_*
 OUTPUT=
 REPORT=
-if [[ ${#} == 2 ]]; then
+if (( ${#} == 2 )); then
 	declare -a LIST_OLD=($(cmp-get_filelist "${1}"))
 	declare -a LIST_NEW=($(cmp-get_filelist "${2}"))
 	${OPT[single-auto]} && OPT[single]=false
@@ -938,7 +938,7 @@ if ${OPT[single]}; then
 	cmp-print_size
 fi
 
-if [[ ${#} == 2 ]]; then
+if (( ${#} == 2 )); then
 	cmp-output_filelist_diff
 	cmp-output_soname_diff
 	cmp-output_abi_diff

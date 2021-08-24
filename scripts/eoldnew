@@ -35,7 +35,7 @@ type portageq qatom >/dev/null || die "missing dependencies"
 skip_new=
 skip_old=
 declare -i old=1
-if [[ ${#} != 0 ]]; then
+if (( ${#} )); then
 	if [[ ${1} == [1-9]* ]]; then
 		old=${1%-}
 		[[ ${1} == *- ]] && skip_new=y
@@ -49,7 +49,7 @@ if [[ ${#} != 0 ]]; then
 		version
 	fi
 fi
-[[ ${#} -ge 1 ]] || die "no atom specified, see \`${0##*/} --help\`"
+(( ${#} >= 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
 # reduce atom to category/pn (or just pn) so we can get all vers
 atom=$(qatom -CqF '%[CATEGORY]%{PN}' "${1}") || die "qatom failed for '${1}'"
@@ -70,7 +70,7 @@ for ver in "${vers[@]}"; do
 	usevers+=("${ver}")
 done
 
-[[ ${#usevers[@]} == 0 ]] && die "failed to find an older version than '${atom}'"
+(( ${#usevers[@]} )) || die "failed to find an older version than '${atom}'"
 
 old=$((${#usevers[@]} - old))
 (( old < 0 )) && old=0 # use oldest

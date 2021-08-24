@@ -42,7 +42,7 @@ OPT[sanity]=true
 OPT[color]=true
 
 eval set -- $(getopt -o hqnsc -l help,version,quiet,dry-run,no-sanity,no-color -- "$@")
-while [[ ${#} != 0 ]]; do
+while (( ${#} )); do
 	case ${1} in
 		-h|--help) usage;;
 		   --version) version;;
@@ -57,7 +57,7 @@ done
 
 # do basic sanity checks on supplied files, safety if going to use in-place
 patches=()
-while [[ ${#} != 0 ]]; do
+while (( ${#} )); do
 	[[ -f ${1} ]] || die "'${1}' is not a valid file"
 	if ${OPT[sanity]} && [[ $(file -bL "${1}") != 'unified diff output'* ]]; then
 		die "'${1}' does not appear to be a unified format patch"
@@ -86,7 +86,7 @@ if [[ ${stdin} ]]; then
 	patches+=("${TMPIN}")
 fi
 
-[[ ${#patches[@]} != 0 ]] || die "no patches given"
+(( ${#patches[@]} )) || die "no patches given"
 [[ ${#patches[@]} -gt 1 && ! ${inplace} ]] && die "no support for multiple files when using stdin/stdout"
 
 # save patch sizes for report
@@ -258,8 +258,7 @@ inspect() {
 			esac
 
 			if [[ ${l} == -* ]]; then
-				removed+=1
-				if [[ ${removed} == 20 ]]; then
+				if (( removed++ == 21 )); then
 					qa "over 20 lines are being removed, any chance to simplify? e.g. with 'if false'"$'\n'"   (disregard if meant to be upstreamed, go in SRC_URI, or would cause issues)" ${j} "${l}"
 				fi
 			else
@@ -269,7 +268,7 @@ inspect() {
 	done < "${1}" || die "failed reading '${1}'"
 
 	# checked by other tools, but check the 20kiB limit as a forewarning
-	if [[ ${2} -gt 20480 ]]; then
+	if (( ${2} >= 20480 )); then
 		qanl "size greater than 20kiB, reminder that large patches should use SRC_URI"$'\n'"   (or be preferably upstreamed)"
 	fi
 
