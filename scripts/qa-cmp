@@ -333,6 +333,12 @@ cmp-get_normalized_image() {
 	return ${atom}
 }
 
+# cmp-get_scanelf <args>
+#	Wrapper for scanelf to echo `sort | uniq` list and check for errors
+cmp-get_scanelf() {
+	scanelf -q "${@}" | sort | uniq || die "scanelf failed"
+}
+
 # cmp-get_tmp
 #	Echos portage's tmpdir or die if basic sanity checks (intended to
 #	give less confusing errors) failed
@@ -731,7 +737,7 @@ cmp-output_size_diff() {
 #	Add to OUTPUT differences between LIST_OLD and LIST_NEW but only
 #	for SONAME changes
 cmp-output_soname_diff() {
-	local -a old=() new=()
+	local -a old=() new=() tmp
 	local elem output report
 
 	# only .so isn't /necessary/ as scanelf will discard, but it's less i/o
@@ -742,12 +748,23 @@ cmp-output_soname_diff() {
 		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
 	done
 
-	# replace lists with scanelf output
+	# replace lists with scanelf output, do three runs to differenciate
+	# 32bit/64bit without guessing what the libdir may be, and one more
+	# if got nothing (to handle potential exotic arches)
+	# TODO?: lacks further awareness of different versions with same soname
 	local IFS=$'\n'
-	[[ ${#old[@]} != 0 ]] && \
-		old=($(scanelf -qF'%S' "${old[@]}" | sort || die "scanelf failed"))
-	[[ ${#new[@]} != 0 ]] && \
-		new=($(scanelf -qF'%S' "${new[@]}" | sort || die "scanelf failed"))
+	if (( ${#old[@]} )); then
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' "${old[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' "${old[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' "${old[@]}"))
+		old=("${tmp[@]}")
+	fi
+	if (( ${#new[@]} )); then
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' "${new[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' "${new[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp_get_scanelf -F'%S' "${new[@]}"))
+		new=("${tmp[@]}")
+	fi
 	unset IFS
 
 	# need uniq on field1, and 2+ can have spaces (`rev | uniq -f1` unsafe),
@@ -868,7 +885,7 @@ cmp-print_size() {
 cmp-print_soname() {
 	${OPT[single-soname]} || return
 
-	local -a new=()
+	local -a new=() tmp
 	local elem
 
 	for elem in "${LIST_NEW[@]:2}"; do
@@ -876,8 +893,12 @@ cmp-print_soname() {
 	done
 
 	local IFS=$'\n'
-	[[ ${#new[@]} != 0 ]] && \
-		new=($(scanelf -qF'%S#F' "${new[@]}" | sort | uniq || die "scanelf failed"))
+	if (( ${#new[@]} )); then
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' "${new[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' "${new[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S#F' "${new[@]}"))
+		new=("${tmp[@]}")
+	fi
 	unset IFS
 
 	local line output=

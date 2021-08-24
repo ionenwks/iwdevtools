@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-cmp: abi awareness for soname lists
+
 iwdevtools-0.3.1 (2021-08-24)
 -----------------------------
 
