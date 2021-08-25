@@ -6,6 +6,8 @@ iwdevtools-next
 
 - qa-cmp: abi awareness for soname lists
 
+- qa-cmp: no longer display header for --single-* if no output
+
 iwdevtools-0.3.1 (2021-08-24)
 -----------------------------
 

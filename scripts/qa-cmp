@@ -638,6 +638,22 @@ cmp-output_abi_diff_issue() {
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
 
+# cmp-output_filelist <compare1>
+#	Add to OUTPUT filelist for 1 value from cmp-get_tocompare
+#	Simplified version of cmp-output_filelist_diff
+cmp-output_filelist() {
+	${OPT[single-filelist]} || return
+
+	local line
+	for line in "${LIST_NEW[@]:2}"; do
+		if ${OPT[color]}; then
+			OUTPUT+=$(printf " \e[90mFILES: \e[32m%s\e[0m" "${line}")$'\n'
+		else
+			OUTPUT+=" FILES: ${line}"$'\n'
+		fi
+	done
+}
+
 # cmp-output_filelist_diff
 #	Add to OUTPUT differences between LIST_OLD and LIST_NEW while omitting
 #	changes to version in filenames (replaced by literal ${PV})
@@ -691,6 +707,28 @@ cmp-output_filelist_diff() {
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
 
+# cmp-output_size <compare1>
+#	Add to OUTPUT size and filecount for 1 value from cmp-get_tocompare
+#	Simplified version of cmp-output_size_diff
+cmp-output_size() {
+	${OPT[single-size]} || return
+
+	local -a new=("${LIST_NEW[@]:2}")
+
+	local errmark=
+	local -i snew
+	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark='~'
+
+	local c1= c2= cn=
+	if ${OPT[color]}; then
+		c1=$(echo -e "\e[90m")
+		c2=$(echo -e "\e[33m")
+		cn=$(echo -e "\e[0m")
+	fi
+	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%s%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
+		"${errmark}" $((10**2 * snew / 1024**2))e-2 ${#new[@]})
+}
+
 # cmp-output_size_diff
 #	Add to OUTPUT difference in size
 cmp-output_size_diff() {
@@ -731,6 +769,38 @@ cmp-output_size_diff() {
 		report=$(cmp-get_makereport "SIZE" -1 90 "${report}")
 		[[ ${report} ]] && REPORT+=" ${report}"
 	fi
+}
+
+# cmp-output_soname <compare>
+#	Add to OUTPUT soname list for 1 value from cmp-get_tocompare
+#	Simplified version of cmp-output_soname_diff
+cmp-output_soname() {
+	${OPT[single-soname]} || return
+
+	local -a new=() tmp
+	local elem
+
+	for elem in "${LIST_NEW[@]:2}"; do
+		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
+	done
+
+	local IFS=$'\n'
+	if (( ${#new[@]} )); then
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' "${new[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' "${new[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S#F' "${new[@]}"))
+		new=("${tmp[@]}")
+	fi
+	unset IFS
+
+	local line
+	for line in "${new[@]}"; do
+		if ${OPT[color]}; then
+			OUTPUT+=$(printf "\e[90mSONAME: \e[36m%s\e[0m" "${line}")$'\n'
+		else
+			OUTPUT+="SONAME: ${line}"$'\n'
+		fi
+	done
 }
 
 # cmp-output_soname_diff
@@ -837,82 +907,6 @@ cmp-print_header_single() {
 	msg "QA: listing $(cmp-get_compare2readable "${1}") info"
 }
 
-# cmp-print_filelist <compare1>
-#	Print filelist for 1 value from cmp-get_tocompare
-#	Simplified version of cmp-output_filelist_diff
-cmp-print_filelist() {
-	${OPT[single-filelist]} || return
-
-	local line output=
-	for line in "${LIST_NEW[@]:2}"; do
-		if ${OPT[color]}; then
-			output+=$(printf " \e[90mFILES: \e[32m%s\e[0m" "${line}")$'\n'
-		else
-			output+=" FILES: ${line}"$'\n'
-		fi
-	done
-
-	[[ ${output} ]] && msg "${output%$'\n'}"
-}
-
-# cmp-print_size <compare1>
-#	Print size and filecount for 1 value from cmp-get_tocompare
-#	Simplified version of cmp-output_size_diff
-cmp-print_size() {
-	${OPT[single-size]} || return
-
-	local -a new=("${LIST_NEW[@]:2}")
-
-	local errmark=
-	local -i snew
-	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark='~'
-
-	local c1= c2= cn=
-	if ${OPT[color]}; then
-		c1=$(echo -e "\e[90m")
-		c2=$(echo -e "\e[33m")
-		cn=$(echo -e "\e[0m")
-	fi
-	local output=$(printf "  ${c1}SIZE: ${c2}%s%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
-		"${errmark}" $((10**2 * snew / 1024**2))e-2 ${#new[@]})
-
-	msg "${output}"
-}
-
-# cmp-print_soname <compare>
-#	Print soname list for 1 value from cmp-get_tocompare
-#	Simplified version of cmp-output_soname_diff
-cmp-print_soname() {
-	${OPT[single-soname]} || return
-
-	local -a new=() tmp
-	local elem
-
-	for elem in "${LIST_NEW[@]:2}"; do
-		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
-	done
-
-	local IFS=$'\n'
-	if (( ${#new[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' "${new[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' "${new[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S#F' "${new[@]}"))
-		new=("${tmp[@]}")
-	fi
-	unset IFS
-
-	local line output=
-	for line in "${new[@]}"; do
-		if ${OPT[color]}; then
-			output+=$(printf "\e[90mSONAME: \e[36m%s\e[0m" "${line}")$'\n'
-		else
-			output+="SONAME: ${line}"$'\n'
-		fi
-	done
-
-	[[ ${output} ]] && msg "${output%$'\n'}"
-}
-
 # normalize arguments to something we can use
 IFS=$'\n'
 set -- $(cmp-get_tocompare "$@")
@@ -932,10 +926,15 @@ declare -a SONAME_OLD=()
 declare -a SONAME_NEW=()
 
 if ${OPT[single]}; then
-	cmp-print_header_single "${2:-${1}}"
-	cmp-print_filelist
-	cmp-print_soname
-	cmp-print_size
+	cmp-output_filelist
+	cmp-output_soname
+	cmp-output_size
+
+	if [[ ${OUTPUT} ]]; then
+		cmp-print_header_single "${2:-${1}}"
+		msg "${OUTPUT%$'\n'}"
+		OUTPUT=
+	fi
 fi
 
 if (( ${#} == 2 )); then
