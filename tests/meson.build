@@ -4,11 +4,12 @@ foreach script : scripts
 		test(t, bash, suite : script,
 			args : [
 				files('run-test'),
-				meson.current_build_dir() / script / t,
 				files(script / t),
+				meson.current_build_dir() / script / t,
+				meson.current_source_dir() / script / 'data',
 				run_script.get(script)
 			],
-			workdir : meson.current_source_dir() / script
+			env : [ 'VERSION=' + meson.project_version() ]
 		)
 	endforeach
 endforeach

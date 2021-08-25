@@ -1,2 +1,2 @@
 # basic --help argument check
-expect "Usage: ${0##*/} *" "${1}" --help
+expect "Usage: ${SCRIPT##*/} *" --help

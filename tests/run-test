@@ -3,23 +3,22 @@ set -euo pipefail
 die() { echo "TestError: ${*} (${FUNCNAME[1]})" >&2; exit 1; }
 skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 
-[[ ${#} == 3 && ${1} && -f ${2} ]] || die "${0##*/} should not be used directly"
-
-if [[ -d data ]]; then
-	DAT=${PWD}/data
-else
-	DAT=
-fi
+# arguments/env coming from meson
+[[ ${#} == 4 && -f ${1} && ${2} && ${3} && -f ${4} && ${VERSION} ]] \
+	|| die "invalid usage, attempted to use directly?"
+TEST=${1}
+WORKDIR=${2}
+DATADIR=${3}
+SCRIPT=${4}
 
 # copydat <files...>
-#	Copy data files to current temporary dir
+#	Copy data files to ${WORKDIR}
 copydat() {
-	[[ ${DAT} ]]
-	cp "${@/#/${DAT}/}" .
+	cp "${@/#/${DATADIR}/}" .
 }
 
-# expect [options] <expected-glob> <source> [args]
-#	Return true if source's output matches <expected-glob>
+# expect [options] <expected-glob> [args]
+#	Return true if ${SCRIPT}'s output matches <expected-glob>
 #	Options:
 #		-2 compare with stderr instead of stdout
 expect() {
@@ -35,16 +34,16 @@ expect() {
 
 	local output errno=0
 	if ${stdout}; then
-		output=$(. "${@:2}") || errno=${?}
+		output=$("${SHELL}" "${SCRIPT}" "${@:2}") || errno=${?}
 		echo "${output}"
 	else
-		{ output=$(. "${@:2}" 3>&2 2>&1 1>&3-) || errno=${?}; } 2>&1
+		{ output=$("${SHELL}" "${SCRIPT}" "${@:2}" 3>&2 2>&1 1>&3-) || errno=${?}; } 2>&1
 		echo "${output}" >&2
 	fi
 
-	(( ! errno )) || return ${errno}
+	eval "[[ \${output} == ${1// /\\ } ]]" || die "output mismatch for '${*}'"
 
-	eval "[[ \${output} == ${1// /\\ } ]]" || die "output did not match '${1}'"
+	return ${errno}
 }
 
 # md5cmp <md5sum> <file>
@@ -53,15 +52,15 @@ md5cmp() {
 	md5sum --quiet -c - <<<"${*}" >/dev/null || die "checksum mismatch for '${2}'"
 }
 
-# setup per-test temporary dir in build dir, cleanup previous if exists
-if [[ -f ${1}/test-tmp-dir ]]; then
-	rm -r "${1}"
+# setup per-test work dir in build dir, cleanup previous if exists
+if [[ -f ${WORKDIR}/test-tmp-dir ]]; then
+	rm -r "${WORKDIR}"
 fi
-mkdir "${1}"
-touch "${1}"/test-tmp-dir # sanity file for safer `rm -r`
+mkdir "${WORKDIR}"
+touch "${WORKDIR}"/test-tmp-dir # sanity file for safer `rm -r`
 
-# run test in temporary dir
-cd "${1}"
-. "${@:2}"
+# run test in work dir
+cd "${WORKDIR}"
+. "${TEST}"
 
 # vim: ts=4
