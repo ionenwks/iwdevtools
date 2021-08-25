@@ -1,0 +1,69 @@
+From 7e27101a4cc366e26e1c69e5492a1a1fc8b3e85a Mon Sep 17 00:00:00 2001
+From: Test <user@host>
+Date: Wed, 25 Aug 2021 07:14:43 -0400
+Subject: [PATCH 1/2] initial import
+
+---
+ Makefile | 1 +
+ hello.c  | 5 +++++
+ 2 files changed, 6 insertions(+)
+ create mode 100644 Makefile
+ create mode 100644 hello.c
+
+diff --git a/Makefile b/Makefile
+new file mode 100644
+index 0000000..8507427
+--- /dev/null
++++ b/Makefile
+@@ -0,0 +1 @@
++hello:
+diff --git a/hello.c b/hello.c
+new file mode 100644
+index 0000000..c9f6f1a
+--- /dev/null
++++ b/hello.c
+@@ -0,0 +1,5 @@
++#include <stdio.h>
++
++int main(void) {
++	puts("Hello World");
++}
+-- 
+2.33.0
+
+
+From 28d056984cdefdba1e3dea84548b63730a096d7b Mon Sep 17 00:00:00 2001
+From: Test <user@host>
+Date: Wed, 25 Aug 2021 07:16:16 -0400
+Subject: [PATCH 2/2] make program less offensive
+
+---
+ Makefile             | 2 +-
+ hello.c => heaveno.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ rename hello.c => heaveno.c (61%)
+
+diff --git a/Makefile b/Makefile
+index 8507427..191cdfa 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1 +1 @@
+-hello:
++heaveno:
+diff --git a/hello.c b/heaveno.c
+similarity index 61%
+rename from hello.c
+rename to heaveno.c
+index c9f6f1a..9ca77ec 100644
+--- a/hello.c
++++ b/heaveno.c
+@@ -1,5 +1,5 @@
+ #include <stdio.h>
+ 
+ int main(void) {
+-	puts("Hello World");
++	puts("Heaveno World");
+ }
+-- 
+2.33.0
+

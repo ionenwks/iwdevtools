@@ -1,0 +1,2 @@
+# basic --version argument check
+expect "${0##*/} [0-9]*" "${1}" --version

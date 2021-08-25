@@ -1,7 +1,7 @@
 project(
 	'iwdevtools',
 	version : '0.3.1',
-	meson_version : '>=0.50.0'
+	meson_version : '>=0.53.0'
 )
 
 prefix = get_option('prefix')
@@ -20,9 +20,13 @@ conf.set('confdir', prefix / confdir)
 conf.set('datadir', prefix / datadir)
 conf.set('version', meson.project_version())
 
+bash = find_program('bash')
+
 subdir('config')
 subdir('portage')
 subdir('scripts')
+
+subdir('tests')
 
 install_data([
 	'NEWS.rst',

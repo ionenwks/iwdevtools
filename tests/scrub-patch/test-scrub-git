@@ -1,0 +1,5 @@
+# test if a git-format-patch style patch is scrubbed properly
+copydat git.patch
+expect -2 "Success*47.60%*" "${1}" -cq git.patch > output
+md5cmp a8e84b0ad0057d55ee22135ae2d18035 git.patch # should be unmodified
+md5cmp a4f7bee77f6164e3fac0a39344ab1166 output
