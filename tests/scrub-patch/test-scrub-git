@@ -1,5 +1,6 @@
 # test if a git-format-patch style patch is scrubbed properly
+# * 001: "From " suggestion
+# * 032: file rename attempt
 copydat git.patch
-expect -2 "Success*47.60%*" "${1}" -cq git.patch > output
-md5cmp a8e84b0ad0057d55ee22135ae2d18035 git.patch # should be unmodified
-md5cmp a4f7bee77f6164e3fac0a39344ab1166 output
+expect -2 "Success*43.09%*001*032*" "${1}" -ci git.patch
+md5cmp a2739dbb2d07787d709bf8e5cb2dc942 git.patch

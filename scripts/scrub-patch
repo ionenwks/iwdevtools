@@ -116,7 +116,6 @@ if ! ${OPT[dry-run]}; then
 	# additions:
 	#  - discard after '---' in header (git noise, e.g. N files changed, N deletion)
 	#  - discard git version and empty lines '-- ' signature
-	#  - similarity index, rename to/from (hopefully patch not meant for the tree)
 	# modifications:
 	#  - add space after ---/+++ and diff for extra safety
 	#   (patches patching patches sometimes have ---- ++++)
@@ -135,9 +134,6 @@ if ! ${OPT[dry-run]}; then
 		-e '/^--- /s:\t.*::' \
 		-e '/^---$/,/^--- /{/^--- /!d}' \
 		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}' \
-		-e '/^similarity index /d' \
-		-e '/^rename from /d' \
-		-e '/^rename to /d' \
 		${inplace} "${patches[@]}" || die "scrubbed too hard"
 fi
 
@@ -249,7 +245,7 @@ inspect() {
 						file_b=${l##*/}
 						file_b=${file_b%%$'\t'*}
 						if [[ ${file_a} && ${file_a} != "${file_b}" ]]; then
-							qa "filename is different from previous line, is this a git-style rename?"$'\n'"   (this is not supported in normal patches and won't be renamed)" ${j} "${l}"
+							qa "filename is different from previous line, is this a git-style rename?"$'\n'"   (renaming needs recent patch(1) and won't work with stripped 'diff --git',"$'\n'"    preferable to not rely on this if patch is intended for portage)" ${j} "${l}"
 						fi
 					fi
 				;;
