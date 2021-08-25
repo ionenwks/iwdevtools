@@ -1,5 +1,9 @@
 tests = [
 	'test-help',
 	'test-version',
-	'test-scrub-git'
+	'test-file-safety',
+	'test-sanity',
+	'test-scrub-git',
+	'test-scrub-mess',
+	'test-scrub-normal'
 ]

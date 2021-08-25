@@ -52,6 +52,15 @@ md5cmp() {
 	md5sum --quiet -c - <<<"${*}" >/dev/null || die "checksum mismatch for '${2}'"
 }
 
+# xfail <expected-errno>
+#	Abort if last return value is not <expected-errno>
+xfail() {
+	local errno=${?}
+
+	[[ ${errno} == ${1} ]] \
+		|| die "expected return value ${1}, got ${errno}"
+}
+
 # setup per-test work dir in build dir, cleanup previous if exists
 if [[ -f ${WORKDIR}/test-tmp-dir ]]; then
 	rm -r "${WORKDIR}"

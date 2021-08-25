@@ -1,0 +1,4 @@
+# test a mostly normal patch using stdout, should not generate any QA
+copydat normal.patch
+expect -2 "Success*37.63%*meaningful." -co normal.patch > output
+md5cmp 591c09716414b49f19836dd0bf02f388 output

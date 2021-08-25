@@ -1,0 +1,13 @@
+Header mentioning adding return value for main()
+https://bugs.gentoo.org/1
+
+Index: heaveno.c
+===================================================================
+--- a/heaveno.c	(revision 7)
++++ b/heaveno.c	(revision 8)
+@@ -2,4 +2,5 @@
+ 
+ int main(void) {
+ 	puts("Heaveno World");
++	return 0;
+ }

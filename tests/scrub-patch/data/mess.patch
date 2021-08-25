@@ -1,0 +1,81 @@
+#!/bin/sh
+Changelog:
+* implement hand-crafted configure script to build the project
+* remove Makefile
+* use the power of the void
+===================================================================
+RCS file: heaveno.c,v
+retrieving revision 1.2
+retrieving revision 1.3
+diff -u -r1.2 -r1.3
+--- heaveno.c	2021/08/25 19:17:21	1.2
++++ heaveno.c	2021/08/25 19:24:00	1.3
+@@ -1,6 +1,5 @@
+ #include <stdio.h>
+ 
+-int main(void) {
+-	puts("Heaveno World");
+-	return 0;
++void main(void) {
++	puts((void *)"Welcome Hell");
+ }
+===================================================================
+RCS file: Makefile,v
+retrieving revision 1.4
+retrieving revision 1.5
+diff -u -r1.4 -r1.5
+--- Makefile	2021/08/25 19:33:09	1.4
++++ Makefile	2021/08/25 19:33:25	1.5
+@@ -1,27 +1,4 @@
+ heaveno:
+ 
+-useless:
+-	@echo this is pointless lines
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo
+-	@echo hope nobody removes them
+-
+ install: heaveno
+ 	install $< $(DESTDIR)/usr/bin
+diff -Nu a/Makefile b/Makefile
+--- hello-1.0/Makefile	2021-08-25 16:11:54.697764375 -0400
++++ /dev/null	1969-12-31 19:00:00.000000000 -0500
+@@ -1,4 +0,0 @@
+-heaveno:
+-
+-install: heaveno
+-	install $< $(DESTDIR)/usr/bin
+diff -Nu a/configure b/configure
+--- /dev/null	1969-12-31 19:00:00.000000000 -0500
++++ hello-1.0/configure	2021-08-25 16:42:42.132325245 -0400
+@@ -0,0 +1,13 @@
++#!/bin/sh
++# reminder: this need to work with POSIX sh
++if [ "$1" == "--with-こんにちは" ] ; then
++	if [[ ${2:0:1} ]]
++	then
++		function getworld() {
++			case $1 in
++				hello) echo $(pkg-config --libs hell) ;&
++				heaveno) echo -n $'-L/usr/lib64/heaven -lheaven\n';;
++			esac
++		}
++		LIBS=$(getworld $2); name=code; code=($(< heaveno.c))
++		echo ${!name} > hello.c; fi; fi
