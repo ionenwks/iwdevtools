@@ -2,7 +2,7 @@
 version() { echo "${0##*/} @version@"; exit; }
 usage() {
 	cat <<-EOF
-		${0##*/} [options] [patches]
+		Usage: ${0##*/} [options] [patches]
 
 		Strip patches of typically useless cruft such as "diff --git"
 		lines and timestamps to reduce size and improve readability.
