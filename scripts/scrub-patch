@@ -16,6 +16,9 @@ usage() {
 
 		  -s, --no-sanity   Disable \`file\` check for if being misdetected
 
+		  -i, --in-place    Force using sed -i (no autodetect)
+		  -o, --stdout      Always output to stdout (no autodetect)
+
 		  -c, --no-color    Disable use of colors
 
 		  -h, --help        Display usage information and exit
@@ -40,8 +43,9 @@ OPT[quiet]=false
 OPT[dry-run]=false
 OPT[sanity]=true
 OPT[color]=true
+OPT[in-place]=
 
-eval set -- $(getopt -o hqnsc -l help,version,quiet,dry-run,no-sanity,no-color -- "$@")
+eval set -- $(getopt -o hqnsioc -l help,version,quiet,dry-run,no-sanity,in-place,stdout,no-color -- "$@")
 while (( ${#} )); do
 	case ${1} in
 		-h|--help) usage;;
@@ -49,6 +53,8 @@ while (( ${#} )); do
 		-q|--quiet) OPT[quiet]=true;;
 		-n|--dry-run) OPT[dry-run]=true;;
 		-s|--no-sanity) OPT[sanity]=false;;
+		-i|--in-place) OPT[in-place]=true;;
+		-o|--stdout) OPT[in-place]=false;;
 		-c|--no-color) OPT[color]=false;;
 		--) shift; break;;
 	esac
@@ -68,12 +74,18 @@ done
 
 # devmanual's sed has a -i by default, try to preserve this behavior but
 # will drop if input or output is detected to be stdin/stdout
-stdin=$(readlink -m /proc/$$/fd/0) || die "readlink failed for stdin"
-[[ -f ${stdin} || ${stdin##*/} == pipe:* ]] || stdin=
-stdout=$(readlink -m /proc/$$/fd/1) || die "readlink failed for stdout"
-[[ -f ${stdout} || ${stdout##*/} == pipe:* ]] || stdout=
-inplace=-i
-[[ ${stdin} || ${stdout} ]] && inplace=
+if [[ ${OPT[in-place]} != true ]]; then
+	stdin=$(readlink -m /proc/$$/fd/0) || die "readlink failed for stdin"
+	[[ -f ${stdin} || ${stdin##*/} == pipe:* ]] || stdin=
+	stdout=$(readlink -m /proc/$$/fd/1) || die "readlink failed for stdout"
+	[[ -f ${stdout} || ${stdout##*/} == pipe:* ]] || stdout=
+	inplace=-i
+	[[ ${stdin} || ${stdout} || ${OPT[in-place]} == false ]] && inplace=
+else
+	stdout=
+	stdin=
+	inplace=-i
+fi
 
 # copy stdin to a temporary file, simplifies inspection and sed usage
 if [[ ${stdin} ]]; then
