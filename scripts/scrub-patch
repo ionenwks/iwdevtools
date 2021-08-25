@@ -29,7 +29,9 @@ usage() {
 
 set -u
 
-die() { echo "Error (${0##*/}): ${*}" >&2; exit 1; }
+MAINPID=${$}
+die() { echo "Error (${0##*/}): ${*}" >&2; kill -USR1 ${MAINPID}; exit 1; }
+trap 'exit 1' USR1
 
 # Dependencies:
 #	sys-apps/coreutils (cat, mktemp, readlink, rm)
@@ -45,7 +47,10 @@ OPT[sanity]=true
 OPT[color]=true
 OPT[in-place]=
 
-eval set -- $(getopt -o hqnsioc -l help,version,quiet,dry-run,no-sanity,in-place,stdout,no-color -- "$@")
+eval set -- $(getopt \
+	-o hqnsioc \
+	-l help,version,quiet,dry-run,no-sanity,in-place,stdout,no-color \
+	-- "$@" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
 		-h|--help) usage;;
