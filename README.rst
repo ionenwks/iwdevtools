@@ -129,10 +129,11 @@ Installing
 On Gentoo, simply ``emerge app-portage/iwdevtools``
 
 Or for a manual install:
-* mkdir build && cd build
-* meson .. --prefix /path/to/prefix
-* meson test
-* meson install
+
+- mkdir build && cd build
+- meson .. --prefix /path/to/prefix
+- meson test
+- meson install
 
 To (optionally) integrate with portage, an example bashrc will be installed
 at ``<prefix>/share/iwdevtools/bashrc`` which can be either symlinked to or
