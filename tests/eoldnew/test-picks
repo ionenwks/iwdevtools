@@ -1,0 +1,10 @@
+# test if picking the right versions out of 3
+set_portroot
+ebuild "$(get_ebuild test 1.0.0)" merge
+ebuild "$(get_ebuild test 1.5.0)" merge
+ebuild "$(get_ebuild test 2.0.0)" merge
+export EOLDNEW_EMERGE_CMD=echo
+expect -2 "old: dev-test/test-1.5.0*new: dev-test/test-2.0.0*" dev-test/test
+expect -2 "old: dev-test/test-1.0.0*new: dev-test/test-2.0.0*" 2 dev-test/test
+expect -2 "old: dev-test/test-1.0.0*new: dev-test/test-1.5.0*" =dev-test/test-1.5.0
+expect -2 "Error*older version*" =dev-test/test-1.0.0 || xfail 1

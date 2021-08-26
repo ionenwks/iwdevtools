@@ -4,7 +4,7 @@ die() { echo "TestError: ${*} (${FUNCNAME[1]})" >&2; exit 1; }
 skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 
 # arguments/env coming from meson
-[[ ${#} == 4 && -f ${1} && ${2} && ${3} && -f ${4} && ${VERSION} ]] \
+[[ ${#} == 4 && -f ${1} && ${2} && ${3} && -f ${4} && ${PACKAGE} && ${VERSION} ]] \
 	|| die "invalid usage, attempted to use directly?"
 TEST=${1}
 WORKDIR=${2}
@@ -46,10 +46,119 @@ expect() {
 	return ${errno}
 }
 
+# get_ebuild <PN> <PVR> <bin:file,ARG:value,inherit:file,...>
+# 	Echos path to ebuild created as <PN>-<PVR>.ebuild (category = dev-test/)
+#	Lowercase prefix determines do* command to use, e.g. bin: = dobin <file>
+#	Uppercase prefix means to set a variable like "QA_PREBUILT:value"
+#	inherit prefix will inherit an eclass from ${DATADIR}
+#	Note: these ebuilds should not actually build anything, use meson
+get_ebuild() {
+	[[ -d ${ROOT} ]]
+
+	local pn=${1} pvr=${2}
+	shift 2
+
+	local key val files= vars= inherit=
+	while (( ${#} )); do
+		key=${1%%:*}
+		val=${1#*:}
+		if [[ ${key} == inherit ]]; then
+			if [[ -f ${DATADIR}/${val}.eclass ]]; then
+				cp ${DATADIR}/${val}.eclass root/eclass/
+			fi
+			inherit+=" ${val}"
+		elif [[ ${key,,} == ${key} ]]; then
+			files+="do${key} "
+			if [[ ${val:0:1} != / ]]; then
+				files+="${PWD}/"
+			fi
+			files+="${val};"
+		else
+			vars+="${key}=\"${val}\";"
+		fi
+		shift
+	done
+
+	if [[ ! ${files} ]]; then
+		# always install at least something
+		files="newbin - ${pn}-${pvr} <<<'#!/usr/bin/env true'"
+	fi
+
+	mkdir -p "${ROOT}"/overlay/dev-test/${pn}
+
+	local ebuild=${ROOT}/overlay/dev-test/${pn}/${pn}-${pvr}.ebuild
+	cat > "${ebuild}" <<-EOF
+		EAPI=8
+
+		${inherit:+inherit${inherit}}
+
+		DESCRIPTION="ebuild for ${pn}"
+		HOMEPAGE="https://localhost/"
+		S="\${WORKDIR}"
+
+		LICENSE="BSD-2"
+		SLOT="0"
+		KEYWORDS="test"
+
+		${vars}
+
+		src_install() {
+			${files}
+		}
+	EOF
+
+	echo "${ebuild}"
+}
+
 # md5cmp <md5sum> <file>
 #	Return true if <file> matches <md5sum>
 md5cmp() {
 	md5sum --quiet -c - <<<"${*}" >/dev/null || die "checksum mismatch for '${2}'"
+}
+
+# set_portroot
+#	Setup and export ROOT, EROOT, and PORTAGE_CONFIGROOT
+#	Needed for any operation with portageq/qlist/ebuild/etc...
+ROOT=
+set_portroot() {
+	# skip if these commands are missing rather than fail (not on Gentoo?)
+	type ebuild portageq qatom qlist >/dev/null \
+		|| skip "portage or portage-utils missing"
+
+	export ROOT="${PWD}/root"
+	export EROOT="${ROOT}"
+	export PORTAGE_CONFIGROOT="${ROOT}"
+
+	mkdir -p root/{etc/portage,overlay/{eclass,metadata,profiles},tmp}
+
+	cat > root/etc/portage/repos.conf <<-EOF
+		[DEFAULT]
+		main-repo = ${PACKAGE}
+
+		[${PACKAGE}]
+		location = ${ROOT}/overlay
+	EOF
+
+	cat > root/etc/portage/make.conf <<-EOF
+		ACCEPT_KEYWORDS="test"
+		FEATURES="-* unprivileged"
+		PORTAGE_TMPDIR="${ROOT}/tmp"
+	EOF
+
+	cat > root/overlay/metadata/layout.conf <<-EOF
+		masters =
+		thin-manifests = true
+	EOF
+
+	cat > root/overlay/profiles/make.defaults <<-EOF
+		ARCH="test"
+		CHOST="test"
+	EOF
+	echo test > root/overlay/profiles/arch.list
+	echo dev-test > root/overlay/profiles/categories
+	echo ${PACKAGE} > root/overlay/profiles/repo_name
+
+	ln -s ../../overlay/profiles root/etc/portage/make.profile
 }
 
 # xfail <expected-errno>
@@ -67,6 +176,13 @@ if [[ -f ${WORKDIR}/test-tmp-dir ]]; then
 fi
 mkdir "${WORKDIR}"
 touch "${WORKDIR}"/test-tmp-dir # sanity file for safer `rm -r`
+
+# try to clear portage env vars not to confuse ebuild-run-in-ebuild,
+# and also clear env known to be used by scripts here
+# (tempting to use env -i but users may need obscure env vars)
+unset "${!PORTAGE@}" "${!PORTDIR@}" "${!EBUILD@}" {,E,B,SYS,ESYS}ROOT
+unset "${!EOLDNEW@}"
+export LC_ALL=C
 
 # run test in work dir
 cd "${WORKDIR}"

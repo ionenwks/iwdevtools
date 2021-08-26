@@ -1,7 +1,7 @@
 foreach script : scripts
 	subdir(script)
 	foreach t : tests
-		test(t, bash, suite : script,
+		test(t, bash, suite : script, timeout : 60,
 			args : [
 				files('run-test'),
 				files(script / t),
@@ -9,7 +9,10 @@ foreach script : scripts
 				meson.current_source_dir() / script / 'data',
 				run_script.get(script)
 			],
-			env : [ 'VERSION=' + meson.project_version() ]
+			env : [
+				'PACKAGE=' + meson.project_name(),
+				'VERSION=' + meson.project_version()
+			]
 		)
 	endforeach
 endforeach
