@@ -234,10 +234,6 @@ inspect() {
 							qa "does not start with a/ (-p1 and short git-style names)" ${j} "${l}"
 						fi
 						file_a=${file_a##*/}
-
-						if [[ ${file_a} == configure ]]; then
-							qa "if this 'configure' is autotools-generated, it's preferable to patch"$'\n'"    configure.ac and use eautoreconf instead" ${j} "${l}"
-						fi
 					fi
 				;;
 				+++\ *)
@@ -250,6 +246,10 @@ inspect() {
 							qa "does not start with b/ (-p1 and short git-style names)" ${j} "${l}"
 						fi
 						file_b=${file_b##*/}
+
+						if [[ ${file_b} == configure ]]; then
+							qa "if this 'configure' is autotools-generated, it's preferable to patch"$'\n'"    configure.ac and use eautoreconf instead" ${j} "${l}"
+						fi
 
 						if [[ ${file_a} && ${file_a} != "${file_b}" ]]; then
 							qa "filename is different from previous line, is this a git-style rename?"$'\n'"   (renaming needs recent patch(1) and won't work with stripped 'diff --git',"$'\n'"    preferable to not rely on this if patch is intended for portage)" ${j} "${l}"
