@@ -19,6 +19,9 @@ for missing missing dependencies, looks for missing binding operators or
 unspecified slots, then suggest changes with a -/+ diff output (some
 checks can optionally be disabled).
 
+Exclusions can be set using config files or command line, either global
+or per packages if something is known to be right or irrelevant.
+
 Example output::
 
     $ qa-vdb xmms2
