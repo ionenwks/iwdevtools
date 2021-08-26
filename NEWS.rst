@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.3.2 (2021-08-26)
+-----------------------------
 
 - tests: newly added to check for regressions (WIP for test cases)
 
