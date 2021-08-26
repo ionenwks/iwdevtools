@@ -57,7 +57,7 @@ usage() {
 set -uo pipefail
 MAINPID=${$}
 die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
-msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}" >&2; }
+msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
 trap 'exit 1' USR1
 
 # Dependencies:

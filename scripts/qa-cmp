@@ -62,7 +62,7 @@ shopt -s nullglob
 MAINPID=${$}
 end() { kill -USR2 ${MAINPID}; exit 0; }
 die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
-msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}" >&2; }
+msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
 trap 'exit 1' USR1
 trap 'exit 0' USR2
 

@@ -79,8 +79,8 @@ portageq has_version "${EROOT:-${ROOT:-/}}" "${usevers[old]}" && skip_old=y
 
 [[ -v skip_old || -v skip_new ]] || die "nothing to do"
 
-echo "old: ${usevers[old]}${skip_old/y/ (skipped)}" >&2
-echo "new: ${atom}${skip_new/y/ (skipped)}" >&2
+echo "old: ${usevers[old]}${skip_old/y/ (skipped)}"
+echo "new: ${atom}${skip_new/y/ (skipped)}"
 
 export IWDT_ALL=y
 
