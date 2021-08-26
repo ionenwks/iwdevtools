@@ -34,10 +34,10 @@ expect() {
 
 	local output errno=0
 	if ${stdout}; then
-		output=$("${SHELL}" "${SCRIPT}" "${@:2}") || errno=${?}
+		output=$("${BASH}" "${SCRIPT}" "${@:2}") || errno=${?}
 		echo "${output}"
 	else
-		{ output=$("${SHELL}" "${SCRIPT}" "${@:2}" 3>&2 2>&1 1>&3-) || errno=${?}; } 2>&1
+		{ output=$("${BASH}" "${SCRIPT}" "${@:2}" 3>&2 2>&1 1>&3-) || errno=${?}; } 2>&1
 		echo "${output}" >&2
 	fi
 
