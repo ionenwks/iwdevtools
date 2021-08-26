@@ -269,6 +269,9 @@ inspect() {
 				+*/usr*|+*/etc*|+*/var*)
 					qa "seeing a potentially top-level path, is it respecting \${EPREFIX}?" ${j} "${l}"
 				;;
+				+*/lib64*|+*/lib32*|+*/lib/*) # keep extra / given lib* matches too much
+					qa "seem like a library dir, is it respecting \$(get_libdir)?" ${j} "${l}"
+				;;
 				*$'\r') crlf=true;;
 			esac
 
