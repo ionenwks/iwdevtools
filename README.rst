@@ -122,3 +122,22 @@ Well this is the script for you!
 May possibly do a bit more...
 
 Run ``scrub-patch --help`` for details.
+
+Installing
+==========
+
+On Gentoo, simply ``emerge app-portage/iwdevtools``
+
+Or for a manual install:
+* mkdir build && cd build
+* meson .. --prefix /path/to/prefix
+* meson test
+* meson install
+
+To (optionally) integrate with portage, an example bashrc will be installed
+at ``<prefix>/share/iwdevtools/bashrc`` which can be either symlinked to or
+sourced from ``/etc/portage/bashrc``.
+
+See the various individual .bashrc for options (such as to pass arguments, or
+the enable/disable all switch: ``IWDT_ALL=y`` [default] / ``=n``), or to
+integrate manually with a custom bashrc.
