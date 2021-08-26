@@ -4,9 +4,13 @@ Release Notes
 iwdevtools-next
 ---------------
 
-- qa-cmp: abi awareness for soname lists
+- tests: newly added to check for regressions (WIP for test cases)
+
+- qa-cmp: abi awareness for soname lists, lets abidiff compare the right ones
 
 - qa-cmp: no longer display header for --single-* if no output
+
+- scrub-patch: received several small fixes for more accurate QA
 
 iwdevtools-0.3.1 (2021-08-24)
 -----------------------------
