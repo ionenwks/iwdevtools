@@ -228,11 +228,12 @@ inspect() {
 					if [[ ${l} == ---\ /dev/null* ]]; then
 						file_a=
 					else
-						if [[ ${l} != ---\ a/* ]]; then
+						file_a=${l%%$'\t'*}
+						file_a=${file_a#--- }
+						if [[ ${file_a} != a/* ]]; then
 							qa "does not start with a/ (-p1 and short git-style names)" ${j} "${l}"
 						fi
-						file_a=${l##*/}
-						file_a=${file_a%%$'\t'*}
+						file_a=${file_a##*/}
 
 						if [[ ${file_a} == configure ]]; then
 							qa "if this 'configure' is autotools-generated, it's preferable to patch"$'\n'"    configure.ac and use eautoreconf instead" ${j} "${l}"
@@ -243,12 +244,13 @@ inspect() {
 					if [[ ${l} == +++\ /dev/null* ]]; then
 						qa "is patch removing files? (how about using rm in the ebuild instead?)" ${j} "${l}"
 					else
-						if [[ ${l} != +++\ b/* ]]; then
+						file_b=${l%%$'\t'*}
+						file_b=${file_b#+++ }
+						if [[ ${file_b} != b/* ]]; then
 							qa "does not start with b/ (-p1 and short git-style names)" ${j} "${l}"
 						fi
+						file_b=${file_b##*/}
 
-						file_b=${l##*/}
-						file_b=${file_b%%$'\t'*}
 						if [[ ${file_a} && ${file_a} != "${file_b}" ]]; then
 							qa "filename is different from previous line, is this a git-style rename?"$'\n'"   (renaming needs recent patch(1) and won't work with stripped 'diff --git',"$'\n'"    preferable to not rely on this if patch is intended for portage)" ${j} "${l}"
 						fi
