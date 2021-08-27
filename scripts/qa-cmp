@@ -832,7 +832,7 @@ cmp-output_soname_diff() {
 	if (( ${#new[@]} )); then
 		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' "${new[@]}"))
 		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' "${new[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp_get_scanelf -F'%S' "${new[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' "${new[@]}"))
 		new=("${tmp[@]}")
 	fi
 	unset IFS
