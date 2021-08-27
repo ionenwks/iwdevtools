@@ -206,7 +206,7 @@ else
 	if [[ ${stdin} && ! -r ${stdin} ]]		|| # stdin not readable
 		[[ ! ${stdin} && ${#in[@]} == 0 ]]	|| # no input files, or `cat | sed`
 		[[ ${stdin} && ${#in[@]} != 0 ]]	|| # sed file1 < file2 > file3
-		(( ${#in[@]} >= 1 )); then			   # sed file1 file2 > file3
+		(( ${#in[@]} > 1 )); then			   # sed file1 file2 > file3
 		sed-run_exit
 	fi
 
