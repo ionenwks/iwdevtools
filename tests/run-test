@@ -3,13 +3,19 @@ set -euo pipefail
 die() { echo "TestError: ${*} (${FUNCNAME[1]})" >&2; exit 1; }
 skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 
-# arguments/env coming from meson
-[[ ${#} == 4 && -f ${1} && ${2} && ${3} && -f ${4} && ${PACKAGE} && ${VERSION} ]] \
+# arguments coming from meson
+[[ ${#} == 2 && -f ${1} && -f ${2} ]] \
 	|| die "invalid usage, attempted to use directly?"
 TEST=${1}
-WORKDIR=${2}
-DATADIR=${3}
-SCRIPT=${4}
+SCRIPT=${2}
+
+PACKAGE="@package@"
+VERSION="@version@"
+DATAROOT="@dataroot@"
+WORKROOT="@workroot@"
+
+DATADIR=${DATAROOT}/${SCRIPT##*/}/data
+WORKDIR=${WORKROOT}/${SCRIPT##*/}/${TEST##*/}
 
 # copydat <files...>
 #	Copy data files to ${WORKDIR}

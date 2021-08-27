@@ -1,17 +1,23 @@
+testconf = configuration_data()
+testconf.set('package', meson.project_name())
+testconf.set('version', meson.project_version())
+testconf.set('dataroot', meson.current_source_dir())
+testconf.set('workroot', meson.current_build_dir())
+
+runtest = configure_file(
+	input : 'run-test',
+	output : '@PLAINNAME@',
+	configuration : testconf
+)
+
 foreach script : scripts
 	subdir(script)
 	foreach t : tests
 		test(t, bash, suite : script, timeout : 60,
 			args : [
-				files('run-test'),
+				runtest,
 				files(script / t),
-				meson.current_build_dir() / script / t,
-				meson.current_source_dir() / script / 'data',
 				run_script.get(script)
-			],
-			env : [
-				'PACKAGE=' + meson.project_name(),
-				'VERSION=' + meson.project_version()
 			]
 		)
 	endforeach
