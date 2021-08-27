@@ -1,0 +1,6 @@
+# category/package to ignore if passed to the qa-vdb command
+# similar purpose as using /etc/portage/package.env to set per-package QA_VDB=n
+
+# metas and virtuals tend to give spurious QA
+*/*-meta
+virtual/*

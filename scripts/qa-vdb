@@ -79,6 +79,7 @@ OPT[exclude-all]=
 OPT[exclude-slot]=
 OPT[exclude-bind]=
 OPT[exclude-extra]=
+OPT[ignore]=
 OPT[depend]=RDEPEND
 OPT[confirm]=false
 OPT[ignore-uninstalled]=false
@@ -476,13 +477,12 @@ vdb-print_libdiff() {
 	fi
 }
 
-# vdb-set_exclude <exclude*>
+# vdb-set_exclude <exclude-*>
 #   Load exclude configs and prepare supplied ${OPT[exclude*]} for use
 vdb-set_exclude() {
 	if ${OPT[default-exclude]}; then
     	local -a conf=()
-		local file=qa-vdb.exclude-${1}
-		file=${file%-all}
+		local file=qa-vdb.${1}
 
 		if [[ ${OPT[confdir]} ]]; then
 			[[ -r ${OPT[confdir]}/${file} ]] && conf=("${OPT[confdir]}/${file}")
@@ -492,17 +492,17 @@ vdb-set_exclude() {
 		fi
 
 		if [[ ${conf[*]} ]]; then
-			OPT[exclude-${1}]+=,$(sed 's/#.*//' "${conf[@]}" | tr '\r\n' ',,' \
+			OPT[${1}]+=,$(sed 's/#.*//' "${conf[@]}" | tr '\r\n' ',,' \
 				|| die "failed reading configuration files")
 		fi
 	fi
 
 	# create a simple a|b|c, escape +, and * -> .*
-	OPT[exclude-${1}]=$(sed \
+	OPT[${1}]=$(sed \
 		-e 's/[^A-Za-z0-9_/+*,=-]//g' \
 		-e 's/,,*/|/g;s/^|//;s/|$//' \
 		-e 's/+/\\+/g;s/\*/.*/g' \
-		<<< "${OPT[exclude-${1}]}") || die "sed failed"
+		<<< "${OPT[${1}]}") || die "sed failed"
 }
 
 # vdb-set_ldcache
@@ -534,13 +534,30 @@ vdb-set_vdb() {
 vdb-init() {
 	vdb-set_vdb
 	vdb-set_ldcache
-	vdb-set_exclude all
-	vdb-set_exclude slot
-	vdb-set_exclude bind
-	vdb-set_exclude extra
+	vdb-set_exclude exclude
+	vdb-set_exclude exclude-slot
+	vdb-set_exclude exclude-bind
+	vdb-set_exclude exclude-extra
+	vdb-set_exclude ignore
+}
+
+# vdb-skip_ignore <CATEGORY/PF>
+#	Exit if CATEGORY/PF is matched by qa-vdb.ignore config file
+#	Do so silently unless OPT[confirm] is set
+vdb-skip_ignore() {
+	local catpn=$(vdb-get_atomf "%{CATEGORY}/%{PN}" ${1})
+
+	if eval "[[ \${catpn} =~ ^(${OPT[ignore]})$ ]]"; then
+		${OPT[confirm]} && msg "QA: ${1} was skipped due to being in qa-vdb.ignore"
+		exit 0
+	fi
 }
 
 vdb-init
-vdb-print_libdiff $(vdb-get_entry "${1}")
+
+vdbentry=$(vdb-get_entry "${1}")
+
+vdb-skip_ignore ${vdbentry}
+vdb-print_libdiff ${vdbentry}
 
 # vim: ts=4

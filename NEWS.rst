@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-vdb: new config/qa-vdb.ignore to facilitate skipping packages
+
 iwdevtools-0.3.2 (2021-08-26)
 -----------------------------
 
