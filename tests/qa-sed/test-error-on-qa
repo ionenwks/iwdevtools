@@ -1,0 +1,3 @@
+echo text > file
+expect -2 "QA:*" -i s/kept// file --qa-sed-args --error-on-qa || xfail 129
+expect -2 "''" -i s/text// file --qa-sed-args --error-on-qa

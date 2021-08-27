@@ -1,0 +1,3 @@
+echo text > a
+touch b
+expect -2 "QA:*-i with stdin*" -i s/text// a < b
