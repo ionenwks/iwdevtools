@@ -1,4 +1,3 @@
-# test if a git-format-patch style patch is scrubbed properly
 # * 001: "From " suggestion
 # * 032: file rename attempt
 copydat git.patch

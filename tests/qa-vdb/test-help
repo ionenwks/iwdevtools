@@ -1,2 +1,1 @@
-# basic --help argument check
 expect "Usage: ${SCRIPT##*/} *" --help
