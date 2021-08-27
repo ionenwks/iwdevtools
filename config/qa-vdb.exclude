@@ -1,4 +1,4 @@
-# category/package to exclude entirely from checks
+# category/package dependencies to exclude entirely from checks
 # - see other qa-vdb.exclude-* for more specific type of exclusions
 # - simple wildcards can be used
 # - can optionally exclude only when checking a specific package

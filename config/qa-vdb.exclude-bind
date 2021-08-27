@@ -1,4 +1,4 @@
-# category/package for which to ignore missing binding := operators
+# category/package dependencies to exclude from the missing binding := check
 
 # subslot is unnecessary due to long-time stable interface
 app-arch/bzip2

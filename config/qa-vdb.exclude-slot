@@ -1,4 +1,4 @@
-# category/package for which to ignore missing explicit slot definitions
+# category/package dependencies to exclude from the missing explicit slot check
 
 # packages where slot being non-zero never really meant anything
 dev-libs/libpcre
