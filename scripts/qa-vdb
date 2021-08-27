@@ -75,7 +75,7 @@ OPT[slot]=true
 OPT[bind]=true
 OPT[overbind]=true
 OPT[extra]=true
-OPT[exclude-all]=
+OPT[exclude]=
 OPT[exclude-slot]=
 OPT[exclude-bind]=
 OPT[exclude-extra]=
@@ -101,7 +101,7 @@ while (( ${#} )); do
 		-b|--no-bind) OPT[bind]=false;;
 		-o|--no-overbind) OPT[overbind]=false;;
 		-x|--no-extra) OPT[extra]=false;;
-		-e|--exclude) OPT[exclude-all]+=,${2}; shift;;
+		-e|--exclude) OPT[exclude]+=,${2}; shift;;
 		   --exclude-slot) OPT[exclude-slot]+=,${2}; shift;;
 		   --exclude-bind) OPT[exclude-bind]+=,${2}; shift;;
 		   --exclude-extra) OPT[exclude-extra]+=,${2}; shift;;
@@ -184,10 +184,10 @@ vdb-get_entry() {
 vdb-get_expected_slot() {
 	local slot=${2} subslot=${3}
 
-	if ! ${OPT[slot]} || vdb-is_excluded slot ${1} ${4}; then
+	if ! ${OPT[slot]} || vdb-is_excluded exclude-slot ${1} ${4}; then
 		 slot=0
 	fi
-	if ! ${OPT[bind]} || vdb-is_excluded bind ${1} ${4} || [[ ${5:-} == prebuilt ]]; then
+	if ! ${OPT[bind]} || vdb-is_excluded exclude-bind ${1} ${4} || [[ ${5:-} == prebuilt ]]; then
 		subslot=0
 	fi
 
@@ -217,7 +217,7 @@ vdb-get_libdeps() {
 		rdep=(${rdep})
 
 		# check if requested for exclusion through --exclude
-		vdb-is_excluded all ${rdep[1]} ${pkg} && continue
+		vdb-is_excluded exclude ${rdep[1]} ${pkg} && continue
 
 		# need to skip entries that do not provide shared libraries but,
 		# to know this, need to check what virtuals resolve to
@@ -241,7 +241,7 @@ vdb-get_libdeps() {
 		fi
 
 		# if --no-extra, exclude if not found in vdb-get_libneed's output
-		if ! ${OPT[extra]} || vdb-is_excluded extra ${rdep[1]} ${pkg}; then
+		if ! ${OPT[extra]} || vdb-is_excluded exclude-extra ${rdep[1]} ${pkg}; then
 			[[ ${need} == *${rdep[1]}* ]] || continue
 		fi
 
@@ -295,7 +295,7 @@ _vdb-get_libneed() {
 		done
 
 		# with final cat/pn, check if requested for exclusion through --exclude
-		vdb-is_excluded all ${dep} ${pkg} && continue
+		vdb-is_excluded exclude ${dep} ${pkg} && continue
 
 		# get SLOT information
 		slot=0; subslot=0
@@ -401,15 +401,16 @@ vdb-get_subslot() {
 	echo 0
 }
 
-# vdb-is_excluded <all|slot|bind|extra> <CATEGORY/PN(dep)> <CATEGORY/PN(pkg)>
+# vdb-is_excluded <exclude-*|ignore> [CATEGORY/PN(dep)] <CATEGORY/PN(pkg)>
 #	Return true if dep shouldn't be considered when checking pkg
-#	Types are based on --exclude* options
+#	Types are based on --exclude* options and qa-vdb.* config files
+#	(dep) can be missing for ignore type
 vdb-is_excluded() {
-	[[ ${OPT[exclude-${1}]} ]] || return 1
+	[[ ${OPT[${1}]} ]] || return 1
 
 	# strip = prefixes if matches package to activate them
 	# eval is needed to enable globs
-	eval "[[ \${2%:*} =~ ^(${OPT[exclude-${1}]//${3}=/})$ ]]"
+	eval "[[ \${2%:*} =~ ^(${OPT[${1}]//${3:-nil}=/})$ ]]"
 }
 
 # vdb-is_prebuilt <CATEGORY/PF>
@@ -468,7 +469,7 @@ vdb-print_libdiff() {
 			fi
 		done
 
-		if ! [[ ${OPT[exclude-all]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} ]] &&
+		if ! [[ ${OPT[exclude]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} ]] &&
 			${OPT[default-exclude]}; then
 			msg "Note: no exclusions set (e.g. glibc/gcc), please verify configuration files"
 		fi
@@ -547,7 +548,7 @@ vdb-init() {
 vdb-skip_ignore() {
 	local catpn=$(vdb-get_atomf "%{CATEGORY}/%{PN}" ${1})
 
-	if eval "[[ \${catpn} =~ ^(${OPT[ignore]})$ ]]"; then
+	if vdb-is_excluded ignore ${catpn}; then
 		${OPT[confirm]} && msg "QA: ${1} was skipped due to being in qa-vdb.ignore"
 		exit 0
 	fi
