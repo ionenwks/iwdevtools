@@ -18,6 +18,7 @@ docdir = get_option('datadir') / 'doc' / docdir
 conf = configuration_data()
 conf.set('confdir', prefix / confdir)
 conf.set('datadir', prefix / datadir)
+conf.set('package', meson.project_name())
 conf.set('version', meson.project_version())
 
 bash = find_program('bash')

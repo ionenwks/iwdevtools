@@ -39,7 +39,7 @@ usage() {
 
 		  -r, --no-default-exclude Ignore configuration files for excludes
 		      --confdir=PATH       Configuration dir to use instead of defaults
-		                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/iwdevtools)
+		                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
 		                           Note: portage will use a different \$HOME
 
 		  -h, --help               Display usage information and exit
@@ -87,7 +87,7 @@ OPT[color]=true
 OPT[default-exclude]=true
 OPT[confdir]=
 OPT[sysconfdir]="@confdir@"
-OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/iwdevtools"
+OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
 
 eval set -- $(getopt \
 	-o hsboxe:rDWuc \
