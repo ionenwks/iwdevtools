@@ -188,8 +188,8 @@ cmp-get_filelist() {
 	if [[ ${1:0:1} == = ]]; then
 		echo $(cmp-get_atomf "%{PVR}" "${1}")
 		echo /
-		qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort \
-			|| die "qlist failed for '${1}'"
+		qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
+		[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${1}'"
 	else
 		# images may not have any information about what they are, but if used
 		# normally the path will have ${CATEGORY}/${PF} given by image2atomf
