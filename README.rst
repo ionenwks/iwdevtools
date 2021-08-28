@@ -134,7 +134,7 @@ On Gentoo, simply ``emerge app-portage/iwdevtools``
 Or for a manual install:
 
 - mkdir build && cd build
-- meson .. --prefix /path/to/prefix
+- meson --prefix /path/to/prefix
 - meson test
 - meson install
 
