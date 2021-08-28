@@ -516,8 +516,16 @@ vdb-set_ldcache() {
 		return
 	fi
 
+	local args=(-N -v)
+	if [[ ${EROOT:-${ROOT:-}} ]]; then
+		args+=(
+			-f "${EROOT:-${ROOT:-}}"/etc/ld.so.conf
+			-C "${EROOT:-${ROOT:-}}"/etc/ld.so.cache
+		)
+	fi
+
 	LDCACHE="
-		$(${ldconfig[0]} -N -v 2>/dev/null | \
+		$(${ldconfig[0]} "${args[@]}" 2>/dev/null | \
 			sed '/: /d;s/\.so.*/.so/;s/.*\t//' | sort | uniq \
 			|| die "ldconfig failed")
 	"
