@@ -4,6 +4,8 @@ testconf.set('version', meson.project_version())
 testconf.set('dataroot', meson.current_source_dir())
 testconf.set('workroot', meson.current_build_dir())
 
+subdir('testelf')
+
 runtest = configure_file(
 	input : 'run-test',
 	output : '@PLAINNAME@',
@@ -18,7 +20,8 @@ foreach script : scripts
 				runtest,
 				files(script / t),
 				run_script.get(script)
-			]
+			],
+			depends : testelf
 		)
 	endforeach
 endforeach

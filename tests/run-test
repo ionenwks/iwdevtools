@@ -14,6 +14,15 @@ VERSION="@version@"
 DATAROOT="@dataroot@"
 WORKROOT="@workroot@"
 
+LIBD100="@libdummy100@" # initial
+LIBD101="@libdummy101@" # no abi changes
+LIBD102="@libdummy102@" # broken abi
+LIBD200="@libdummy200@" # soname change
+LIBA300="@libalt300@" # initial
+LIBA400="@libalt400@" # soname change
+EXED="@exedummy@" # libdummy symbols
+EXEA="@exealt@" # libdummy+libalt symbols
+
 DATADIR=${DATAROOT}/${SCRIPT##*/}/data
 WORKDIR=${WORKROOT}/${SCRIPT##*/}/${TEST##*/}
 
@@ -55,7 +64,7 @@ expect() {
 # get_ebuild <PN> <PVR> <bin:file,ARG:value,inherit:file,...>
 # 	Echos path to ebuild created as <PN>-<PVR>.ebuild (category = dev-test/)
 #	Lowercase prefix determines do* command to use, e.g. bin: = dobin <file>
-#	Uppercase prefix means to set a variable like "QA_PREBUILT:value"
+#	Uppercase prefix means to set a variable like "RDEPEND:value"
 #	inherit prefix will inherit an eclass from ${DATADIR}
 #	Note: these ebuilds should not actually build anything, use meson
 get_ebuild() {
@@ -64,7 +73,7 @@ get_ebuild() {
 	local pn=${1} pvr=${2}
 	shift 2
 
-	local key val files= vars= inherit=
+	local key val soname files= vars= inherit=
 	while (( ${#} )); do
 		key=${1%%:*}
 		val=${1#*:}
@@ -79,6 +88,14 @@ get_ebuild() {
 				files+="${PWD}/"
 			fi
 			files+="${val};"
+
+			if [[ ${key} == lib.so ]]; then
+				val=${val##*/}
+				soname=${val##*.so.}
+				soname=${val%%.so.*}.so.${soname%%.*}
+				files+="dosym -r /usr/lib64/{${val},${soname}};"
+				files+="dosym -r /usr/lib64/{${val},${val%%.so.*}.so};"
+			fi
 		else
 			vars+="${key}=\"${val}\";"
 		fi
@@ -135,7 +152,7 @@ set_portroot() {
 	export EROOT="${ROOT}"
 	export PORTAGE_CONFIGROOT="${ROOT}"
 
-	mkdir -p root/{etc/portage,overlay/{eclass,metadata,profiles},tmp}
+	mkdir -p root/{etc/{env.d,portage},overlay/{eclass,metadata,profiles},tmp}
 
 	cat > root/etc/portage/repos.conf <<-EOF
 		[DEFAULT]
@@ -165,6 +182,8 @@ set_portroot() {
 	echo ${PACKAGE} > root/overlay/profiles/repo_name
 
 	ln -s ../../overlay/profiles root/etc/portage/make.profile
+
+	echo "LDPATH=\"${ROOT}/usr/lib\"" > root/etc/env.d/00test
 }
 
 # xfail <expected-errno>

@@ -1,4 +1,5 @@
 tests = [
 	'test-help',
-	'test-version'
+	'test-version',
+	'test-missing-dep'
 ]

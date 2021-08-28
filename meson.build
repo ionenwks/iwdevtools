@@ -27,7 +27,9 @@ subdir('config')
 subdir('portage')
 subdir('scripts')
 
-subdir('tests')
+if get_option('tests')
+	subdir('tests')
+endif
 
 install_data([
 	'NEWS.rst',
