@@ -209,7 +209,8 @@ touch "${WORKDIR}"/test-tmp-dir # sanity file for safer `rm -r`
 # try to clear portage env vars not to confuse ebuild-run-in-ebuild,
 # and also clear env known to be used by scripts here
 # (tempting to use env -i but users may need obscure env vars)
-unset "${!PORTAGE@}" "${!PORTDIR@}" "${!EBUILD@}" {,E,B,SYS,ESYS}ROOT
+unset FEATURES {,E,B,SYS,ESYS}ROOT USE
+unset "${!PORTAGE@}" "${!PORTDIR@}" "${!EBUILD@}" "${!ACCEPT@}"
 unset "${!EOLDNEW@}"
 export LC_ALL=C
 
