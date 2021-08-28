@@ -569,4 +569,6 @@ vdbentry=$(vdb-get_entry "${1}")
 vdb-skip_ignore ${vdbentry}
 vdb-print_libdiff ${vdbentry}
 
+:
+
 # vim: ts=4
