@@ -1,0 +1,16 @@
+# nodebug checks need no real abi changes and run instprep to strip
+type abidiff >/dev/null || skip "abidiff not available"
+set_portroot
+ebuild "$(get_ebuild test 1.5 lib.so:"${LIBD100}")" instprep
+ebuild "$(get_ebuild test 2.5 lib.so:"${LIBD101}")" instprep
+expect "*nodebug*" -cI dev-test/test
+expect "*nodebug*" -cI --quiet-nodebug --confirm dev-test/test
+expect -! "*nodebug*" -cI --quiet-nodebug dev-test/test
+export FEATURES="nostrip"
+ebuild "$(get_ebuild test 3.5 lib.so:"${LIBD100}")" instprep
+ebuild "$(get_ebuild test 4.5 lib.so:"${LIBD101}")" instprep
+expect -! "*nodebug*" -cI dev-test/test
+export FEATURES="splitdebug"
+ebuild "$(get_ebuild test 5.5 lib.so:"${LIBD100}")" instprep
+ebuild "$(get_ebuild test 6.5 lib.so:"${LIBD101}")" instprep
+expect -! "*nodebug*" -cI dev-test/test

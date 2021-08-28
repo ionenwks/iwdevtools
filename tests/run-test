@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-die() { echo "TestError: ${*} (${FUNCNAME[1]})" >&2; exit 1; }
+die() { echo "TestError: ${*} (${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2; exit 1; }
 skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 
 # arguments coming from meson
@@ -35,13 +35,17 @@ copydat() {
 # expect [options] <expected-glob> [args]
 #	Return true if ${SCRIPT}'s output matches <expected-glob>
 #	Options:
+#		-! invert match
+#		-e use regex instead of glob
 #		-2 compare with stderr instead of stdout
 expect() {
-	local stdout=true
+	local op='==' invert= stdout=true
 
 	while (( ${#} )); do
 		case ${1} in
+			-!) invert='!';;
 			-2) stdout=false;;
+			-e) op='=~';;
 			*) break;;
 		esac
 		shift
@@ -56,7 +60,7 @@ expect() {
 		echo "${output}" >&2
 	fi
 
-	eval "[[ \${output} == ${1// /\\ } ]]" || die "output mismatch for '${*}'"
+	eval "[[ ${invert} \${output} ${op} ${1// /\\ } ]]" || die "output mismatch for '${*}'"
 
 	return ${errno}
 }

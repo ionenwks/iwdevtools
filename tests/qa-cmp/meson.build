@@ -1,4 +1,6 @@
 tests = [
 	'test-help',
-	'test-version'
+	'test-version',
+	'test-abi-debug',
+	'test-disable'
 ]
