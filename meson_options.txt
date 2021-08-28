@@ -1,4 +1,4 @@
 option('docdir', type : 'string', value : '',
 	description : 'Path or doc/ subdirectory name for installing documentation')
-option('tests', type : 'boolean', value : true,
+option('test', type : 'boolean', value : true,
 	description : 'Build tests (requires a C compiler unlike the rest of the project)')

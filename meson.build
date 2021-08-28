@@ -27,7 +27,7 @@ subdir('config')
 subdir('portage')
 subdir('scripts')
 
-if get_option('tests')
+if get_option('test')
 	subdir('tests')
 endif
 
