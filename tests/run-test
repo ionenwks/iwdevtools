@@ -73,7 +73,7 @@ get_ebuild() {
 	local pn=${1} pvr=${2}
 	shift 2
 
-	local key val soname files= vars= inherit=
+	local key val soname= files= vars= inherit=
 	while (( ${#} )); do
 		key=${1%%:*}
 		val=${1#*:}
@@ -93,8 +93,8 @@ get_ebuild() {
 				val=${val##*/}
 				soname=${val##*.so.}
 				soname=${val%%.so.*}.so.${soname%%.*}
-				files+="dosym -r /usr/lib64/{${val},${soname}};"
-				files+="dosym -r /usr/lib64/{${val},${val%%.so.*}.so};"
+				files+="dosym -r /usr/\$(get_libdir)/{${val},${soname}};"
+				files+="dosym -r /usr/\$(get_libdir)/{${val},${val%%.so.*}.so};"
 			fi
 		else
 			vars+="${key}=\"${val}\";"
@@ -104,7 +104,9 @@ get_ebuild() {
 
 	if [[ ! ${files} ]]; then
 		# always install at least something
-		files="newbin - ${pn}-${pvr} <<<'#!/usr/bin/env true'"
+		files="newbin - ${pn}-${pvr} <<<'#!/usr/bin/env true';"
+	elif [[ ${soname} ]]; then
+		files+="newenvd - 00\${PN} <<<LDPATH=\"\\\"${ROOT}/usr/\$(get_libdir)\\\"\";"
 	fi
 
 	mkdir -p "${ROOT}"/overlay/dev-test/${pn}
@@ -152,7 +154,7 @@ set_portroot() {
 	export EROOT="${ROOT}"
 	export PORTAGE_CONFIGROOT="${ROOT}"
 
-	mkdir -p root/{etc/{env.d,portage},overlay/{eclass,metadata,profiles},tmp}
+	mkdir -p root/{etc/portage,overlay/{eclass,metadata,profiles},tmp}
 
 	cat > root/etc/portage/repos.conf <<-EOF
 		[DEFAULT]
@@ -182,8 +184,6 @@ set_portroot() {
 	echo ${PACKAGE} > root/overlay/profiles/repo_name
 
 	ln -s ../../overlay/profiles root/etc/portage/make.profile
-
-	echo "LDPATH=\"${ROOT}/usr/lib\"" > root/etc/env.d/00test
 }
 
 # xfail <expected-errno>
