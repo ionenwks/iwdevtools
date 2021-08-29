@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-vdb: new config/qa-vdb.exclude-lib primarily to skip toolchain libraries
+
 iwdevtools-0.4.0 (2021-08-27)
 -----------------------------
 

@@ -2,6 +2,7 @@ configs = [
 	'qa-vdb.exclude',
 	'qa-vdb.exclude-bind',
 	'qa-vdb.exclude-extra',
+	'qa-vdb.exclude-lib',
 	'qa-vdb.exclude-slot',
 	'qa-vdb.ignore'
 ]

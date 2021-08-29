@@ -1,0 +1,7 @@
+# libraries to exclude when looking at what a dependency is providing
+# note: for packages providing many libraries (gcc/glibc), should use .exclude
+
+# exclude some of gcc's libraries for non-gcc packages providing them
+libgcc_s.so
+libgomp.so
+libstdc++.so

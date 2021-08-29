@@ -24,6 +24,8 @@ usage() {
 		      --exclude-slot=LIST  Like --exclude but to selectively --no-slot
 		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
 		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
+		      --exclude-lib=LIST   Similar to --exclude but takes .so libraries
+		                           as arguments and excludes if seen in DT_NEEDED
 		  (packages that provide no shared libraries are always excluded)
 
 		  -D, --depend             Check against DEPEND rather than RDEPEND
@@ -79,6 +81,7 @@ OPT[exclude]=
 OPT[exclude-slot]=
 OPT[exclude-bind]=
 OPT[exclude-extra]=
+OPT[exclude-lib]=
 OPT[ignore]=
 OPT[depend]=RDEPEND
 OPT[confirm]=false
@@ -91,7 +94,7 @@ OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
 
 eval set -- $(getopt \
 	-o hsboxe:rDWuc \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
@@ -105,6 +108,7 @@ while (( ${#} )); do
 		   --exclude-slot) OPT[exclude-slot]+=,${2}; shift;;
 		   --exclude-bind) OPT[exclude-bind]+=,${2}; shift;;
 		   --exclude-extra) OPT[exclude-extra]+=,${2}; shift;;
+		   --exclude-lib) OPT[exclude-lib]+=,${2}; shift;;
 		-D|--depend) OPT[depend]=DEPEND;;
 		-W|--confirm) OPT[confirm]=true;;
 		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
@@ -270,13 +274,17 @@ _vdb-get_libneed() {
 
 	local pkg=$(vdb-get_pf2pn ${1})
 
-	# read REQUIRES with stripped 'x86_64: ' and then use qfile to
-	# find the matching installed package
-	local IFS dep entry slot subslot virtual
+	# read REQUIRES and strip excluded libraries
+	local -a req=()
 	for entry in $(
-		sed 's/[^ ]*: //g' < "${VDB}"/${1}/REQUIRES | \
-		xargs qfile -CqvP | sort | uniq \
-		|| die "failed to get dependencies from REQUIRES for '${1}'"); do
+		sed 's/[^ ]*: //g' < "${VDB}"/${1}/REQUIRES \
+			|| die "failed to get dependencies from REQUIRES for '${1}'"); do
+		vdb-is_excluded exclude-lib ${entry%.so*}.so ${pkg} || req+=(${entry})
+	done
+
+	# use qfile to find providers (not best if more than one, but usually fine)
+	local IFS dep entry slot subslot virtual
+	for entry in $(qfile -CqvP "${req[@]}" | sort | uniq || die "qfile failed for '${1}'"); do
 		dep=$(vdb-get_pf2pn "${entry}")
 
 		# check rdepend for virtuals and the the virtual's rdepend for this dep
@@ -401,7 +409,7 @@ vdb-get_subslot() {
 	echo 0
 }
 
-# vdb-is_excluded <exclude-*|ignore> [CATEGORY/PN(dep)] <CATEGORY/PN(pkg)>
+# vdb-is_excluded <exclude-*|ignore> [CATEGORY/PN(dep) or lib.so] <CATEGORY/PN(pkg)>
 #	Return true if dep shouldn't be considered when checking pkg
 #	Types are based on --exclude* options and qa-vdb.* config files
 #	(dep) can be missing for ignore type
@@ -469,7 +477,7 @@ vdb-print_libdiff() {
 			fi
 		done
 
-		if ! [[ ${OPT[exclude]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} ]] &&
+		if ! [[ ${OPT[exclude]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} || ${OPT[exclude-lib]} ]] &&
 			${OPT[default-exclude]}; then
 			msg "Note: no exclusions set (e.g. glibc/gcc), please verify configuration files"
 		fi
@@ -498,11 +506,11 @@ vdb-set_exclude() {
 		fi
 	fi
 
-	# create a simple a|b|c, escape +, and * -> .*
+	# create a simple a|b|c, escape +/., and * -> .*
 	OPT[${1}]=$(sed \
-		-e 's/[^A-Za-z0-9_/+*,=-]//g' \
+		-e 's/[^A-Za-z0-9_/.+*,=-]//g' \
 		-e 's/,,*/|/g;s/^|//;s/|$//' \
-		-e 's/+/\\+/g;s/\*/.*/g' \
+		-e 's/+/\\+/g;s/\./\\./g;s/\*/.*/g' \
 		<<< "${OPT[${1}]}") || die "sed failed"
 }
 
@@ -547,6 +555,7 @@ vdb-init() {
 	vdb-set_exclude exclude-slot
 	vdb-set_exclude exclude-bind
 	vdb-set_exclude exclude-extra
+	vdb-set_exclude exclude-lib
 	vdb-set_exclude ignore
 }
 
