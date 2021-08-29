@@ -165,16 +165,19 @@ if ${OPT[dry-run]}; then
 	fi
 else
 	# get new sizes and give a report at same time (newsizes re-used for QA later)
+	percent() {
+		(( ${1} && ${2} )) && echo $((10**4 - 10**4 * ${2} / ${1})) || echo NaN
+	}
 	echo "Successfully scrubbed:"
 	if [[ ${inplace} ]]; then
 		for ((i=0; i < ${#patches[@]}; i++)); do
 			newsizes[i]=$(stat -c %s "${patches[i]}") || die "stat failed for '${patches[i]}'"
-			printf -- " - %s (%.2f%% reduction)\n" "${patches[i]}" $((10**4 - 10**4 * newsizes[i]/oldsizes[i]))e-2
+			printf -- " - %s (%.2f%% reduction)\n" "${patches[i]}" $(percent ${oldsizes[i]} ${newsizes[i]})e-2
 		done
 	else
 		if [[ -f ${stdout} ]]; then
 			newsizes[0]=$(stat -c %s "${stdout}") || die "stat failed for '${stdout}'"
-			printf -- " - %s (%.2f%% reduction)\n" "${stdin:-${patches[0]}}" $((10**4 - 10**4 * newsizes[0]/oldsizes[0]))e-2
+			printf -- " - %s (%.2f%% reduction)\n" "${stdin:-${patches[0]}}" $(percent ${oldsizes[0]} ${newsizes[0]})e-2
 		else
 			newsizes[0]=${oldsizes[0]}
 			echo " - ${stdin:-${patches[0]}}"
