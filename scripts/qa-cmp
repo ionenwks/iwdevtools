@@ -683,8 +683,8 @@ cmp-output_filelist_diff() {
 
 	output=$(
 		diff -U0 \
-			<(printf "%s\n" "${old[@]}") \
-			<(printf "%s\n" "${new[@]}") \
+			<(printf "%s" "${old[@]/%/$'\n'}") \
+			<(printf "%s" "${new[@]/%/$'\n'}") \
 			| grep -v '@@\|---\|+++'
 		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "failed comparing lists"
 	)
@@ -863,10 +863,12 @@ cmp-output_soname_diff() {
 		return # nothing to compare
 	fi
 
+	old=("${SONAME_OLD[@]%% *}")
+	new=("${SONAME_NEW[@]%% *}")
 	output=$(
 		diff -U0 \
-			<(printf "%s\n" "${SONAME_OLD[@]%% *}") \
-			<(printf "%s\n" "${SONAME_NEW[@]%% *}") \
+			<(printf "%s" "${old[@]/%/$'\n'}") \
+			<(printf "%s" "${new[@]/%/$'\n'}") \
 			| grep -v '@@\|---\|+++'
 		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "failed comparing lists"
 	)
