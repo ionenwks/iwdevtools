@@ -156,18 +156,7 @@ cmp-get_atom2catpn() {
 # cmp-get_atomf <format> <atom>
 #   Echos <atom> based on <format> using qatom -F.
 cmp-get_atomf() {
-    qatom -CqF "${@}" || die "q command failed: qatom -CqF ${*}"
-}
-
-# cmp-get_buildtime <CATEGORY/PF>
-#	Echoes unix timestamp from VDB's BUILD_TIME
-cmp-get_buildtime() {
-	local -i ts
-
-	ts=$(<"$(cmp-get_vdb)/${1}"/BUILD_TIME) \
-		|| die "failed to read '$(cmp-get_vdb)/${1}/BUILD_TIME'"
-
-	echo ${ts}
+	qatom -CqF "${@}" || die "q command failed: qatom -CqF ${*}"
 }
 
 # cmp-get_compare2readable <compare>
@@ -183,12 +172,19 @@ cmp-get_compare2readable() {
 
 # cmp-get_filelist <compare>
 #	Echoes sorted filelist from a cmp-get_tocompare value
-#	First two lines are specially set to 1. ${PVR} 2. prefix/
+#	First three lines are specially set to:
+#		1. ${PVR} 2. prefix/ 3. size in bytes
 #	usr/lib/debug/ excluded for simplification
 cmp-get_filelist() {
+	local -i size
 	if [[ ${1:0:1} == = ]]; then
 		echo $(cmp-get_atomf "%{PVR}" "${1}")
 		echo /
+
+		size=$(<"$(cmp-get_vdb)/${1#=}"/SIZE) \
+			|| die "failed to read '$(cmp-get_vdb)/${1#=}/SIZE'"
+		echo ${size}
+
 		qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
 		[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${1}'"
 	else
@@ -206,6 +202,11 @@ cmp-get_filelist() {
 		fi
 		echo ${pv}
 		echo "${1}/"
+
+		size=$(<"${1%/image}"/build-info/SIZE) \
+				|| die "failed to read '${1%/image}/build-info/SIZE', failed build image?"
+		echo ${size}
+
 		find "${1}" -path "${1}/usr/lib/debug" -prune -o -not -type d -printf '%P\n' | sort \
 			|| die "find failed for '${1}'"
 	fi
@@ -242,7 +243,11 @@ cmp-get_images() {
 
 		if ! ${OPT[image-only]}; then
 			match=$(cmp-get_installed "${1}")
-			[[ ${match} ]] && echo "$(cmp-get_buildtime ${match}) =${match}"
+			if [[ ${match} ]]; then
+				ts=$(<"$(cmp-get_vdb)/${match}"/BUILD_TIME) \
+					|| die "failed to read '$(cmp-get_vdb)/${match}/BUILD_TIME'"
+				echo "${ts} =${match}"
+			fi
 		fi
 
 		for dir in "$(cmp-get_tmp)/${cat}"/*; do
@@ -646,7 +651,7 @@ cmp-output_filelist() {
 	${OPT[single-filelist]} || return
 
 	local line
-	for line in "${LIST_NEW[@]:2}"; do
+	for line in "${LIST_NEW[@]:3}"; do
 		if ${OPT[color]}; then
 			OUTPUT+=$(printf " \e[90mFILES: \e[32m%s\e[0m" "${line}")$'\n'
 		else
@@ -659,7 +664,7 @@ cmp-output_filelist() {
 #	Add to OUTPUT differences between LIST_OLD and LIST_NEW while omitting
 #	changes to version in filenames (replaced by literal ${PV})
 cmp-output_filelist_diff() {
-	local -a old=("${LIST_OLD[@]:2}") new=("${LIST_NEW[@]:2}")
+	local -a old=("${LIST_OLD[@]:3}") new=("${LIST_NEW[@]:3}")
 	local output report
 
 	if ! (( ${#old[@]} || ${#new[@]} )); then
@@ -691,7 +696,7 @@ cmp-output_filelist_diff() {
 			+) color=32; add+=1;;
 			-) color=31; del+=1;;
 			*) color=90;; # unused unless increase -U*
-        esac
+		esac
 
 		if ${OPT[filelist-diff]}; then
 			if ${OPT[color]}; then
@@ -714,34 +719,32 @@ cmp-output_filelist_diff() {
 cmp-output_size() {
 	${OPT[single-size]} || return
 
-	local -a new=("${LIST_NEW[@]:2}")
-
-	local errmark=
-	local -i snew
-	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark='~'
-
 	local c1= c2= cn=
 	if ${OPT[color]}; then
 		c1=$(echo -e "\e[90m")
 		c2=$(echo -e "\e[33m")
 		cn=$(echo -e "\e[0m")
 	fi
-	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%s%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
-		"${errmark}" $((10**2 * snew / 1024**2))e-2 ${#new[@]})
+	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
+		$((10**2 * ${LIST_NEW[2]} / 1024**2))e-2 $((${#LIST_NEW[@]} - 3)))
 }
 
 # cmp-output_size_diff
 #	Add to OUTPUT difference in size
 cmp-output_size_diff() {
-	local -a old=("${LIST_OLD[@]:2}") new=("${LIST_NEW[@]:2}")
+	local sper
+	local -i sold=${LIST_OLD[2]}
+	local -i snew=${LIST_NEW[2]}
 
-	# don't bail on errors since permission denied on 1-2 files may be frequent
-	local errmark1= errmark2=
-	local -i sold snew
-	sold=$(du -cb "${old[@]/#/${LIST_OLD[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark1='~'
-	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark2='~'
-
-	local sper=$((10**4 * snew / sold - 10**4))
+	if (( sold && snew )); then
+		sper=$((10**4 * snew / sold - 10**4))
+	elif (( snew )); then
+		sper=10000 # pretend 0->1 is 100%
+	elif (( sold )); then
+		sper=-10000
+	else
+		sper=0
+	fi
 
 	if ${OPT[size-diff]} && (( ${sper#-} >= OPT[size-thres] )); then
 		local c1= c2= cn=
@@ -751,13 +754,11 @@ cmp-output_size_diff() {
 			cn=$(echo -e "\e[0m")
 		fi
 		OUTPUT+=$(
-			printf "  ${c1}SIZE: ${c2}%s%.2fMiB${c1} -> ${c2}%s%.2fMiB${c1}, ${c2}%d${c1} -> ${c2}%d files${cn}\n" \
-				"${errmark1}" \
+			printf "  ${c1}SIZE: ${c2}%.2fMiB${c1} -> ${c2}%.2fMiB${c1}, ${c2}%d${c1} -> ${c2}%d files${cn}\n" \
 				$((10**2 * sold / 1024**2))e-2 \
-				"${errmark2}" \
 				$((10**2 * snew / 1024**2))e-2 \
-				${#old[@]} \
-				${#new[@]})$'\n'
+				$((${#LIST_OLD[@]} - 3)) \
+				$((${#LIST_NEW[@]} - 3)))$'\n'
 	fi
 
 	if ${OPT[confirm]} || (( ${sper#-} >= OPT[size-thres] )); then
@@ -781,7 +782,7 @@ cmp-output_soname() {
 	local -a new=() tmp
 	local elem
 
-	for elem in "${LIST_NEW[@]:2}"; do
+	for elem in "${LIST_NEW[@]:3}"; do
 		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
 	done
 
@@ -812,10 +813,10 @@ cmp-output_soname_diff() {
 	local elem output report
 
 	# only .so isn't /necessary/ as scanelf will discard, but it's less i/o
-	for elem in "${LIST_OLD[@]:2}"; do
+	for elem in "${LIST_OLD[@]:3}"; do
 		[[ ${elem} == *.so* ]] && old+=("${LIST_OLD[1]}${elem}")
 	done
-	for elem in "${LIST_NEW[@]:2}"; do
+	for elem in "${LIST_NEW[@]:3}"; do
 		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
 	done
 
@@ -877,7 +878,7 @@ cmp-output_soname_diff() {
 			+) color=36; add+=1;;
 			-) color=33; del+=1;;
 			*) color=90;; # unused unless increase -U*
-        esac
+		esac
 
 		if ${OPT[soname-diff]}; then
 			if ${OPT[color]}; then
