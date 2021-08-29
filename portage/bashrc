@@ -1,6 +1,6 @@
 # symlink, copy, or source using /etc/portage/bashrc to load all features
 
-if \
+if [[ ! ${PKGCORE_PKG_REPO} ]] &&
 	. "@datadir@/qa-cmp.bashrc" &&
 	. "@datadir@/qa-sed.bashrc" &&
 	. "@datadir@/qa-vdb.bashrc"; then
