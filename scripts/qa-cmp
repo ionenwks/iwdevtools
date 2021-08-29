@@ -20,7 +20,7 @@ usage() {
 		  (unless -r, report will also have statitics for disabled options)
 
 		  -T, --size-thres=%    Size difference percentage at which to display it
-		                        (default: 10, 0 to always display)
+		                        (default: 10.0%, 0 to always display)
 
 		  -B, --full-abidiff    Show complete abidiff output
 		  -d, --quiet-nodebug   Do not warn if missing debug for abidiff (unless -W)
@@ -84,7 +84,7 @@ OPT[soname-diff]=true
 OPT[abi-diff]=true
 OPT[size-diff]=true
 OPT[report]=true
-OPT[size-thres]=10
+OPT[size-thres]=1000
 OPT[full-abidiff]=false
 OPT[warn-debug]=true
 OPT[image-only]=false
@@ -111,7 +111,8 @@ while (( ${#} )); do
 		-z|--no-size) OPT[size-diff]=false;;
 		-r|--no-report) OPT[report]=false;;
 		-T|--size-thres)
-			printf -v 'OPT[size-thres]' '%d' "${2}" 2>/dev/null
+			printf -v 'OPT[size-thres]' '%.2f' "${2%\%}" 2>/dev/null
+			OPT[size-thres]=${OPT[size-thres]/./}
 			shift
 		;;
 		-B|--full-abidiff) OPT[full-abidiff]=true;;
@@ -740,9 +741,9 @@ cmp-output_size_diff() {
 	sold=$(du -cb "${old[@]/#/${LIST_OLD[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark1='~'
 	snew=$(du -cb "${new[@]/#/${LIST_NEW[1]}}" 2>/dev/null | tail -n 1 | cut -f1) || errmark2='~'
 
-	local sper=$((100 - 100 * sold / snew))
+	local sper=$((10**4 * snew / sold - 10**4))
 
-	if ${OPT[size-diff]} && (( ${sper#-} > OPT[size-thres] )); then
+	if ${OPT[size-diff]} && (( ${sper#-} >= OPT[size-thres] )); then
 		local c1= c2= cn=
 		if ${OPT[color]}; then
 			c1=$(echo -e "\e[90m")
@@ -759,8 +760,8 @@ cmp-output_size_diff() {
 				${#new[@]})$'\n'
 	fi
 
-	if ${OPT[confirm]} || (( ${sper#-} > OPT[size-thres] )); then
-		printf -v sper "%.2f" $((10**4 - 10**4 * sold / snew))e-2
+	if ${OPT[confirm]} || (( ${sper#-} >= OPT[size-thres] )); then
+		printf -v sper "%.2f" ${sper}e-2
 		if (( snew >= sold )); then
 			report=$(cmp-get_makereport "+${sper}%%" 1 32 "")
 		else
