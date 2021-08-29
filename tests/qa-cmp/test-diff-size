@@ -11,4 +11,4 @@ ebuild "$(get_ebuild test 4.5 bin:file{10MiB,1555kiB})" install
 expect -! '*SIZE*' -cI --size-thres=15.19 dev-test/test
 expect "*SIZE: 10.00MiB*11.51MiB*'SIZE(+15.18%)'" -cI --size-thres=15.18 dev-test/test
 expect "*SIZE: 11.51MiB*10.00MiB*'SIZE(-13.19%)'" -cI --size-thres=13.19 =dev-test/test-4.5 =dev-test/test-3.5
-expect "*SIZE: 11.51MiB*0.00MiB*'SIZE(-100.00%)'" -cI --size-thres=100 -W =dev-test/test-4.5 =dev-test/test-1.5
+expect "*SIZE: 11.51MiB*0.00MiB*'SIZE(-100.00%)'" -cI --size-thres=100 =dev-test/test-4.5 =dev-test/test-1.5
