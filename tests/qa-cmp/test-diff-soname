@@ -1,0 +1,14 @@
+set_portroot
+ebuild "$(get_ebuild test 1.5 empty)" install
+ebuild "$(get_ebuild test 2.5 bin:"${EXED}")" install
+expect -! "*SONAME*" -cI  dev-test/test
+expect "*'SONAME(N/A)'*" -cI --confirm dev-test/test
+ebuild "$(get_ebuild test 3.5 lib.so:"${LIBD100}")" install
+expect "*SONAME:+libdummy.so.1*'SONAME(+1)'*" -cI dev-test/test
+expect "*SONAME:-libdummy.so.1*'SONAME(-1)'*" -cI =dev-test/test-3.5 =dev-test/test-1.5
+ebuild "$(get_ebuild test 4.5 lib.so:"${LIBD101}")" install
+expect "*'SONAME(+0,-0)'*" -cI --confirm dev-test/test
+ebuild "$(get_ebuild test 5.5 lib.so:{"${LIBD200}","${LIBA300}"})" install
+expect "*SONAME:-libdummy.so.1*+libalt.so.3*+libdummy.so.2*'SONAME(+2,-1)'*" -cI dev-test/test
+ebuild "$(get_ebuild test 6.5 lib.so:{"${LIBD200}","${LIBA400}"})" install
+expect "*SONAME:-libalt.so.3*+libalt.so.4*'SONAME(+1,-1)'*" -cI dev-test/test

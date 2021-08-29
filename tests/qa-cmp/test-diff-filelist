@@ -1,0 +1,14 @@
+set_portroot
+touch file{1,2}
+ebuild "$(get_ebuild test 1.5 :)" install
+ebuild "$(get_ebuild test 2.5 :)" install
+expect -! "*FILES*" -cI dev-test/test
+expect "*'FILES(N/A)'*" -cI --confirm dev-test/test
+ebuild "$(get_ebuild test 3.5 bin:file1)" install
+expect "*FILES:+usr/bin/file1*'FILES(+1)'*" -cI dev-test/test
+expect "*FILES:-usr/bin/file1*'FILES(-1)'*" -cI =dev-test/test-3.5 =dev-test/test-1.5
+ebuild "$(get_ebuild test 4.5 bin:file2)" install
+expect "*FILES:-usr/bin/file1*+usr/bin/file2*'FILES(+1,-1)'*" -cI dev-test/test
+ebuild "$(get_ebuild test 5.5 bin:file{1,2})" install
+expect "*FILES:+usr/bin/file1*+usr/bin/file2*'FILES(+2)'*" -cI =dev-test/test-1.5 =dev-test/test-5.5
+expect "*FILES:-usr/bin/file1*-usr/bin/file2*'FILES(-2)'*" -cI =dev-test/test-5.5 =dev-test/test-1.5

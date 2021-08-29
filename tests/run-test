@@ -70,6 +70,7 @@ expect() {
 #	Lowercase prefix determines do* command to use, e.g. bin: = dobin <file>
 #	Uppercase prefix means to set a variable like "RDEPEND:value"
 #	inherit prefix will inherit an eclass from ${DATADIR}
+#	: on its own means to install nothing
 #	Note: these ebuilds should not actually build anything, use meson
 get_ebuild() {
 	[[ -d ${ROOT} ]]
@@ -81,7 +82,9 @@ get_ebuild() {
 	while (( ${#} )); do
 		key=${1%%:*}
 		val=${1#*:}
-		if [[ ${key} == inherit ]]; then
+		if [[ ! ${key} ]]; then
+			files+=':;'
+		elif [[ ${key} == inherit ]]; then
 			if [[ -f ${DATADIR}/${val}.eclass ]]; then
 				cp ${DATADIR}/${val}.eclass root/eclass/
 			fi
