@@ -1,0 +1,10 @@
+# do basic abidiff tests using system copy rather than two images
+check_abidiff
+set_portroot
+ebuild "$(get_ebuild test 1.5 lib.so:"${LIBD100}")" merge
+ebuild "$(get_ebuild test 2.5 lib.so:"${LIBD102}")" install
+expect "*'ABI(+2,-1,>B<)'*" -c dev-test/test
+export FEATURES="splitdebug"
+ebuild "$(get_ebuild test 3.5 lib.so:"${LIBD100}")" merge
+ebuild "$(get_ebuild test 4.5 lib.so:"${LIBD102}")" install
+expect "*'ABI(+2,~2,-1,>B<)'*" -c dev-test/test

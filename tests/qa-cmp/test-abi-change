@@ -1,0 +1,11 @@
+check_abidiff
+set_portroot
+ebuild "$(get_ebuild test 1.5 lib.so:"${LIBD100}")" install
+ebuild "$(get_ebuild test 2.5 lib.so:"${LIBD100}")" install
+expect "*'ABI(+0,~0,-0)'*" -cI --confirm dev-test/test
+ebuild "$(get_ebuild test 3.5 lib.so:"${LIBD101}")" install
+expect "*ABI:libdummy.so 'func(+1)'*'vars(+1)'*'ABI(+2)'*" -cI dev-test/test
+ebuild "$(get_ebuild test 4.5 lib.so:"${LIBD102}")" install
+expect "*ABI:libdummy.so 'func(+1,~1,-2)'*'vars(+1,~1,-1)'*BREAKING*'ABI(+2,~2,-3,>B<)'*" -cI dev-test/test
+ebuild "$(get_ebuild test 5.5 lib.so:{"${LIBD200}","${LIBA300}"})" install
+expect "*'ABI(---)'*" -cI --confirm dev-test/test

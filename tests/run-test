@@ -26,6 +26,17 @@ EXEA="@exealt@" # libdummy+libalt symbols
 DATADIR=${DATAROOT}/${SCRIPT##*/}/data
 WORKDIR=${WORKROOT}/${SCRIPT##*/}/${TEST##*/}
 
+# check_abidiff
+#	Calls skip() if abidiff is not usable
+check_abidiff() {
+	type abidiff >/dev/null || skip "abidiff not found in PATH"
+
+	local file
+	file=$(file "${LIBD100}") # check on its own for -e exit status
+
+	[[ ${file} == *debug_info* ]] || skip "debug symbols needed for abidiff tests, build with -g"
+}
+
 # copydat <files...>
 #	Copy data files to ${WORKDIR}
 copydat() {

@@ -1,8 +1,8 @@
 # test if --no-* options do disable reports
 set_portroot
-touch file{1..6}
+touch file{1..4}
 ebuild "$(get_ebuild test 1.5 bin:file{1..2} lib.so:"${LIBD100}")" install
-ebuild "$(get_ebuild test 2.5 bin:file{3..6} lib.so:{"${LIBD200}","${LIBA300}"})" install
+ebuild "$(get_ebuild test 2.5 bin:file{3..4} lib.so:{"${LIBD200}","${LIBA300}"})" install
 expect -! -e "(SONAME:|SIZE:|ABI:|------>)" -cIT0a -szr dev-test/test
 expect -! -e "(FILES:|SIZE:|ABI:|------>)" -cIT0a -fszr dev-test/test
 expect -! -e "(FILES:|SONAME:|ABI:|------>)" -cIT0a -fsr dev-test/test

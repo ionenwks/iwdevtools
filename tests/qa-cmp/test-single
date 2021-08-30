@@ -1,0 +1,14 @@
+set_portroot
+touch file{1,2}
+head -c 1555kiB /dev/zero > file1555kiB
+ebuild "$(get_ebuild test 1.5 :)" install
+expect "*SIZE: 0.00MiB, 0 files" -cI --single-all dev-test/test
+expect -! -e "(FILES: |SONAME: )" -cI --single-all dev-test/test
+ebuild "$(get_ebuild test 1.5 bin:file1555kiB)" clean install
+expect "*FILES: usr/bin/file1555kiB*SIZE: 1.51MiB, 1 files" -cI --single-all dev-test/test
+ebuild "$(get_ebuild test 2.5 bin:file{1,2} lib.so:{"${LIBD200}","${LIBA300}"})" install
+expect -! "*QA: listing*" -cI --single-all --single-auto dev-test/test
+expect "*QA: listing*FILES: usr/bin/file1*FILES: usr/bin/file2*" -cI --single-filelist dev-test/test
+expect "*QA: listing*SONAME: libalt.so.3*SONAME: libdummy.so.2*" -cI --single-soname dev-test/test
+expect "*QA: listing*SIZE: *" -cI --single-size dev-test/test
+expect "*QA: listing*FILES: usr/bin/file1*FILES: usr/bin/file2*SONAME: libalt.so.3*SONAME: libdummy.so.2*SIZE: *" -cI --single-all dev-test/test
