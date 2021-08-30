@@ -70,12 +70,12 @@ trap 'exit 0' USR2
 #	app-misc/pax-utils (scanelf)
 #	app-portage/portage-utils (qatom,qlist)
 #	dev-util/libabigail (abidiff) [optional]
-#	sys-apps/coreutils (basename,cat,cut,dirname,du,head,readlink,sort,tail,uniq)
+#	sys-apps/coreutils (basename,cat,cut,dirname,head,readlink,sort,tail,uniq)
 #	sys-apps/diffutils (diff)
 #	sys-apps/grep (grep)
 #	sys-apps/portage (portageq)
 #	sys-apps/util-linux (getopt)
-type basename cat cut diff dirname du getopt grep head portageq \
+type basename cat cut diff dirname getopt grep head portageq \
 	qatom qlist readlink scanelf sort tail uniq >/dev/null || die "missing dependencies"
 
 declare -A OPT
