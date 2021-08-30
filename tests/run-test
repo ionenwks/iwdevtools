@@ -9,19 +9,19 @@ skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 TEST=${1}
 SCRIPT=${2}
 
-PACKAGE="@package@"
-VERSION="@version@"
-DATAROOT="@dataroot@"
-WORKROOT="@workroot@"
+PACKAGE='@package@'
+VERSION='@version@'
+DATAROOT='@dataroot@'
+WORKROOT='@workroot@'
 
-LIBD100="@libdummy100@" # initial
-LIBD101="@libdummy101@" # no abi changes
-LIBD102="@libdummy102@" # broken abi
-LIBD200="@libdummy200@" # soname change
-LIBA300="@libalt300@" # initial
-LIBA400="@libalt400@" # soname change
-EXED="@exedummy@" # libdummy symbols
-EXEA="@exealt@" # libdummy+libalt symbols
+LIBD100='@libdummy100@' # initial
+LIBD101='@libdummy101@' # no abi changes
+LIBD102='@libdummy102@' # broken abi
+LIBD200='@libdummy200@' # soname change
+LIBA300='@libalt300@' # initial
+LIBA400='@libalt400@' # soname change
+EXED='@exedummy@' # libdummy symbols
+EXEA='@exealt@' # libdummy+libalt symbols
 
 DATADIR=${DATAROOT}/${SCRIPT##*/}/data
 WORKDIR=${WORKROOT}/${SCRIPT##*/}/${TEST##*/}
