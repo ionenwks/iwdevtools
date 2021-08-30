@@ -12,6 +12,8 @@ runtest = configure_file(
 	configuration : testconf
 )
 
+bash = find_program('bash')
+
 foreach script : scripts
 	subdir(script)
 	foreach t : tests

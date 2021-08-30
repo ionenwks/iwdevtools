@@ -21,8 +21,6 @@ conf.set('datadir', prefix / datadir)
 conf.set('package', meson.project_name())
 conf.set('version', meson.project_version())
 
-bash = find_program('bash')
-
 subdir('config')
 subdir('portage')
 subdir('scripts')
