@@ -17,7 +17,7 @@ bash = find_program('bash')
 foreach script : scripts
 	subdir(script)
 	foreach t : tests
-		test(t, bash, suite : script, timeout : 60,
+		test(t, bash, suite : script, timeout : 120,
 			args : [
 				runtest,
 				files(script / t),
