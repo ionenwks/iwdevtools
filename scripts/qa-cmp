@@ -186,11 +186,13 @@ cmp-get_filelist() {
 		echo $(cmp-get_atomf "%{PVR}" "${1}")
 		echo "${ROOT%/}"/
 
-		size=$(<"$(cmp-get_vdb)/${1#=}"/SIZE) \
+		local vdb=$(cmp-get_vdb)
+		size=$(<"${vdb}/${1#=}"/SIZE) \
 			|| die "failed to read '$(cmp-get_vdb)/${1#=}/SIZE'"
 		echo ${size}
 
-		qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
+		Q_VDB=${vdb#${ROOT}} \
+			qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
 		[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${1}'"
 	else
 		# images may not have any information about what they are, but if used

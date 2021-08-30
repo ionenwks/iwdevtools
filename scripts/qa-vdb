@@ -550,6 +550,8 @@ vdb-set_ldcache() {
 vdb-set_vdb() {
 	VDB=$(portageq vdb_path) || die "portageq failed to return vdb path"
 	[[ -d ${VDB} ]] || die "found VDB (${VDB}) but does not appear valid"
+
+	export Q_VDB=${VDB#${ROOT}} # ensure q tool use right vdb
 }
 
 # vdb-init
