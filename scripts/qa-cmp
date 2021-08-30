@@ -260,8 +260,9 @@ cmp-get_images() {
 			match=$(cmp-get_atomf "%{PN}" "${cat}/${dir##*/}")
 			[[ ${pn} == "${match}" ]] || continue
 
+			[[ -e "${dir}"/build-info/BUILD_TIME ]] || continue # likely a failed image
 			ts=$(<"${dir}"/build-info/BUILD_TIME) \
-				|| die "failed to read '${dir}/build-info/BUILD_TIME', failed build image?"
+				|| die "failed to read '${dir}/build-info/BUILD_TIME'"
 
 			dir+=/image
 			[[ -d "${dir}" ]] || die "found unusable image at '${dir}'"
