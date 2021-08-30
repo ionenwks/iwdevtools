@@ -179,7 +179,7 @@ cmp-get_filelist() {
 	local -i size
 	if [[ ${1:0:1} == = ]]; then
 		echo $(cmp-get_atomf "%{PVR}" "${1}")
-		echo /
+		echo "${ROOT%/}"/
 
 		size=$(<"$(cmp-get_vdb)/${1#=}"/SIZE) \
 			|| die "failed to read '$(cmp-get_vdb)/${1#=}/SIZE'"

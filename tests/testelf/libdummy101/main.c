@@ -10,3 +10,7 @@ void hello(int i, int j) {
 void hello_rev(void) {
 	hello(0,0);
 }
+
+void harmless(void) {
+	puts("new in this version");
+}
