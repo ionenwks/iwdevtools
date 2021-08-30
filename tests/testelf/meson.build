@@ -1,4 +1,4 @@
-add_languages('c')
+add_languages('c', native : false)
 
 testelf = []
 subdir('libdummy100')

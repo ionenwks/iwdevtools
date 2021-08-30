@@ -1,7 +1,7 @@
 project(
 	'iwdevtools',
 	version : '0.4.0',
-	meson_version : '>=0.53.0'
+	meson_version : '>=0.54.0'
 )
 
 prefix = get_option('prefix')
