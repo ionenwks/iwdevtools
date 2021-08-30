@@ -431,14 +431,14 @@ cmp-get_tocompare() {
 		[[ ${catpn} ]] && i2=($(cmp-get_images "${catpn}"))
 	fi
 
-	# shift i1 until i1[0] != i2[0]
-	if (( ${#i2[@]} )); then
-		while [[ ${#i1[@]} != 0 && ${i1[0]} == "${i2[0]}" ]]; do
+	# shift until i1[0] != i2[0]
+	while (( ${#i1[@]} && ${#i2[@]} )) && [[ ${i1[0]} == "${i2[0]}" ]]; do
+		if (( ${#i1[@]} >= ${#i2[@]} )); then
 			i1=("${i1[@]:1}")
-		done
-		# if exausted options, check if i2 has the extra to offer
-		(( ! ${#i1[@]} && ${#i2[@]} >= 2 )) && i1[0]=${i2[1]}
-	fi
+		else
+			i2=("${i2[@]:1}")
+		fi
+	done
 
 	if ! (( ${#i1[@]} && ${#i2[@]} )); then
 		if ${OPT[single]}; then
