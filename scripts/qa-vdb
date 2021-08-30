@@ -286,6 +286,7 @@ _vdb-get_libneed() {
 			|| die "failed to get dependencies from REQUIRES for '${1}'"); do
 		vdb-is_excluded exclude-lib ${entry%.so*}.so ${pkg} || req+=(${entry})
 	done
+	(( ${#req[@]} )) || return 0 # all libs excluded
 
 	# use qfile to find providers (not best if more than one, but usually fine)
 	local IFS dep entry slot subslot virtual
