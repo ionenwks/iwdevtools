@@ -8,6 +8,8 @@ iwdevtools-next
 
 - tests: more test cases which led to several small fixes
 
+- tools should now be more usable on Gentoo Prefix
+
 iwdevtools-0.4.0 (2021-08-27)
 -----------------------------
 

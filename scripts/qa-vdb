@@ -121,6 +121,11 @@ while (( ${#} )); do
 done
 (( ${#} == 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
+: @eprefix@
+: ${ROOT=''}
+: ${EROOT=${ROOT}${EPREFIX:-}}
+export ROOT EROOT EPREFIX
+
 # vdb-get_atomf <format> <atom>
 #	Echos <atom> based on <format> using qatom -F.
 vdb-get_atomf() {
@@ -163,7 +168,7 @@ vdb-get_entry() {
 
 	# perform a search
 	local match
-	match=$(portageq match "${EROOT:-${ROOT:-/}}" "${1}") \
+	match=$(portageq match "${EROOT:-/}" "${1}") \
 		|| die "portageq match failed for '${match}'"
 
 	if [[ ${match} == *$'\n'* ]]; then
@@ -525,10 +530,10 @@ vdb-set_ldcache() {
 	fi
 
 	local args=(-N -v)
-	if [[ ${EROOT:-${ROOT:-}} ]]; then
+	if [[ ${EROOT} ]]; then
 		args+=(
-			-f "${EROOT:-${ROOT:-}}"/etc/ld.so.conf
-			-C "${EROOT:-${ROOT:-}}"/etc/ld.so.cache
+			-f "${EROOT}"/etc/ld.so.conf
+			-C "${EROOT}"/etc/ld.so.cache
 		)
 	fi
 

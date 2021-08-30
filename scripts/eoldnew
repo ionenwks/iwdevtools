@@ -51,6 +51,11 @@ if (( ${#} )); then
 fi
 (( ${#} >= 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
+: @eprefix@
+: ${ROOT=''}
+: ${EROOT=${ROOT}${EPREFIX:-}}
+export ROOT EROOT EPREFIX
+
 # reduce atom to category/pn (or just pn) so we can get all vers
 atom=$(qatom -CqF '%[CATEGORY]%{PN}' "${1}") || die "qatom failed for '${1}'"
 
@@ -61,7 +66,7 @@ vers=($(portageq pquery "${atom}")) \
 unset IFS
 
 # requested atom may not necessarily be latest, resolve it to know its position
-atom=$(portageq best_visible "${EROOT:-${ROOT:-/}}" "${1}") \
+atom=$(portageq best_visible "${EROOT:-/}" "${1}") \
 	|| die "portageq best_visible failed for '${1}'"
 
 usevers=()
@@ -75,7 +80,7 @@ done
 old=$((${#usevers[@]} - old))
 (( old < 0 )) && old=0 # use oldest
 
-portageq has_version "${EROOT:-${ROOT:-/}}" "${usevers[old]}" && skip_old=y
+portageq has_version "${EROOT:-/}" "${usevers[old]}" && skip_old=y
 
 [[ -v skip_old || -v skip_new ]] || die "nothing to do"
 

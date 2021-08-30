@@ -170,6 +170,7 @@ set_portroot() {
 
 	export ROOT="${PWD}/root"
 	export EROOT="${ROOT}"
+	export EPREFIX=
 	export PORTAGE_CONFIGROOT="${ROOT}"
 
 	mkdir -p root/{etc/portage,overlay/{eclass,metadata,profiles},tmp}

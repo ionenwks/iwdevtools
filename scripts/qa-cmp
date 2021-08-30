@@ -140,6 +140,11 @@ done
 ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 	&& OPT[single]=true
 
+: @eprefix@
+: ${ROOT=''}
+: ${EROOT=${ROOT}${EPREFIX:-}}
+export ROOT EROOT EPREFIX
+
 # cmp-get_atom2catpn <atom>
 #	Echoes ${CATEGORY}/${PN} for <atom>
 cmp-get_atom2catpn() {
@@ -272,7 +277,7 @@ declare -A CMP_INSTALLED=() CMP_INSTALLED_SET=()
 cmp-get_installed() {
 	if [[ ! ${CMP_INSTALLED_SET[${1}]+x} ]]; then
 		# note: unlike best_visible, does not return false if no match
-		CMP_INSTALLED[${1}]=$(portageq match "${EROOT:-${ROOT:-/}}" "${1}" | tail -n 1) \
+		CMP_INSTALLED[${1}]=$(portageq match "${EROOT:-/}" "${1}" | tail -n 1) \
 			|| die "portageq match failed for '${1}'"
 		CMP_INSTALLED_SET[${1}]=y
 	fi
@@ -478,7 +483,7 @@ cmp-get_vdb() {
 declare -A CMP_VISIBLE=() CMP_VISIBLE_SET=()
 cmp-get_visible() {
 	if [[ ! ${CMP_VISIBLE_SET[${1}]+x} ]]; then
-		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-${ROOT:-/}}" "${1}" | tail -n 1) \
+		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-/}" "${1}" | tail -n 1) \
 			|| die "portageq best_visible failed for '${1}'"
 		# empty string shouldn't happen as it returns false, but check anyway
 		[[ ${CMP_VISIBLE[${1}]} ]] || die "portageq best_visible returned an empty string for '${1}'"
