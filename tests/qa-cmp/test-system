@@ -1,8 +1,8 @@
 # most tests are done between two images (-I), do generic tests with system's
 set_portroot
 touch file{1..4}
-ebuild "$(get_ebuild test 1.5 -)" merge
-ebuild "$(get_ebuild test 2.5 -)" install
+ebuild "$(get_ebuild test 1.5 :)" merge
+ebuild "$(get_ebuild test 2.5 :)" install
 expect -! "QA:*" -c dev-test/test
 ebuild "$(get_ebuild test 2.5 bin:file{1..2} lib.so:"${LIBD100}")" clean merge
 expect -2 "Error:*" -c dev-test/test || xfail 1
