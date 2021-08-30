@@ -1,5 +1,5 @@
 set_portroot
-ebuild "$(get_ebuild test 1.5 empty)" install
+ebuild "$(get_ebuild test 1.5 :)" install
 ebuild "$(get_ebuild test 2.5 bin:"${EXED}")" install
 expect -! "*SONAME*" -cI  dev-test/test
 expect "*'SONAME(N/A)'*" -cI --confirm dev-test/test
