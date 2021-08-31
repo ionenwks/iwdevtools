@@ -153,7 +153,7 @@ vdb-get_dep2entry() {
 
 	# don't check for failure as it's normal if dep is not installed,
 	# fickle but this is relevant when checking for || ( ) deps
-	qlist -CqvI "${dep}" | tail -n 1
+	qlist -CqveI "${dep}" | tail -n 1
 }
 
 # vdb-get_entry <atom>
