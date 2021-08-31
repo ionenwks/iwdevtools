@@ -504,7 +504,7 @@ vdb-get_deps() {
 		if [[ ! ${entry} ]]; then
 			(( group )) && continue
 			${OPT[ignore-uninstalled]} && continue
-			die "failed to find an installed provider in vdb for '${rdep}'"
+			die "no installed provider in vdb for '${rdep}' (may be due to binpkgs ordering)"
 		fi
 
 		# ${rdep} can be something like ">=dev-libs/libevent-2.0:0/2.1-7=[threads]"
