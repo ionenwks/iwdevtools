@@ -262,7 +262,7 @@ vdb-get_libdeps() {
 		fi
 
 		echo "${rdep[1]}$(vdb-get_expected_slot ${rdep[1]} ${rdep[2]} ${rdep[3]} ${pkg} ${prebuilt})"
-	done | sort
+	done | sort || die "sort failed"
 }
 
 # vdb-get_libdiff_unified <CATEGORY/PN>
@@ -462,7 +462,7 @@ _vdb-get_libneed() {
 		fi
 
 		echo "${dep}$(vdb-get_expected_slot ${dep} ${slot} ${subslot} ${pkg} ${prebuilt})"
-	done | sort | uniq
+	done | sort | uniq || die "sort/uniq failed"
 }
 
 # vdb-get_deps <CATEGORY/PF> [glob|-] [DEPEND|BDEPEND]
