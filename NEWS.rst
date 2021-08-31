@@ -6,6 +6,10 @@ iwdevtools-next
 
 - qa-vdb: new config/qa-vdb.exclude-lib primarily to skip toolchain libraries
 
+- qa-cmp: now ignores failed build images rather than throw spurious errors
+
+- qa-cmp: better slot awareness, e.g. try not to compare python:3.9 with :3.10
+
 - tests: more test cases which led to several small fixes
 
 - tools should now be more usable on Gentoo Prefix
