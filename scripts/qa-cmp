@@ -495,7 +495,7 @@ cmp-get_vdb() {
 declare -A CMP_VISIBLE=() CMP_VISIBLE_SET=()
 cmp-get_visible() {
 	if [[ ! ${CMP_VISIBLE_SET[${1}]+x} ]]; then
-		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-/}" "${1}" | tail -n 1) \
+		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-/}" "${1}") \
 			|| die "portageq best_visible failed for '${1}'"
 		# empty string shouldn't happen as it returns false, but check anyway
 		[[ ${CMP_VISIBLE[${1}]} ]] || die "portageq best_visible returned an empty string for '${1}'"
