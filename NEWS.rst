@@ -6,6 +6,8 @@ iwdevtools-next
 
 - qa-vdb: new config/qa-vdb.exclude-lib primarily to skip toolchain libraries
 
+- qa-vdb: overbind (lib:= -> lib) warning now works for SLOT=0
+
 - qa-cmp: now ignores failed build images rather than throw spurious errors
 
 - qa-cmp: better slot awareness, e.g. try not to compare python:3.9 with :3.10

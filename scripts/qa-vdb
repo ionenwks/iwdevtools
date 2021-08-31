@@ -378,8 +378,14 @@ vdb-get_deps() {
 				atom[1]=0
 			fi
 		fi
-		[[ ${atom[2]} == '<unset>' ]] && atom[2]=0
-		atom[2]=${atom[2]%=}
+		if [[ ${atom[2]} == '<unset>' ]]; then
+			atom[2]=0
+		elif [[ ${atom[2]: -1} == = ]]; then
+			atom[2]=${atom[2]%=}
+
+			# pretend have non-zero subslot if bound
+			[[ ${atom[2]} == 0 ]] && atom[2]=1
+		fi
 
 		echo ${entry} ${atom[*]}
 	done | sort | uniq
