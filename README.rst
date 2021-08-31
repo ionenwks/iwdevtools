@@ -16,8 +16,7 @@ Dependencies: portage (portageq), portage-utils (qatom qfile qlist)
 Tries to find issues based on information provided by VDB (/var/db/pkg).
 Currently this compares RDEPEND and DT_NEEDED (i.e. from ``scanelf -n``)
 for missing missing dependencies, looks for missing binding operators or
-unspecified slots, then suggest changes with a -/+ diff output (some
-checks can optionally be disabled).
+unspecified slots, then suggest changes with a diff style output.
 
 Exclusions can be set using config files or command line, either global
 or per packages if something is known to be right or irrelevant.
@@ -26,14 +25,24 @@ Example output::
 
     $ qa-vdb xmms2
     QA: detected possibly incorrect RDEPEND (media-sound/xmms2-0.8_p20161122-r8)
-    -dev-db/sqlite
-    -dev-libs/glib
-    +dev-libs/glib:2
-    +media-libs/libogg
-     media-libs/opus
-     media-libs/opusfile
-    +sys-libs/readline:=
-     virtual/jack
+    dev-db/sqlite <
+    dev-libs/glib | dev-libs/glib:2
+                  > media-libs/libogg
+                  > sys-libs/readline:=
+
+Says sqlite seems unused despite being in RDEPEND (xmms2 did implement its own
+database backend), and it's linking with libogg and readline with current USE
+without RDEPEND. glib -> glib:2 is to suggest explicit SLOT use when available
+(can be disabled with --no-slot among other options).
+
+Alternate output::
+
+    $ qa-vdb --unified gnome-terminal
+    QA: detected possibly incorrect RDEPEND (x11-terms/gnome-terminal-3.40.3)
+    +dev-libs/atk
+    -dev-libs/libpcre2
+    +x11-libs/libX11
+    +x11-libs/pango
 
 Run ``qa-vdb --help`` for details, and see ``qa-vdb.bashrc`` for portage.
 
