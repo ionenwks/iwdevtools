@@ -20,6 +20,8 @@ iwdevtools-next
 
 - tools should now be more usable on Gentoo Prefix
 
+- basic man pages are now provided (does not say more than --help outputs)
+
 iwdevtools-0.4.0 (2021-08-27)
 -----------------------------
 

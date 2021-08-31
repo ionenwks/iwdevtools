@@ -6,6 +6,8 @@ scripts = [
 	'scrub-patch'
 ]
 
+help2man = find_program('help2man', required : false)
+
 run_script = {}
 
 foreach script : scripts
@@ -20,4 +22,15 @@ foreach script : scripts
 			configuration : conf
 		)
 	}
+
+	if help2man.found()
+		custom_target(
+			script + '.1',
+			input : run_script.get(script),
+			output : '@PLAINNAME@.1',
+			command : [ help2man, '-N', '@INPUT@', '-o', '@OUTPUT@' ],
+			install : true,
+			install_dir : get_option('mandir') / 'man1'
+		)
+	endif
 endforeach
