@@ -9,6 +9,7 @@ tests = [
 	'test-diff-soname',
 	'test-disable',
 	'test-missing',
+	'test-pick',
 	'test-single',
 	'test-system'
 ]
