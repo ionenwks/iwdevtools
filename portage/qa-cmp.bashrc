@@ -27,7 +27,7 @@ qa-cmp_post_pkg_preinst() {
 	[[ ${QA_CMP} == y ]] || return
 
 	local output
-	output=$("${QA_CMP_CMD}" -M ${CATEGORY}/${PN} =${CATEGORY}/${PF} "$@" ${QA_CMP_ARGS} 2>&1) || \
+	output=$("${QA_CMP_CMD}" -M ${CATEGORY}/${PN}:${SLOT} =${CATEGORY}/${PF} "$@" ${QA_CMP_ARGS} 2>&1) || \
 		eerror "qa-cmp: running '${QA_CMP_CMD}' failed (disable with QA_CMP=n)"
 
 	[[ ${output} ]] && ${QA_CMP_LOG} "${output}"
