@@ -37,6 +37,8 @@ usage() {
 		                           be in vdb, isn't. In theory this should never
 		                           happen without package.provided or bugs.
 
+		  -U, --unified            Use \`diff -U\` for output instead builtin
+
 		  -c, --no-color           Disable use of colors
 
 		  -r, --no-default-exclude Ignore configuration files for excludes
@@ -86,6 +88,7 @@ OPT[ignore]=
 OPT[depend]=RDEPEND
 OPT[confirm]=false
 OPT[ignore-uninstalled]=false
+OPT[unified]=false
 OPT[color]=true
 OPT[default-exclude]=true
 OPT[confdir]=
@@ -93,8 +96,8 @@ OPT[sysconfdir]="@confdir@"
 OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
 
 eval set -- $(getopt \
-	-o hsboxe:rDWuc \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,no-color,no-default-exclude,confdir: \
+	-o hsboxe:DWuUcr \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,unified,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
@@ -111,6 +114,7 @@ while (( ${#} )); do
 		   --exclude-lib) OPT[exclude-lib]+=,${2}; shift;;
 		-D|--depend) OPT[depend]=DEPEND;;
 		-W|--confirm) OPT[confirm]=true;;
+		-U|--unified) OPT[unified]=true;;
 		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
 		-c|--no-colors) OPT[color]=false;;
 		-r|--no-default-exclude) OPT[default-exclude]=false;;
@@ -256,6 +260,131 @@ vdb-get_libdeps() {
 
 		echo "${rdep[1]}$(vdb-get_expected_slot ${rdep[1]} ${rdep[2]} ${rdep[3]} ${pkg} ${prebuilt})"
 	done | sort
+}
+
+# vdb-get_libdiff_unified <CATEGORY/PN>
+#	Echoes difference between vdb-get_libdeps and vdb-get_libneed,
+#	or nothing if no changes.
+vdb-get_libdiff() {
+	local f1=($(vdb-get_libdeps ${1})) f2=($(vdb-get_libneed ${1}))
+
+	# insert blank line if a line isn't indentical minus slot
+	# same | same
+	# diff <
+	#      > diff
+	# FIXME: this is terrible
+	local -i i j
+	local g1=f1 g2=f2
+	if (( ${#f1[@]} < ${#f2[@]} )); then
+		g1=f2
+		g2=f1
+	fi
+	eval "
+		for ((i=0; i < \${#${g1}[@]}; i++)); do
+			for ((j=i; j < \${#${g2}[@]}; j++)); do
+				if [[ \${${g1}[i]%:*} == \${${g2}[j]%:*} ]]; then
+					(( i == j )) || ${g1}=(\"\${${g1}[@]:0:\${i}}\" '' \"\${${g1}[@]:\${i}}\")
+					continue 2
+				fi
+			done
+			${g2}=(\"\${${g2}[@]:0:\${i}}\" '' \"\${${g2}[@]:\${i}}\")
+		done
+	"
+
+	# create combined output
+	local -i len=0
+	local o mark changes=false
+	for ((i=0; i < ${#f1[@]}; i++)); do
+		if [[ ${f1[i]} == ${f2[i]} ]]; then
+			mark=' '
+		elif [[ ${f1[i]%:*} == ${f2[i]%:*} ]]; then
+			mark='|'; changes=true
+		elif [[ ! ${f1[i]} ]]; then
+			mark='>'; changes=true
+		else
+			mark='<'; changes=true
+		fi
+		(( ${#f1[i]} > len )) && len=${#f1[i]}
+		o[$((i*2))]=${f1[i]}
+		o[$((i*2+1))]="${mark} ${f2[i]}"
+	done
+
+	${changes} || return 1
+
+	printf -v o "%-${len}s %s\n" "${o[@]}"
+
+	# colorize, done last so not considered for alignment
+	local s1s s1sc s2s s2sc
+	if ${OPT[color]}; then
+		local -A c
+		c[n]=$(echo -e '\e[0m')
+		c[r]=$(echo -e '\e[31m')
+		c[g]=$(echo -e '\e[32m')
+		c[y]=$(echo -e '\e[33m')
+		c[a]=$(echo -e '\e[90m')
+		local IFS=$'\n'
+		for o in ${o}; do
+			if [[ ${o} == *\|* ]]; then
+				s1=${o%|*}; s1s=; s1sc=
+				s2=${o#*|}; s2s=; s2sc=
+				if [[ ${s1} == *:* ]]; then
+					s1s=:${s1#*:}
+					s1s=${s1s%% *}
+				fi
+				if [[ ${s2} == *:* ]]; then
+					s2s=:${s2#*:}
+				fi
+
+				i=0
+				while [[ ${s1s:${i}} || ${s2s:${i}} ]]; do
+					if [[ ${s1s:${i}:1} == ${s2s:${i}:1} ]]; then
+						s1sc+=${c[a]}${s1s:${i}:1}
+						s2sc+=${c[a]}${s2s:${i}:1}
+					else
+						s1sc+=${c[r]}${s1s:${i}:1}
+						s2sc+=${c[g]}${s2s:${i}:1}
+					fi
+					((i++))
+				done
+
+				o="${c[a]}${s1//${s1s}/${s1sc}}${c[y]}|${c[a]}${s2//${s2s}/${s2sc}}${c[n]}"
+			elif [[ ${o} == *\<* ]]; then
+				o=${c[r]}${o}${c[n]}
+			elif [[ ${o} == *\>* ]]; then
+				o=${c[g]}${o}${c[n]}
+			else
+				o=${c[a]}${o}${c[n]}
+			fi
+			echo "${o}"
+		done
+	else
+		echo "${o%$'\n'}"
+	fi
+}
+
+# vdb-get_libdiff_unified <CATEGORY/PN>
+#	Same as vdb-get_libdiff but uses `diff -U` for output
+vdb-get_libdiff_unified() {
+	local diff
+
+	diff=$(diff -U9999 <(vdb-get_libdeps ${1}) <(vdb-get_libneed ${1}))
+	[[ ${?} != 2 ]] || die "diff failed for ${1}"
+
+	[[ ${diff} ]] || return 0
+
+	local IFS=$'\n' line color
+	for line in ${diff#*@@$'\n'}; do
+		case ${line:0:1} in
+			+) color=32;;
+			-) color=31;;
+			*) color=90;;
+		esac
+		if ${OPT[color]}; then
+			printf "\e[${color}m%s\e[0m\n" "${line}"
+		else
+			echo "${line}"
+		fi
+	done
 }
 
 # vdb-get_libneed <CATEGORY/PF>
@@ -465,29 +594,19 @@ vdb-is_providing() {
 }
 
 # vdb-print_libdiff <CATEGORY/PF>
-# 	Print differences between vdb-get_libdeps and vdb-get_libneed,
-#	or nothing if matches.
+# 	Prints output of vdb_get_libdiff (if any) with header
 vdb-print_libdiff() {
-	local color diff
-	diff=$(diff -U9999 <(vdb-get_libdeps ${1}) <(vdb-get_libneed ${1}))
-	[[ ${?} != 2 ]] || die "diff failed for ${1}"
+	local diff
+
+	if ${OPT[unified]}; then
+		diff=$(vdb-get_libdiff_unified ${1})
+	else
+		diff=$(vdb-get_libdiff ${1})
+	fi
 
 	if [[ ${diff} ]]; then
 		msg "QA: detected possibly incorrect ${OPT[depend]} (${1})"
-
-		local IFS=$'\n' line
-		for line in ${diff#*@@$'\n'}; do
-			case ${line:0:1} in
-				+) color=32;;
-				-) color=31;;
-				*) color=90;;
-			esac
-			if ${OPT[color]}; then
-				msg $(printf "\e[${color}m%s\e[0m" "${line}")
-			else
-				msg "${line}"
-			fi
-		done
+		msg "${diff}"
 
 		if ! [[ ${OPT[exclude]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} || ${OPT[exclude-lib]} ]] &&
 			${OPT[default-exclude]}; then
