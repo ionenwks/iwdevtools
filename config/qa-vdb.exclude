@@ -8,3 +8,6 @@
 */gcc
 */glibc
 */musl
+
+# packages with bundled libraries mistaken for being a provider
+www-client/firefox-bin
