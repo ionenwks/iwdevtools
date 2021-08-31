@@ -480,6 +480,7 @@ vdb-get_deps() {
 
 	local atom entry rdep IFS=' '
 	local -i group=0
+	local -A deps
 	for rdep in $(cat "${VDB}"/${1}/${deptype} || die "failed to read ${deptype} for '${1}'"); do
 		[[ ${rdep} == !* ]] && continue # ignore blockers
 
@@ -527,8 +528,16 @@ vdb-get_deps() {
 			[[ ${atom[2]} == 0 ]] && atom[2]=1
 		fi
 
-		echo ${entry} ${atom[*]}
-	done | sort | uniq
+		# in case of duplicates, keep the one that defines a subslot
+		if [[ ${deps[${entry}]:-} ]]; then
+			rdep=(${deps[${entry}]:-})
+			[[ ${atom[2]} == 0 || ${rdep[2]} != 0 ]] && continue
+		fi
+
+		deps[${entry}]="${entry} ${atom[*]}"
+	done
+
+	printf "%s" "${deps[@]/%/$'\n'}"
 }
 
 # vdb-get_slot <CATEGORY/PF>
