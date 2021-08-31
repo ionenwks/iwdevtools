@@ -141,8 +141,8 @@ ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 	&& OPT[single]=true
 
 : @eprefix@
-: ${ROOT=''}
-: ${EROOT=${ROOT}${EPREFIX:-}}
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # cmp-get_atom2catpn <atom>
@@ -184,7 +184,7 @@ cmp-get_filelist() {
 	local -i size
 	if [[ ${1:0:1} == = ]]; then
 		echo $(cmp-get_atomf "%{PVR}" "${1}")
-		echo "${ROOT%/}"/
+		echo "${ROOT}"/
 
 		local vdb=$(cmp-get_vdb)
 		size=$(<"${vdb}/${1#=}"/SIZE) \

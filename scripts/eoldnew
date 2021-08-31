@@ -52,8 +52,8 @@ fi
 (( ${#} >= 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
 : @eprefix@
-: ${ROOT=''}
-: ${EROOT=${ROOT}${EPREFIX:-}}
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # reduce atom to category/pn (or just pn) so we can get all vers

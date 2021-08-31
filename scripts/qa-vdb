@@ -122,8 +122,8 @@ done
 (( ${#} == 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
 : @eprefix@
-: ${ROOT=''}
-: ${EROOT=${ROOT}${EPREFIX:-}}
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # vdb-get_atomf <format> <atom>
