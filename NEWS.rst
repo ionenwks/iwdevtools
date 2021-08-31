@@ -6,6 +6,8 @@ iwdevtools-next
 
 - qa-vdb: new output format, use --unified if prefer old behavior
 
+- qa-vdb: no longer showing unchanged deps by default, use --full to revert
+
 - qa-vdb: new config/qa-vdb.exclude-lib primarily to skip toolchain libraries
 
 - qa-vdb: overbind (lib:= -> lib) warning now works for SLOT=0

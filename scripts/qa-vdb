@@ -38,6 +38,7 @@ usage() {
 		                           happen without package.provided or bugs.
 
 		  -U, --unified            Use \`diff -U\` for output instead builtin
+		  -F, --full               When showing differences, display unchanged as well
 
 		  -c, --no-color           Disable use of colors
 
@@ -89,6 +90,7 @@ OPT[depend]=RDEPEND
 OPT[confirm]=false
 OPT[ignore-uninstalled]=false
 OPT[unified]=false
+OPT[full]=false
 OPT[color]=true
 OPT[default-exclude]=true
 OPT[confdir]=
@@ -96,8 +98,8 @@ OPT[sysconfdir]="@confdir@"
 OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
 
 eval set -- $(getopt \
-	-o hsboxe:DWuUcr \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,unified,no-color,no-default-exclude,confdir: \
+	-o hsboxe:DWuUFcr \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,unified,full,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
@@ -115,6 +117,7 @@ while (( ${#} )); do
 		-D|--depend) OPT[depend]=DEPEND;;
 		-W|--confirm) OPT[confirm]=true;;
 		-U|--unified) OPT[unified]=true;;
+		-F|--full) OPT[full]=true;;
 		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
 		-c|--no-colors) OPT[color]=false;;
 		-r|--no-default-exclude) OPT[default-exclude]=false;;
@@ -296,6 +299,7 @@ vdb-get_libdiff() {
 	local o mark changes=false
 	for ((i=0; i < ${#f1[@]}; i++)); do
 		if [[ ${f1[i]} == ${f2[i]} ]]; then
+			${OPT[full]} || continue
 			mark=' '
 		elif [[ ${f1[i]%:*} == ${f2[i]%:*} ]]; then
 			mark='|'; changes=true
@@ -365,15 +369,22 @@ vdb-get_libdiff() {
 # vdb-get_libdiff_unified <CATEGORY/PN>
 #	Same as vdb-get_libdiff but uses `diff -U` for output
 vdb-get_libdiff_unified() {
-	local diff
+	local diff context=0
 
-	diff=$(diff -U9999 <(vdb-get_libdeps ${1}) <(vdb-get_libneed ${1}))
-	[[ ${?} != 2 ]] || die "diff failed for ${1}"
+	${OPT[full]} && context=9999
+
+	diff=$(
+		diff -U${context} \
+			<(vdb-get_libdeps ${1}) \
+			<(vdb-get_libneed ${1}) \
+			| grep -v '@@\|---\|+++'
+		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "diff failed for ${1}"
+	)
 
 	[[ ${diff} ]] || return 0
 
 	local IFS=$'\n' line color
-	for line in ${diff#*@@$'\n'}; do
+	for line in ${diff}; do
 		case ${line:0:1} in
 			+) color=32;;
 			-) color=31;;
