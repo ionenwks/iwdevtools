@@ -145,19 +145,6 @@ ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 : ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
-# cmp-get_atom2catpn <atom>
-#	Echoes ${CATEGORY}/${PN} for <atom>
-cmp-get_atom2catpn() {
-	if [[ ${1} == */* ]]; then
-		catpn=${1}
-	else
-		# ${CATEGORY} is missing, ask portageq
-		catpn=$(cmp-get_visible "${1}")
-	fi
-
-	cmp-get_atomf "%{CATEGORY}/%{PN}" "${catpn}"
-}
-
 # cmp-get_atomf <format> <atom>
 #   Echos <atom> based on <format> using qatom -F.
 cmp-get_atomf() {
@@ -238,29 +225,51 @@ cmp-get_image2atomf() {
 	return 1
 }
 
-# cmp-get_images <CATEGORY/PN>
+# cmp-get_images <atom>
 #	Echos 1-3 images full path and/or installed =CATEGORY/PF from newest to older
+#	First exact matches, then cat/pn:slot (if specified) then cat/pn
 cmp-get_images() {
 	{
-		local cat pn dir match
+		local atom dir match slot
 		local -i ts
 
-		cat=${1%%/*}
-		pn=$(cmp-get_atomf "%{PN}" "${1}")
-
-		if ! ${OPT[image-only]}; then
-			match=$(cmp-get_installed "${1}")
-			if [[ ${match} ]]; then
-				ts=$(<"$(cmp-get_vdb)/${match}"/BUILD_TIME) \
-					|| die "failed to read '$(cmp-get_vdb)/${match}/BUILD_TIME'"
-				echo "${ts} =${match}"
-			fi
+		# convert atom to something we can use
+		if [[ ${1} == */* ]]; then
+			match=${1}
+		else
+			# ${CATEGORY} is missing, ask portage for a match
+			match=$(cmp-get_visible "${1}")
+			match+=$(cmp-get_atomf "%[SLOT]" "${1}") # keep explicit slot if given
 		fi
 
-		for dir in "$(cmp-get_tmp)/${cat}"/*; do
+		local IFS=' ' # may be set to $'\n'
+		atom=($(cmp-get_atomf "%{CATEGORY} %{PN} %[SLOT]" "${match}"))
+		unset IFS
+
+		if ! ${OPT[image-only]}; then
+			for match in "${1}" ${atom[0]}/${atom[1]}${atom[2]:-} ${atom[2]:+${atom[0]}/${atom[1]}}; do
+				match=$(cmp-get_installed "${match}")
+				if [[ ${match} ]]; then
+					ts=$(<"$(cmp-get_vdb)/${match}"/BUILD_TIME) \
+						|| die "failed to read '$(cmp-get_vdb)/${match}/BUILD_TIME'"
+					echo "${atom[2]:-:0} ${ts} =${match}"
+					break
+				fi
+			done
+		fi
+
+		for dir in "$(cmp-get_tmp)/${atom[0]}"/*; do
 			# need to atomf the directory too, ${PN} can contain -
-			match=$(cmp-get_atomf "%{PN}" "${cat}/${dir##*/}")
-			[[ ${pn} == "${match}" ]] || continue
+			match=$(cmp-get_atomf "%{PN}" "${atom[0]}/${dir##*/}")
+			[[ ${atom[1]} == "${match}" ]] || continue # mismatch
+
+			if [[ ${atom[2]:-} ]]; then
+				# try to skip wrong slots
+				[[ -e "${dir}"/build-info/SLOT ]] || continue # likely a failed image
+				slot=$(<"${dir}"/build-info/SLOT) \
+					|| die "failed to read '${dir}/build-info/SLOT'"
+				[[ ${atom[2]} == :${slot%/*} ]] || continue
+			fi
 
 			[[ -e "${dir}"/build-info/BUILD_TIME ]] || continue # likely a failed image
 			ts=$(<"${dir}"/build-info/BUILD_TIME) \
@@ -269,9 +278,9 @@ cmp-get_images() {
 			dir+=/image
 			[[ -d "${dir}" ]] || die "found unusable image at '${dir}'"
 
-			echo "${ts} ${dir}"
+			echo "${atom[2]:-:0} ${ts} ${dir}"
 		done
-	} | sort -nr | head -n 3 | cut -d' ' -f2- || die "failed to get images for '${1}'"
+	} | sort -nr | head -n 3 | cut -d' ' -f3- || die "failed to get images for '${1}'"
 }
 
 # cmp-get_installed <atom>
@@ -406,13 +415,13 @@ cmp-get_tocompare() {
 	i1[0]=$(cmp-get_normalized_image "${1}")
 	case ${?} in
 		1)	# no match, fallback to cat/pn search
-			i1=($(cmp-get_images $(cmp-get_atom2catpn "${1}")))
+			i1=($(cmp-get_images "${1}"))
 		;;
 		2)	# matched but if ${2} is same then one of them is meant
 			# to match system (can't tell which), discard and search
 			if [[ ${1} == ${2:-} ]]; then
 				shift
-				i1=($(cmp-get_images $(cmp-get_atom2catpn "${1}")))
+				i1=($(cmp-get_images "${1}"))
 			fi
 		;;
 	esac
@@ -427,7 +436,7 @@ cmp-get_tocompare() {
 
 	if (( ${#} == 2 )); then
 		i2[0]=$(cmp-get_normalized_image "${2}")
-		(( ${?} == 1 )) && i2=($(cmp-get_images $(cmp-get_atom2catpn "${2}")))
+		(( ${?} == 1 )) && i2=($(cmp-get_images "${2}"))
 	elif (( ${#i1[@]} >= 2 )); then
 		# use first image as newest (in i2), and 2nd as older (in i1)
 		i2[0]=${i1[0]}
