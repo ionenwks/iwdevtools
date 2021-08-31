@@ -12,11 +12,11 @@ usage() {
 		If \`-\` is specified (e.g. \`${0##*/} -\` or \`${0##*/} 2-\`), will only
 		emerge the previous and not the newest.
 
-		Any options after <package> are passed to emerge as-is.
+		Any options after <atom> are passed to emerge as-is.
 
 		Environment variables:
-		  EOLDNEW_EMERGE_CMD=emerge
-		  EOLDNEW_EMERGE_ARGS=
+		 *  EOLDNEW_EMERGE_CMD=emerge
+		 *  EOLDNEW_EMERGE_ARGS=
 
 		Note: this exports IWDT_ALL=y
 	EOF
