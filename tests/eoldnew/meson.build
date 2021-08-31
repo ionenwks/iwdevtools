@@ -1,6 +1,6 @@
 tests = [
 	'test-help',
 	'test-version',
-	'test-picks',
+	'test-pick',
 	'test-skip-new'
 ]
