@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.5.0 (2021-09-01)
+-----------------------------
 
 - qa-vdb: new output format, use --unified if prefer old behavior
 
