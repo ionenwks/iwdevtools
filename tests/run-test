@@ -237,7 +237,8 @@ touch "${WORKDIR}"/test-tmp-dir # sanity file for safer `rm -r`
 # and also clear env known to be used by scripts here
 # (tempting to use env -i but users may need obscure env vars)
 unset FEATURES {,E,B,SYS,ESYS}ROOT USE
-unset "${!ACCEPT@}" "${!EBUILD@}" "${!LIBDIR@}" "${!MULTILIB@}" "${!PORTAGE@}" "${!PORTDIR@}"
+unset "${!ACCEPT@}" "${!EBUILD@}" "${!LIBDIR@}" "${!MULTILIB@}" "${!PORTDIR@}"
+unset "${!PKGCORE@}" "${!PORTAGE@}"
 unset "${!EOLDNEW@}"
 export LC_ALL=C EPREFIX=
 
