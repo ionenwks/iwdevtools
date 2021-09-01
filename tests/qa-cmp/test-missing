@@ -1,4 +1,4 @@
 set_portroot
 ebuild "$(get_ebuild test 1.5 :)" install
-expect -2 "Error: nothing*" -cI dev-test/test || xfail 1
+expect -2 "Error:*nothing*" -cI dev-test/test || xfail 1
 expect -2 "''" -cI --allow-missing dev-test/test

@@ -426,14 +426,6 @@ cmp-get_tocompare() {
 		;;
 	esac
 
-	if (( ! ${#i1[@]} )); then
-		if ${OPT[allow-missing]}; then
-			end
-		else
-			die "cannot determine what to compare, not installed and no matching image?"
-		fi
-	fi
-
 	if (( ${#} == 2 )); then
 		i2[0]=$(cmp-get_normalized_image "${2}")
 		(( ${?} == 1 )) && i2=($(cmp-get_images "${2}"))
@@ -441,7 +433,7 @@ cmp-get_tocompare() {
 		# use first image as newest (in i2), and 2nd as older (in i1)
 		i2[0]=${i1[0]}
 		i1[0]=${i1[1]}
-	else
+	elif (( ${#i1[@]} )); then
 		# last hope to try to find something to compare with by using
 		# category/pn in the image path and checking if installed
 		local catpn=$(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")
@@ -459,19 +451,21 @@ cmp-get_tocompare() {
 
 	if ! (( ${#i1[@]} && ${#i2[@]} )); then
 		if ${OPT[single]}; then
-			if (( ${#i1[@]} )); then
-				echo "${i1[0]}"
-				return
-			elif (( ${#i2[@]} )); then
+			if (( ${#i2[@]} )); then
 				echo "${i2[0]}"
+				return
+			elif (( ${#i1[@]} )); then
+				echo "${i1[0]}"
 				return
 			fi
 		fi
 
 		if ${OPT[allow-missing]}; then
 			end
+		elif (( ${#i1[@]} && ${#i2[@]} )); then
+			die "could not find images for '${*}'"
 		else
-			die "nothing to compare with, did you mean to use --single-*?"
+			die "found nothing to compare with, did you mean to use --single-*?"
 		fi
 	fi
 
