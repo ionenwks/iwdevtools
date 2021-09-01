@@ -47,16 +47,18 @@ copydat() {
 #	Return true if ${SCRIPT}'s output matches <expected-glob>
 #	Options:
 #		-! invert match
-#		-e use regex instead of glob
 #		-2 compare with stderr instead of stdout
+#		-e use regex instead of glob
+#		-s do not auto-escape spaces from glob
 expect() {
-	local op='==' invert= stdout=true
+	local op='==' invert= stdout=true escape=true
 
 	while (( ${#} )); do
 		case ${1} in
 			-!) invert='!';;
 			-2) stdout=false;;
 			-e) op='=~';;
+			-s) escape=false;;
 			*) break;;
 		esac
 		shift
@@ -71,7 +73,10 @@ expect() {
 		echo "${output}" >&2
 	fi
 
-	eval "[[ ${invert} \${output} ${op} ${1// /\\ } ]]" || die "output mismatch for '${*}'"
+	local glob=${1}
+	${escape} && glob=${1// /\\ }
+
+	eval "[[ ${invert} \${output} ${op} ${glob} ]]" || die "output mismatch for '${*}'"
 
 	return ${errno}
 }
@@ -157,6 +162,14 @@ get_ebuild() {
 #	Return true if <file> matches <md5sum>
 md5cmp() {
 	md5sum --quiet -c - <<<"${*}" >/dev/null || die "checksum mismatch for '${2}'"
+}
+
+# set_conf <dir> <suffix> <content>
+#	Setup a ${SCRIPT}.<suffix> config file with <content> in ./<dir>
+set_conf() {
+	[[ -d ${1} ]] || mkdir "${1}"
+
+	echo "${3}" > "${1}/${SCRIPT##*/}.${2}"
 }
 
 # set_portroot

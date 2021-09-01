@@ -1,0 +1,40 @@
+# setup a few generics to check diff output, not exhaustive
+set_portroot
+ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}" SLOT:0/1)" merge
+ebuild "$(get_ebuild libalt 1.5 lib.so:"${LIBA300}" SLOT:3)" merge
+
+ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}" \
+	RDEPEND:'
+		dev-test/libalt
+		dev-test/libalt:=')" merge
+expect -s "QA:*'
+-dev-test/libalt:3=
++dev-test/libalt:3
++dev-test/libdummy:='" -cr --unified dev-test/alt
+expect -s "QA:*'
+dev-test/libalt:3= | dev-test/libalt:3
+                   > dev-test/libdummy:='" -cr dev-test/alt
+
+ebuild "$(get_ebuild alt 2.5 bin:"${EXEA}" \
+	RDEPEND:'
+		dev-test/libalt:3
+		dev-test/libdummy')" merge
+expect -s "QA:*'
+-dev-test/libdummy
++dev-test/libdummy:='" -cr --unified dev-test/alt
+expect -s "QA:*'
+ dev-test/libalt:3
+-dev-test/libdummy
++dev-test/libdummy:='" -cr --unified --full dev-test/alt
+expect -s "QA:*'
+dev-test/libdummy | dev-test/libdummy:='" -cr dev-test/alt
+expect -s "QA:*'
+dev-test/libalt:3   dev-test/libalt:3
+dev-test/libdummy | dev-test/libdummy:='" -cr --full dev-test/alt
+
+ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" \
+	RDEPEND:'
+		dev-test/libalt
+		dev-test/libdummy:0=')" merge
+expect -s "QA:*'-dev-test/libalt'" -cr --unified dev-test/dummy
+expect -s "QA:*'dev-test/libalt < '" -cr dev-test/dummy

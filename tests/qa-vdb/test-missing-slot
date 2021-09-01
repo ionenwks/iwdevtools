@@ -1,0 +1,8 @@
+set_portroot
+ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}" SLOT:2)" merge
+ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" RDEPEND:dev-test/libdummy)" merge
+expect "*+dev-test/libdummy:2" -cUrWbx dev-test/dummy
+expect "QA:*expected*" -cUrWbx --no-slot dev-test/dummy
+expect "QA:*expected*" -cUrWbx --exclude-slot=dev-test/libdummy dev-test/dummy
+ebuild "$(get_ebuild dummy 2.5 bin:"${EXED}" RDEPEND:dev-test/libdummy:2)" merge
+expect "QA:*expected*" -cUrWbx dev-test/dummy

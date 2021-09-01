@@ -1,0 +1,9 @@
+set_portroot
+ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
+ebuild "$(get_ebuild libalt 1.5 lib.so:"${LIBA300}")" merge
+ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" RDEPEND:'dev-test/libdummy dev-test/libalt')" merge
+expect "*-dev-test/libalt" -cUrWsb dev-test/dummy
+expect "QA:*expected*" -cUrWsb --no-extra dev-test/dummy
+expect "QA:*expected*" -cUrWsb --exclude-extra=dev-test/libalt dev-test/dummy
+ebuild "$(get_ebuild dummy 2.5 bin:"${EXED}" RDEPEND:dev-test/libdummy)" merge
+expect "QA:*expected*" -cUrWsb dev-test/dummy

@@ -1,0 +1,50 @@
+set_portroot
+ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}" SLOT:2/1)" merge
+ebuild "$(get_ebuild libalt 1.5 lib.so:"${LIBA300}")" merge
+
+ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" \
+	RDEPEND:'
+		dev-test/libalt
+		dev-test/libdummy')" merge
+expect -s "QA:*'
+-dev-test/libalt
+-dev-test/libdummy
++dev-test/libdummy:2=
+Note: no exclusion'*" -cUW --confdir=. dev-test/dummy
+
+ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}")" merge
+expect -s "QA:*'
++dev-test/libalt
++dev-test/libdummy:2=
+Note: no exclusion'*" -cUW --confdir=. dev-test/alt
+
+set_conf c1 exclude '
+dev-test/libalt
+dev-test/libdummy'
+expect "QA:*expected*" -cUW --confdir=c1 dev-test/dummy
+
+set_conf c2 exclude '@de|v-tes^t/"*"@ # stripped characters, should still work'
+expect "QA:*expected*" -cUW --confdir=c2 dev-test/dummy
+
+set_conf c3 exclude 'dev-test/alt = */*'
+expect "QA:*expected*" -cUW --confdir=c3 dev-test/alt
+expect -! "QA:*expected*" -cUW --confdir=c3 dev-test/dummy
+
+set_conf c4 exclude-slot dev-test/libdummy
+expect "*+dev-test/libdummy:=" -cUW --confdir=c4 dev-test/dummy
+
+set_conf c5 exclude-bind dev-test/libdummy
+expect "*+dev-test/libdummy:2" -cUW --confdir=c5 dev-test/dummy
+
+set_conf c6 exclude-slot dev-test/libdummy
+set_conf c6 exclude-bind dev-test/libdummy
+expect -! "*+dev-test/libdummy*" -cUW --confdir=c6 dev-test/dummy
+
+set_conf c7 exclude-extra dev-test/libalt
+expect -! "*-dev-test/libalt*" -cUW --confdir=c7 dev-test/dummy
+
+set_conf c8 exclude-lib libdummy.so
+expect -! "*dev-test/libdummy*" -cUW --confdir=c8 dev-test/alt
+
+set_conf c9 ignore dev-test/dummy
+expect "QA:*dev-test/dummy-1.5 was skipped*" -cUW --confdir=c9 dev-test/dummy
