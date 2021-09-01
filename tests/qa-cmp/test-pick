@@ -8,6 +8,7 @@ ebuild "$(get_ebuild test 5.5 :)" prepare # incomplete build
 ebuild "$(get_ebuild alt 1.5 :)" merge
 ebuild "$(get_ebuild alt 1.5 :)" install
 expect "*test-3.5*test-4.5*" -cW dev-test/test
+expect "*test-1.5*test-3.5*" -cW dev-test/test:2
 expect "*test-4.5*test-3.5*" -cW test =test-3.5
 expect "*test-1.5*test-3.5*" -cW dev-test/test:2 =dev-test/test-3.5
 expect "*test-2.5*test-4.5*" -cW test:0 =test-4.5
@@ -15,4 +16,3 @@ expect "*alt-1.5/image*test-4.5*" -cW alt test # nonsense but allowed
 expect "*=dev-test/alt-1.5*alt-1.5/image*" -cW alt
 # FIXME:
 #expect "*test-4.5*test-2.5*" -cW =dev-test/test-4.5 =dev-test/test-2.5
-#expect "*test-1.5*test-3.5*" -cW dev-test/test:2

@@ -244,6 +244,7 @@ cmp-get_images() {
 
 		local IFS=' ' # may be set to $'\n'
 		atom=($(cmp-get_atomf "%{CATEGORY} %{PN} %[SLOT]" "${match}"))
+		atom[2]=${atom[2]:+:${atom[2]}}
 		unset IFS
 
 		if ! ${OPT[image-only]}; then
