@@ -430,8 +430,15 @@ _vdb-get_libneed() {
 	(( ${#req[@]} )) || return 0 # all libs excluded
 
 	# use qfile to find providers (not best if more than one, but usually fine)
+	local providers
+	providers=$(qfile -CqvP "${req[@]}" | sort | uniq)
+	if (( ${?} )); then
+		${OPT[ignore-uninstalled]} && return 0 # pretend no libs
+		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
+	fi
+
 	local IFS dep entry slot subslot virtual
-	for entry in $(qfile -CqvP "${req[@]}" | sort | uniq || die "qfile failed for '${1}'"); do
+	for entry in ${providers}; do
 		dep=$(vdb-get_pf2pn "${entry}")
 
 		# check rdepend for virtuals and the the virtual's rdepend for this dep
