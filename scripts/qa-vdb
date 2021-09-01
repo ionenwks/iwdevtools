@@ -37,6 +37,10 @@ usage() {
 		                           be in vdb, isn't. In theory this should never
 		                           happen without package.provided or bugs.
 
+		      --ldconf=CONF        ld.so.conf to use (default: ${OPT[ldconf]})
+		  -p, --no-ldpath          Disable using ld.so.conf to find libraries' path
+		  (ldpath allows more accurate reports, but may miss rpath-based dependencies)
+
 		  -U, --unified            Use \`diff -U\` for output instead builtin
 		  -F, --full               When showing differences, display unchanged as well
 
@@ -78,7 +82,6 @@ export ROOT EROOT EPREFIX
 #	sys-apps/portage (portageq)
 #	sys-apps/sed (sed)
 #	sys-apps/util-linux (getopt)
-#	sys-libs/glibc (ldconfig) [optional]
 type cat diff getopt grep portageq qatom qfile qlist sed sort tr uniq >/dev/null || die "missing dependencies"
 
 declare -A OPT
@@ -95,6 +98,8 @@ OPT[ignore]=
 OPT[depend]=RDEPEND
 OPT[confirm]=false
 OPT[ignore-uninstalled]=false
+OPT[ldconf]="${EROOT}/etc/ld.so.conf"
+OPT[ldpath]=true
 OPT[unified]=false
 OPT[full]=false
 OPT[color]=true
@@ -104,8 +109,8 @@ OPT[sysconfdir]="@confdir@"
 OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
 
 eval set -- $(getopt \
-	-o hsboxe:DWuUFcr \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,unified,full,no-color,no-default-exclude,confdir: \
+	-o hsboxe:DWupUFcr \
+	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,ldconf:,no-ldpath,unified,full,no-color,no-default-exclude,confdir: \
 	-- "${@}" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
@@ -122,6 +127,8 @@ while (( ${#} )); do
 		   --exclude-lib) OPT[exclude-lib]+=,${2}; shift;;
 		-D|--depend) OPT[depend]=DEPEND;;
 		-W|--confirm) OPT[confirm]=true;;
+		   --ldconf) OPT[ldconf]=${2}; shift;;
+		-p|--no-ldpath) OPT[ldpath]=false;;
 		-U|--unified) OPT[unified]=true;;
 		-F|--full) OPT[full]=true;;
 		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
@@ -399,6 +406,40 @@ vdb-get_libdiff_unified() {
 	done
 }
 
+# vdb-get_ldpath <libraries...>
+#	Echos full path first match for all libraries based on VDB_LDPATH, or
+#	echos back library without path if not found.
+#	Returns true if all paths were found, false otherwise unless
+#	OPT[ldpath] is disabled.
+declare -A VDB_LDPATH_CACHE
+vdb-get_ldpath() {
+	local found path errno=0
+	while (( ${#} )); do
+		if ! ${OPT[ldpath]}; then
+			echo "${1}"
+			shift
+			continue
+		fi
+
+		if [[ ! ${VDB_LDPATH_CACHE[${1}]:-} ]]; then
+			for path in ${VDB_LDPATH[@]/%//${1}}; do
+				if [[ -e ${path} ]]; then
+					VDB_LDPATH_CACHE[${1}]=${path#${ROOT}}
+					break
+				fi
+			done
+			[[ ${VDB_LDPATH_CACHE[${1}]:-} ]] || VDB_LDPATH_CACHE[${1}]=${1}
+		fi
+
+		[[ ${VDB_LDPATH_CACHE[${1}]} != ${1} ]] || errno=1
+
+		echo "${VDB_LDPATH_CACHE[${1}]}"
+
+		shift
+	done
+	return ${errno}
+}
+
 # vdb-get_libneed <CATEGORY/PF>
 # 	Echos package list providing shared libraries based
 #	on <CATEGORY/PF>'s vdb REQUIRES.
@@ -429,7 +470,11 @@ _vdb-get_libneed() {
 	done
 	(( ${#req[@]} )) || return 0 # all libs excluded
 
-	# use qfile to find providers (not best if more than one, but usually fine)
+	# try to use LDPATH to find full paths, lets qfile ignore private libraries
+	local IFS=$'\n'
+	req=($(vdb-get_ldpath "${req[@]}"))
+
+	# use qfile to find providers
 	local providers
 	providers=$(qfile -CqvP "${req[@]}" | sort | uniq)
 	if (( ${?} )); then
@@ -437,7 +482,7 @@ _vdb-get_libneed() {
 		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
 	fi
 
-	local IFS dep entry slot subslot virtual
+	local dep entry slot subslot virtual
 	for entry in ${providers}; do
 		dep=$(vdb-get_pf2pn "${entry}")
 
@@ -604,20 +649,20 @@ vdb-is_providing() {
 
 	# This file can contain modules and executables we aren't
 	# interested in and modules sometime have "lib*.so" names.
-	# To rule them out, check if one of its file is known to ldconfig.
+	# To rule them out, check if exists in LDPATH
 	local provided IFS=' '
 	for provided in $(cat "${VDB}"/${1}/PROVIDES || die "could not read PROVIDES for ${1}"); do
 		[[ ${provided} == *.so* ]] || continue
 
-		if [[ ${LDCACHE} ]]; then
-			[[ ${LDCACHE} == *$'\n'${provided%.so*}.so$'\n'* ]] && return 0
+		${OPT[ldpath]} || return 0
 
-			# special exception for haskell as it doesn't use linker path
-			[[ ${provided} == *-ghc* ]] && return 0
-		else
-			return 0 # ignore missing cache
-		fi
+		vdb-get_ldpath "${provided}" >/dev/null && return 0
+
+		# special exception for haskell as it doesn't use linker path
+		# TODO: is this going to need a configuration file?
+		[[ ${provided} == *-ghc* ]] && return 0
 	done
+
 	return 1
 }
 
@@ -673,29 +718,27 @@ vdb-set_exclude() {
 		<<< "${OPT[${1}]}") || die "sed failed"
 }
 
-# vdb-set_ldcache
-#	Load list of libraries known to ldconfig (optional)
-vdb-set_ldcache() {
-	local ldconfig IFS=$'\n'
-	ldconfig=($(type -P ldconfig /sbin/ldconfig /usr/sbin/ldconfig 2>/dev/null))
-	if (( ! ${#ldconfig[@]} )); then
-		LDCACHE=
-		return
-	fi
-
-	local args=(-N -v)
-	if [[ ${EROOT} ]]; then
-		args+=(
-			-f "${EROOT}"/etc/ld.so.conf
-			-C "${EROOT}"/etc/ld.so.cache
-		)
-	fi
-
-	LDCACHE="
-		$(${ldconfig[0]} "${args[@]}" 2>/dev/null | \
-			sed '/: /d;s/\.so.*/.so/;s/.*\t//' | sort | uniq \
-			|| die "ldconfig failed")
-	"
+# vdb-set_ldpath
+#	Read paths from ld.so.conf and store them in VDB_LDPATH
+VDB_LDPATH=()
+vdb-set_ldpath() {
+	_vdb-set_ldpath "${OPT[ldconf]}"
+}
+_vdb-set_ldpath() {
+	local path
+	while read -r path; do
+		if [[ ${path:0:1} == / ]]; then
+			[[ -d ${EROOT}${path} ]] && VDB_LDPATH+=("${EROOT}${path}")
+		elif [[ ${path} =~ ^include\ ([^#]*) ]]; then
+			path=${BASH_REMATCH[1]}
+			[[ ${path:0:1} == / ]] || path=${1%/*}/${path}
+			for path in ${EROOT}${path}; do
+				[[ -r ${1} ]] || continue # ignore bad includes
+				_vdb-set_ldpath "${path}"
+			done
+		fi
+		:
+	done < "${1}" || die "failed to read '${1}', use --no-ldpath to disable"
 }
 
 # vdb-set_vdb
@@ -711,7 +754,7 @@ vdb-set_vdb() {
 #	Init various settings
 vdb-init() {
 	vdb-set_vdb
-	vdb-set_ldcache
+	vdb-set_ldpath
 	vdb-set_exclude exclude
 	vdb-set_exclude exclude-slot
 	vdb-set_exclude exclude-bind

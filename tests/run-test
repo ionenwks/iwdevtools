@@ -130,7 +130,7 @@ get_ebuild() {
 		# always install at least something
 		files="newbin - ${pn}-${pvr} <<<'#!/usr/bin/env true';"
 	elif [[ ${soname} ]]; then
-		files+="newenvd - 00\${PN} <<<LDPATH=\"\\\"${ROOT}/usr/\$(get_libdir)\\\"\";"
+		files+="newenvd - 00\${PN} <<<LDPATH=\"\\\"${EPREFIX}/usr/\$(get_libdir)\\\"\";"
 	fi
 
 	mkdir -p "${ROOT}"/overlay/dev-test/${pn}
@@ -223,6 +223,8 @@ set_portroot() {
 	echo ${PACKAGE} > root/overlay/profiles/repo_name
 
 	ln -s ../../overlay/profiles root/etc/portage/make.profile
+
+	touch root/etc/ld.so.conf # need to exist for qa-vdb
 }
 
 # xfail <expected-errno>
