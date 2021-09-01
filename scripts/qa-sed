@@ -29,12 +29,12 @@ usage() {
 		See provided qa-sed.bashrc for that purpose.
 
 		Caveats:
-		- can't do detection if stdin/stdout is used and isn't a file
-		  e.g. \`cat file | sed\` rather than \`sed < file\` (latter is fine)
-		- can't handle multiple files being combined into a single file
-		- can't detect if only one expression out of many is failing
-		- does not know if a sed only replaces under specific conditions
-		  e.g. 's|/usr|\${EPREFIX}/usr|', or 's|lib|\$(get_libdir)|'
+		 -  can't do detection if stdin/stdout is used and isn't a file
+		    e.g. \`cat file | sed\` rather than \`sed < file\` (latter is fine)
+		 -  can't handle multiple files being combined into a single file
+		 -  can't detect if only one expression out of many is failing
+		 -  does not know if a sed only replaces under specific conditions
+		    e.g. 's|/usr|\${EPREFIX}/usr|', or 's|lib|\$(get_libdir)|'
 
 		Using this wrapper should, in theory, not break sed usage
 		as it ultimately call sed with same arguments even on error.
