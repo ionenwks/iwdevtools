@@ -1,6 +1,5 @@
 testconf = configuration_data()
-testconf.set('package', meson.project_name())
-testconf.set('version', meson.project_version())
+testconf.merge_from(conf)
 testconf.set('dataroot', meson.current_source_dir())
 testconf.set('workroot', meson.current_build_dir())
 
