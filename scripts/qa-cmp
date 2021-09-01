@@ -66,6 +66,11 @@ msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
 trap 'exit 1' USR1
 trap 'exit 0' USR2
 
+: @eprefix@
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+export ROOT EROOT EPREFIX
+
 # Dependencies:
 #	app-misc/pax-utils (scanelf)
 #	app-portage/portage-utils (qatom,qlist)
@@ -139,11 +144,6 @@ done
 
 ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 	&& OPT[single]=true
-
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
-export ROOT EROOT EPREFIX
 
 # cmp-get_atomf <format> <atom>
 #   Echos <atom> based on <format> using qatom -F.

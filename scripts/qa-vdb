@@ -65,6 +65,11 @@ die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; 
 msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
 trap 'exit 1' USR1
 
+: @eprefix@
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+export ROOT EROOT EPREFIX
+
 # Dependencies:
 #	app-portage/portage-utils (qatom,qfile,qlist)
 #	sys-apps/coreutils (cat,sort,tr,uniq)
@@ -128,11 +133,6 @@ while (( ${#} )); do
 	shift
 done
 (( ${#} == 1 )) || die "no atom specified, see \`${0##*/} --help\`"
-
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
-export ROOT EROOT EPREFIX
 
 # vdb-get_atomf <format> <atom>
 #	Echos <atom> based on <format> using qatom -F.

@@ -26,6 +26,11 @@ usage() {
 set -u
 die() { echo "Error (${0##*/}): ${*}" >&2; exit 1; }
 
+: @eprefix@
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+export ROOT EROOT EPREFIX
+
 # Dependencies:
 #	app-portage/portage-utils (qatom)
 #	sys-apps/portage (portageq)
@@ -50,11 +55,6 @@ if (( ${#} )); then
 	fi
 fi
 (( ${#} >= 1 )) || die "no atom specified, see \`${0##*/} --help\`"
-
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
-export ROOT EROOT EPREFIX
 
 # reduce atom to category/pn (or just pn) so we can get all vers
 atom=$(qatom -CqF '%[CATEGORY]%{PN}' "${1}") || die "qatom failed for '${1}'"
