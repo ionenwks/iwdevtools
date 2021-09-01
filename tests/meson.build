@@ -11,6 +11,15 @@ runtest = configure_file(
 	configuration : testconf
 )
 
+bashconf = configuration_data()
+bashconf.set('datadir', bashrc_source)
+
+bashrc = configure_file(
+	input : bashrc_top,
+	output : 'bashrc',
+	configuration : bashconf
+)
+
 bash = find_program('bash')
 
 foreach script : scripts

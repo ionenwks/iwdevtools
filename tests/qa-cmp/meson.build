@@ -4,6 +4,7 @@ tests = [
 	'test-abi-change',
 	'test-abi-debug',
 	'test-abi-system',
+	'test-bashrc',
 	'test-diff-filelist',
 	'test-diff-size',
 	'test-diff-soname',

@@ -1,0 +1,9 @@
+set_portroot
+ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
+set_bashrc
+export QA_VDB=y
+export QA_VDB_ARGS=-cUr
+export QA_VDB_CMD="${SCRIPT}"
+export QA_VDB_LOG='echo :test-output:'
+expect -b "*:test-output:*+dev-test/libdummy*" \
+	"$(get_ebuild dummy 1.5 bin:"${EXED}")" merge

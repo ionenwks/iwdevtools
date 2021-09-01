@@ -48,15 +48,19 @@ copydat() {
 #	Options:
 #		-! invert match
 #		-2 compare with stderr instead of stdout
+#		-b run ebuild(1) instead of default command
 #		-e use regex instead of glob
 #		-s do not auto-escape spaces from glob
 expect() {
 	local op='==' invert= stdout=true escape=true
 
+	local cmd=("${BASH}" "${SCRIPT}")
+
 	while (( ${#} )); do
 		case ${1} in
 			-!) invert='!';;
 			-2) stdout=false;;
+			-b) cmd=(ebuild);;
 			-e) op='=~';;
 			-s) escape=false;;
 			*) break;;
@@ -66,10 +70,10 @@ expect() {
 
 	local output errno=0
 	if ${stdout}; then
-		output=$("${BASH}" "${SCRIPT}" "${@:2}") || errno=${?}
+		output=$("${cmd[@]}" "${@:2}") || errno=${?}
 		echo "${output}"
 	else
-		{ output=$("${BASH}" "${SCRIPT}" "${@:2}" 3>&2 2>&1 1>&3-) || errno=${?}; } 2>&1
+		{ output=$("${cmd[@]}" "${@:2}" 3>&2 2>&1 1>&3-) || errno=${?}; } 2>&1
 		echo "${output}" >&2
 	fi
 
@@ -81,11 +85,11 @@ expect() {
 	return ${errno}
 }
 
-# get_ebuild <PN> <PVR> <bin:file,ARG:value,inherit:file,...>
+# get_ebuild <PN> <PVR> <bin:file,ARG:value,cmd:name/args,...>
 # 	Echos path to ebuild created as <PN>-<PVR>.ebuild (category = dev-test/)
 #	Lowercase prefix determines do* command to use, e.g. bin: = dobin <file>
 #	Uppercase prefix means to set a variable like "RDEPEND:value"
-#	inherit prefix will inherit an eclass from ${DATADIR}
+#	cmd prefix will run name/args as-is
 #	: on its own means to install nothing
 #	Note: these ebuilds should not actually build anything, use meson
 get_ebuild() {
@@ -94,17 +98,14 @@ get_ebuild() {
 	local pn=${1} pvr=${2}
 	shift 2
 
-	local key val soname= files= vars= inherit=
+	local key val soname= cmds= files= vars=
 	while (( ${#} )); do
 		key=${1%%:*}
 		val=${1#*:}
 		if [[ ! ${key} ]]; then
 			files+=':;'
-		elif [[ ${key} == inherit ]]; then
-			if [[ -f ${DATADIR}/${val}.eclass ]]; then
-				cp ${DATADIR}/${val}.eclass root/eclass/
-			fi
-			inherit+=" ${val}"
+		elif [[ ${key} == cmd ]]; then
+			cmds+="${val};"
 		elif [[ ${key,,} == ${key} ]]; then
 			files+="do${key} "
 			if [[ ${val:0:1} != / ]]; then
@@ -138,8 +139,6 @@ get_ebuild() {
 	cat > "${ebuild}" <<-EOF
 		EAPI=8
 
-		${inherit:+inherit${inherit}}
-
 		DESCRIPTION="ebuild for ${pn}"
 		HOMEPAGE="https://localhost/"
 		S="\${WORKDIR}"
@@ -151,6 +150,7 @@ get_ebuild() {
 		${vars}
 
 		src_install() {
+			${cmds}
 			${files}
 		}
 	EOF
@@ -162,6 +162,14 @@ get_ebuild() {
 #	Return true if <file> matches <md5sum>
 md5cmp() {
 	md5sum --quiet -c - <<<"${*}" >/dev/null || die "checksum mismatch for '${2}'"
+}
+
+# set_bashrc
+#	Set bashrc to be loaded by ebuild(1), should be done after set_portroot
+#	Disables all features by default, should export variables as needed
+set_bashrc() {
+	echo "IWDT_ALL=n; . '${WORKROOT}/bashrc' || die" \
+		> "${ROOT}"/etc/portage/bashrc
 }
 
 # set_conf <dir> <suffix> <content>
@@ -239,7 +247,7 @@ touch "${WORKDIR}"/test-tmp-dir # sanity file for safer `rm -r`
 unset FEATURES {,E,B,SYS,ESYS}ROOT USE
 unset "${!ACCEPT@}" "${!EBUILD@}" "${!LIBDIR@}" "${!MULTILIB@}" "${!PORTDIR@}"
 unset "${!PKGCORE@}" "${!PORTAGE@}"
-unset "${!EOLDNEW@}"
+unset "${!EOLDNEW@}" "${!IWDT@}" "${!QA@}"
 export LC_ALL=C EPREFIX=
 
 # run test in work dir
