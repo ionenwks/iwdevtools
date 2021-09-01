@@ -1,0 +1,2 @@
+copydat mess.patch
+expect -2 "*^^^"$'\e[0m'"*" -si mess.patch

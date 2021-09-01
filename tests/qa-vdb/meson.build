@@ -2,6 +2,7 @@ tests = [
 	'test-help',
 	'test-version',
 	'test-bashrc',
+	'test-color',
 	'test-config',
 	'test-depend-over-rdepend',
 	'test-extra',

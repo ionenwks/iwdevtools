@@ -1,0 +1,4 @@
+set_portroot
+touch file
+ebuild $(get_ebuild test 1.5 bin:file) install
+expect "*usr/bin/file"$'\e[0m'"*" -IF dev-test/test
