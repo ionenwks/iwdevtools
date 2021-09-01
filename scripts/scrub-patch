@@ -146,11 +146,11 @@ exec >&2 # done with stdout which may be a file
 
 declare -A C
 if ${OPT[color]}; then
-	C[n]=$(echo -e '\e[0m')
-	C[r]=$(echo -e '\e[31m')
-	C[g]=$(echo -e '\e[32m')
-	C[y]=$(echo -e '\e[33m')
-	C[a]=$(echo -e '\e[90m')
+	C[n]=$'\e[0m'
+	C[r]=$'\e[31m'
+	C[g]=$'\e[32m'
+	C[y]=$'\e[33m'
+	C[a]=$'\e[90m'
 else
 	C=([n]= [r]= [g]= [y]= [a]=)
 fi

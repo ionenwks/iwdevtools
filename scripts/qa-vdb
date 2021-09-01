@@ -322,11 +322,11 @@ vdb-get_libdiff() {
 	local s1s s1sc s2s s2sc
 	if ${OPT[color]}; then
 		local -A c
-		c[n]=$(echo -e '\e[0m')
-		c[r]=$(echo -e '\e[31m')
-		c[g]=$(echo -e '\e[32m')
-		c[y]=$(echo -e '\e[33m')
-		c[a]=$(echo -e '\e[90m')
+		c[n]=$'\e[0m'
+		c[r]=$'\e[31m'
+		c[g]=$'\e[32m'
+		c[y]=$'\e[33m'
+		c[a]=$'\e[90m'
 		local IFS=$'\n'
 		for o in ${o}; do
 			if [[ ${o} == *\|* ]]; then

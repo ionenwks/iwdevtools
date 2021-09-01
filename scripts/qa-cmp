@@ -733,9 +733,9 @@ cmp-output_size() {
 
 	local c1= c2= cn=
 	if ${OPT[color]}; then
-		c1=$(echo -e "\e[90m")
-		c2=$(echo -e "\e[33m")
-		cn=$(echo -e "\e[0m")
+		c1=$'\e[90m'
+		c2=$'\e[33m'
+		cn=$'\e[0m'
 	fi
 	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
 		$((10**2 * ${LIST_NEW[2]} / 1024**2))e-2 $((${#LIST_NEW[@]} - 3)))
@@ -761,9 +761,9 @@ cmp-output_size_diff() {
 	if ${OPT[size-diff]} && (( ${sper#-} >= OPT[size-thres] )); then
 		local c1= c2= cn=
 		if ${OPT[color]}; then
-			c1=$(echo -e "\e[90m")
-			c2=$(echo -e "\e[33m")
-			cn=$(echo -e "\e[0m")
+			c1=$'\e[90m'
+			c2=$'\e[33m'
+			cn=$'\e[0m'
 		fi
 		OUTPUT+=$(
 			printf "  ${c1}SIZE: ${c2}%.2fMiB${c1} -> ${c2}%.2fMiB${c1}, ${c2}%d${c1} -> ${c2}%d files${cn}\n" \
