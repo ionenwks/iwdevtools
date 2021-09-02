@@ -1,7 +1,7 @@
-# libraries to exclude when looking at what a dependency is providing
-# note: for packages providing many libraries (gcc/glibc), should use .exclude
+# Libraries to exclude when looking at what a dependency is providing
 
-# exclude some of gcc's libraries for non-gcc packages providing them
+# If need to use --no-ldpath, excluding some gcc libraries for
+# non-gcc packages providing them will give a better output
 libgcc_s.so
 libgomp.so
 libstdc++.so

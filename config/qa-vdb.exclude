@@ -1,13 +1,10 @@
 # category/package dependencies to exclude entirely from checks
 # - see other qa-vdb.exclude-* for more specific type of exclusions
-# - simple wildcards can be used
+# - simple wildcards can be used, e.g. category/*
 # - can optionally exclude only when checking a specific package
 #   e.g. category/my-package = dev-libs/openssl (no wildcards on left side)
 
-# implicit core libraries (* used to include cross-*)
-*/gcc
-*/glibc
-*/musl
-
-# packages with bundled libraries mistaken for being a provider
-www-client/firefox-bin
+# implicit core libraries
+sys-devel/gcc
+sys-libs/glibc
+sys-libs/musl
