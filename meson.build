@@ -2,13 +2,14 @@ project(
 	'iwdevtools',
 	license : 'BSD-2-Clause',
 	version : '0.5.0',
-	meson_version : '>=0.54.0'
+	meson_version : '>=0.57.0'
 )
 
 prefix = get_option('prefix')
 bindir = get_option('bindir')
 confdir = get_option('sysconfdir') / meson.project_name()
 datadir = get_option('datadir') / meson.project_name()
+eprefix = get_option('eprefix')
 
 docdir = get_option('docdir')
 if docdir == ''
@@ -21,7 +22,7 @@ conf.set('confdir', prefix / confdir)
 conf.set('datadir', prefix / datadir)
 conf.set('package', meson.project_name())
 conf.set('version', meson.project_version())
-conf.set('eprefix', '${EPREFIX=\'' + get_option('eprefix') + '\'}')
+conf.set('eprefix', '${EPREFIX=\'' + eprefix + '\'}')
 
 subdir('config')
 subdir('portage')

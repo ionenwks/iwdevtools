@@ -29,6 +29,7 @@ foreach script : scripts
 			input : run_script.get(script),
 			output : '@PLAINNAME@.1',
 			command : [ help2man, '-N', '@INPUT@', '-o', '@OUTPUT@' ],
+			env : { 'ROOT' : '', 'EROOT' : eprefix },
 			install : true,
 			install_dir : get_option('mandir') / 'man1'
 		)

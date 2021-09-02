@@ -51,7 +51,7 @@ usage() {
 		    revdeps, but it warrants testing them while built against old version
 		 *  order matters, downgrading will more often report broken ABI
 
-		Can be integrated with portage through /etc/portage/bashrc, see
+		Can be integrated with portage through ${EROOT}/etc/portage/bashrc, see
 		provided qa-cmp.bashrc for details and options.
 	EOF
 	exit

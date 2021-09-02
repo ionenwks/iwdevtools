@@ -54,7 +54,7 @@ usage() {
 		  -h, --help               Display usage information and exit
 		      --version            Display version information and exit
 
-		Can be integrated with portage through /etc/portage/bashrc, see
+		Can be integrated with portage through ${EROOT}/etc/portage/bashrc, see
 		provided qa-vdb.bashrc for details and options.
 
 		Output is not a hard indication that something needs fixing (especially
