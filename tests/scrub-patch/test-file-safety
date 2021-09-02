@@ -1,6 +1,6 @@
 # verify that the original patch is not getting modified when it shouldn't
 copydat normal.patch
 expect -2 "Would*" -c --in-place --dry-run normal.patch
-expect -2 "*Error*invalid arguments*" -c --in-place --unrecognized-option normal.patch || xfail 1
+expect -2 "*Error:*invalid arguments*" -c --in-place --unrecognized-option normal.patch || xfail 1
 expect "Header*" -c --stdout normal.patch
 md5cmp 1d59182cdda831ac9fc922b0269ce525 normal.patch

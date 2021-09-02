@@ -59,7 +59,7 @@ done
 # warning: this must not output anything to stdout if sed-run() is being ran
 sed-run() { sed "${SED_ARGV[@]}"; }
 sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
-die() { echo "Error (${0##*/}): ${*}" >&2; sed-run_exit; }
+die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; sed-run_exit; }
 
 # Dependencies:
 #	sys-apps/coreutils (cat,readlink)

@@ -57,15 +57,22 @@ usage() {
 	exit
 }
 
-set -uo pipefail
-shopt -s nullglob
-MAINPID=${$}
-end() { kill -USR2 ${MAINPID}; exit 0; }
-die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
-msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
-trap 'exit 1' USR1
+set -Euo pipefail; shopt -s nullglob
+trap '(( ${?} != 166 )) || exit 166' ERR
+trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
 trap 'exit 0' USR2
-
+die() {
+	local sig=1
+	if [[ ${1} == -0 ]]; then
+		sig=2
+	else
+		echo "Error: ${*} (${FUNCNAME[1]/#main/${0##*/}}:${BASH_LINENO[0]})" >&2
+	fi
+	local IFS=' '; eval "set -- \$(</proc/${BASHPID}/stat)"
+	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 ${4}
+	kill -USR${sig} ${$}; exit 166
+}
+msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
 : @eprefix@
 : ${ROOT=''}; ROOT=${ROOT%/}
 : ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
@@ -462,7 +469,7 @@ cmp-get_tocompare() {
 		fi
 
 		if ${OPT[allow-missing]}; then
-			end
+			die -0 # exit with 0
 		elif (( ${#i1[@]} && ${#i2[@]} )); then
 			die "could not find images for '${*}'"
 		else

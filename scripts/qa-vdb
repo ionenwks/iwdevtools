@@ -63,12 +63,16 @@ usage() {
 	exit
 }
 
-set -uo pipefail
-MAINPID=${$}
-die() { echo "Error: ${*} (${FUNCNAME[1]})" >&2; kill -USR1 ${MAINPID}; exit 1; }
+set -Euo pipefail; shopt -s nullglob
+trap '(( ${?} != 166 )) || exit 166' ERR
+trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
+die() {
+	echo "Error: ${*} (${FUNCNAME[1]/#main/${0##*/}}:${BASH_LINENO[0]})" >&2
+	local IFS=' '; eval "set -- \$(</proc/${BASHPID}/stat)"
+	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 ${4}
+	kill -USR1 ${$}; exit 166
+}
 msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
-trap 'exit 1' USR1
-
 : @eprefix@
 : ${ROOT=''}; ROOT=${ROOT%/}
 : ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}

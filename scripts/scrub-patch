@@ -28,10 +28,8 @@ usage() {
 }
 
 set -u
-
-MAINPID=${$}
-die() { echo "Error (${0##*/}): ${*}" >&2; kill -USR1 ${MAINPID}; exit 1; }
 trap 'exit 1' USR1
+die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; kill -USR1 ${$}; exit 1; }
 
 # Dependencies:
 #	sys-apps/coreutils (cat, mktemp, readlink, rm)
