@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.5.1 (2021-09-01)
+-----------------------------
 
 - qa-vdb: use LDPATH checks to avoid wrong lib providers, e.g. firefox-bin
 
