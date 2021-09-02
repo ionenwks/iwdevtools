@@ -6,6 +6,8 @@ iwdevtools-next
 
 - qa-vdb: use LDPATH checks to avoid wrong lib providers, e.g. firefox-bin
 
+- qa-vdb: fix occasional crash from new output format
+
 iwdevtools-0.5.0 (2021-09-01)
 -----------------------------
 

@@ -306,6 +306,7 @@ vdb-get_libdiff() {
 	local -i len=0
 	local o mark changes=false
 	for ((i=0; i < ${#f1[@]}; i++)); do
+		: ${f2[i]:=""}
 		if [[ ${f1[i]} == ${f2[i]} ]]; then
 			${OPT[full]} || continue
 			mark=' '
