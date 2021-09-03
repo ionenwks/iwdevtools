@@ -22,7 +22,7 @@ bashrc = configure_file(
 
 bash = find_program('bash')
 
-foreach script : scripts
+foreach script : scripts.keys()
 	subdir(script)
 	foreach t : tests
 		test(t, bash, suite : script, timeout : 300,

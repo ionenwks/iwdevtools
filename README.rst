@@ -9,8 +9,8 @@ written, but should (I hope) still be mostly functional.
 
 .. _mgorny-dev-scripts: https://github.com/mgorny/mgorny-dev-scripts
 
-qa-vdb, qa-vdb.bashrc
----------------------
+qa-vdb
+------
 Dependencies: portage (portageq), portage-utils (qatom qfile qlist)
 
 Tries to find issues based on information provided by VDB (/var/db/pkg).
@@ -44,10 +44,10 @@ Alternate output::
     +x11-libs/libX11
     +x11-libs/pango
 
-Run ``qa-vdb --help`` for details, and see ``qa-vdb.bashrc`` for portage.
+Run ``qa-vdb --help`` or see **qa-vdb(1)** man page for details.
 
-qa-sed, qa-sed.bashrc
----------------------
+qa-sed
+------
 Wrapper for sed that will notify if files were unmodified by the expression.
 Primarily intended to be integrated with portage than used directly.
 
@@ -58,10 +58,10 @@ Example output from portage::
     * QA: following sed did not cause any changes
     *     sed -e "s:${EPREFIX}/usr:${EPREFIX}:" -i "${ED}"/bin/gunzip || die
 
-Run ``qa-sed --help`` for details, and see ``qa-sed.bashrc`` for portage.
+Run ``qa-sed --help`` or see **qa-sed(1)** man page for details.
 
-qa-cmp, qa-cmp.bashrc
----------------------
+qa-cmp
+------
 Dependencies: pax-utils (scanelf), portage (portageq), portage-utils
 (qatom qlist), libabigail (abidiff, optional)
 
@@ -103,7 +103,7 @@ example that's also using ``abidiff`` for `bug #616054`_::
 
 .. _bug #616054: https://bugs.gentoo.org/616054
 
-Run ``qa-cmp --help`` for details, and see ``qa-cmp.bashrc`` for portage.
+Run ``qa-cmp --help`` or see **qa-cmp(1)** man page for details.
 
 eoldnew
 -------
@@ -122,7 +122,7 @@ Example usage::
     running: emerge iwdevtools --quiet --pretend
     [ebuild  N    ] app-portage/iwdevtools-0.2.0
 
-Run ``eoldnew --help`` for details.
+Run ``eoldnew --help`` or see **eoldnew(1)** man page for details.
 
 scrub-patch
 -----------
@@ -133,7 +133,7 @@ Well this is the script for you!
 
 May possibly do a bit more...
 
-Run ``scrub-patch --help`` for details.
+Run ``scrub-patch --help`` or see **scrub-patch(1)** man page for details.
 
 Installing
 ==========

@@ -54,11 +54,25 @@ usage() {
 		  -h, --help               Display usage information and exit
 		      --version            Display version information and exit
 
-		Can be integrated with portage through ${EROOT}/etc/portage/bashrc, see
-		provided qa-vdb.bashrc for details and options.
-
+		*Notes*
 		Output is not a hard indication that something needs fixing (especially
-		with seemingly unused deps) and needs a human to interpret it.
+		with seemingly unused dependencies that may still be using dlopen(),
+		executables, or data files) and needs a human to interpret it. Exclusions
+		can be used if something is known to be right.
+
+		*Portage Integration*
+		Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
+		example ${ROOT}@datadir@/bashrc or by manually adding:
+		 >  source @datadir@/${0##*/}.bashrc
+		 >  post_pkg_postinst() {
+		 >      qa-vdb_post_pkg_postinst
+		 >  }
+
+		bashrc environment options (export/make.conf/package.env):
+		  QA_VDB=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
+		  QA_VDB_CMD=${0##*/}     This script, needs to be changed if not in PATH
+		  QA_VDB_ARGS=          Extra arguments to pass, see options above
+		  QA_VDB_LOG=ewarn      Portage log level command to use for output
 	EOF
 	exit
 }

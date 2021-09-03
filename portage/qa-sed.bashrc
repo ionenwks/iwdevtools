@@ -1,23 +1,9 @@
-# Intended for use in /etc/portage/bashrc by, for example, adding:
-#
-#	source /path/to/qa-sed.bashrc
-#
-# Dependencies:
-#	app-portage/iwdevtools (qa-sed)
+# Integrates qa-sed with portage, intended for use in /etc/portage/bashrc.
+# See `qa-sed --help` or see qa-sed(1) man page for details.
 
-# The following environment variables can be set in make.conf,
-# bashrc, command-line, or package.env as needed:
-
-# Set to 'y' to run qa-sed, anything else to skip
-: ${QA_SED:=${IWDT_ALL:=y}}
-
-# Path to qa-sed command if not in PATH
+: ${QA_SED:=${IWDT_ALL:-y}}
 : ${QA_SED_CMD:=qa-sed}
-
-# Extra arguments to pass to qa-sed
 : ${QA_SED_ARGS:=""}
-
-# Message log command to use (use einfo for less noise)
 : ${QA_SED_LOG:=ewarn}
 
 sed() {

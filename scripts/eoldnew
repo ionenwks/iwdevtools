@@ -14,11 +14,11 @@ usage() {
 
 		Any options after <atom> are passed to emerge as-is.
 
-		Environment variables:
-		 *  EOLDNEW_EMERGE_CMD=emerge
-		 *  EOLDNEW_EMERGE_ARGS=
+		Note: this exports IWDT_ALL=y (see help text of other @package@ commands)
 
-		Note: this exports IWDT_ALL=y
+		Environment:
+		  EOLDNEW_EMERGE_CMD=emerge  If need to call something else than emerge(1)
+		  EOLDNEW_EMERGE_ARGS=       Similar to EMERGE_DEFAULT_OPTS
 	EOF
 	exit
 }

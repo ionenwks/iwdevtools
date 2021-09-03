@@ -45,14 +45,25 @@ usage() {
 		  -h, --help            Display usage information and exit
 		      --version         Display version information and exit
 
-		abidiff notes:
-		 *  requires debug symbols for full report (FEATURES=splitdebug and -g)
-		 *  report saying '[BREAKING]' doesn't necessarily mean it's breaking
-		    revdeps, but it warrants testing them while built against old version
-		 *  order matters, downgrading will more often report broken ABI
+		*Abidiff Notes*
+		Requires debug symbols for full report (FEATURES=splitdebug and -g).
+		Report showing '[BREAKING]' doesn't necessarily mean it's breaking
+		revdeps without rebuilds, but it warrants testing them while built
+		against old version. Order matters, downgrading often breaks ABI.
 
-		Can be integrated with portage through ${EROOT}/etc/portage/bashrc, see
-		provided qa-cmp.bashrc for details and options.
+		*Portage Integration*
+		Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
+		example ${ROOT}@datadir@/bashrc or by manually adding:
+		 >  source @datadir@/${0##*/}.bashrc
+		 >  post_pkg_preinst() {
+		 >      qa-cmp_post_pkg_preinst
+		 >  }
+
+		bashrc environment options (export/make.conf/package.env):
+		  QA_CMP=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
+		  QA_CMP_CMD=${0##*/}     This script, needs to be changed if not in PATH
+		  QA_CMP_ARGS=          Extra arguments to pass, see options above
+		  QA_CMP_LOG=ewarn      Portage log level command to use for output
 	EOF
 	exit
 }

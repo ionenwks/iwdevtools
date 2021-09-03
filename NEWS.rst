@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- bashrc information was moved to --help text and man pages of commands
+
 iwdevtools-0.5.1 (2021-09-01)
 -----------------------------
 

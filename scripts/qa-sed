@@ -28,17 +28,29 @@ usage() {
 		on its own, and is only split so this isn't saved in vdb's environment.
 		See provided qa-sed.bashrc for that purpose.
 
-		Caveats:
-		 -  can't do detection if stdin/stdout is used and isn't a file
+		*Caveats*
+		 *  can't do detection if stdin/stdout is used and isn't a file
 		    e.g. \`cat file | sed\` rather than \`sed < file\` (latter is fine)
-		 -  can't handle multiple files being combined into a single file
-		 -  can't detect if only one expression out of many is failing
-		 -  does not know if a sed only replaces under specific conditions
+		 *  can't handle multiple files being combined into a single file
+		 *  can't detect if only one expression out of many is failing
+		 *  does not know if a sed only replaces under specific conditions
 		    e.g. 's|/usr|\${EPREFIX}/usr|', or 's|lib|\$(get_libdir)|'
 
-		Using this wrapper should, in theory, not break sed usage
-		as it ultimately call sed with same arguments even on error.
-		But use with caution nonetheless, not for production.
+		*Portage Integration*
+		Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
+		example ${ROOT}@datadir@/bashrc or by manually adding:
+
+		 >  source @datadir@/${0##*/}.bashrc
+
+		Creates a sed() function that everything will use instead. Should, in
+		theory, not break anything as it will call sed with same arguments even
+		on error -- but use with caution nonetheless, not for production.
+
+		bashrc environment options (export/make.conf/package.env):
+		  QA_SED=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
+		  QA_SED_CMD=${0##*/}     This script, needs to be changed if not in PATH
+		  QA_SED_ARGS=          Extra arguments to pass, see options above
+		  QA_SED_LOG=ewarn      Portage log level command to use for output
 	EOF
 	exit
 }
@@ -60,6 +72,10 @@ done
 sed-run() { sed "${SED_ARGV[@]}"; }
 sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
 die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; sed-run_exit; }
+: @eprefix@
+: ${ROOT=''}; ROOT=${ROOT%/}
+: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+export ROOT EROOT EPREFIX
 
 # Dependencies:
 #	sys-apps/coreutils (cat,readlink)
