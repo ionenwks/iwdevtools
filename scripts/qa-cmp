@@ -69,7 +69,7 @@ usage() {
 	exit
 }
 
-set -Euo pipefail; shopt -s nullglob
+set -Efuo pipefail
 trap '(( ${?} != 166 )) || exit 166' ERR
 trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
 trap 'exit 0' USR2
@@ -285,6 +285,7 @@ cmp-get_images() {
 			done
 		fi
 
+		set +f; shopt -s nullglob
 		for dir in "$(cmp-get_tmp)/${atom[0]}"/*; do
 			# need to atomf the directory too, ${PN} can contain -
 			match=$(cmp-get_atomf "%{PN}" "${atom[0]}/${dir##*/}")
@@ -307,6 +308,7 @@ cmp-get_images() {
 
 			echo "${atom[2]:-:0} ${ts} ${dir}"
 		done
+		set -f; shopt -u nullglob
 	} | sort -nr | head -n 3 | cut -d' ' -f3- || die "failed to get images for '${1}'"
 }
 
@@ -443,10 +445,12 @@ cmp-get_tmp() {
 
 	# portage often uses 700 for tmp/cat/pkg which can lead to confusing errors,
 	# e.g. -d tmp/cat/pkg/image not being a directory
+	set +f; shopt -s nullglob
 	local dirs=("${CMP_TMP}"/*/*)
 	if [[ ${#dirs[@]} != 0 && ! -r ${dirs[0]} ]]; then
 		die "permission denied for image dirs under '${CMP_TMP}'"
 	fi
+	set -f; shopt -u nullglob
 
 	echo "${CMP_TMP}"
 }

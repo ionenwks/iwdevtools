@@ -27,7 +27,7 @@ usage() {
 	exit
 }
 
-set -u
+set -fuo pipefail
 trap 'exit 1' USR1
 die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; kill -USR1 ${$}; exit 1; }
 

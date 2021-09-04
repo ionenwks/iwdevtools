@@ -77,7 +77,7 @@ usage() {
 	exit
 }
 
-set -Euo pipefail
+set -Efuo pipefail
 trap '(( ${?} != 166 )) || exit 166' ERR
 trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
 die() {
@@ -441,7 +441,7 @@ vdb-get_ldpath() {
 		fi
 
 		if [[ ! ${VDB_LDPATH_CACHE[${1}]:-} ]]; then
-			for path in ${VDB_LDPATH[@]/%//${1}}; do
+			for path in "${VDB_LDPATH[@]/%//${1}}"; do
 				if [[ -e ${path} ]]; then
 					VDB_LDPATH_CACHE[${1}]=${path#${ROOT}}
 					break
@@ -742,7 +742,9 @@ vdb-set_exclude() {
 #	Read paths from ld.so.conf and store them in VDB_LDPATH
 VDB_LDPATH=()
 vdb-set_ldpath() {
+	set +f; shopt -s nullglob # need to glob include paths in ld.so.conf
 	_vdb-set_ldpath "${OPT[ldconf]}"
+	set -f; shopt -u nullglob
 }
 _vdb-set_ldpath() {
 	local path

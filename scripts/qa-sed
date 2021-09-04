@@ -55,7 +55,7 @@ usage() {
 	exit
 }
 
-set -u
+set -fuo pipefail
 
 # split sed's and our own arguments
 SED_ARGV=()
