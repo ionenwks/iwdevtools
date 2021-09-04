@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.5.2 (2021-09-04)
+-----------------------------
 
 - qa-cmp: new shortcut option (-x/--no-compare) that equals -fsazr
 
