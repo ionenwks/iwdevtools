@@ -3,6 +3,7 @@ tests = [
 	'test-version',
 	'test-bashrc',
 	'test-color',
+	'test-complex-depend',
 	'test-config',
 	'test-depend-over-rdepend',
 	'test-extra',
