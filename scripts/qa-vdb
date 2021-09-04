@@ -585,13 +585,14 @@ vdb-get_deps() {
 		atom=($(vdb-get_atomf '%{CATEGORY}/%{PN} %{SLOT} %{SUBSLOT}' "${rdep}"))
 		if [[ ${atom[1]} == '<unset>' ]]; then
 			# qatom converts :* to <unset> even if set, check against ${rdep}
-			if [[ ${atom[1]} == *:\** ]]; then
+			if [[ ${rdep} == *:\** ]]; then
 				atom[1]=$(vdb-get_slot ${entry})
 			else
 				atom[1]=0
 			fi
 		fi
-		if [[ ${atom[2]} == '<unset>' ]]; then
+		# :* sets subslot to <unset>*, just glob in case there's more garbage
+		if [[ ${atom[2]} == '<unset>'* ]]; then
 			atom[2]=0
 		elif [[ ${atom[2]: -1} == = ]]; then
 			atom[2]=${atom[2]%=}
