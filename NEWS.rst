@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.5.3 (2021-09-04)
+-----------------------------
 
 - qa-vdb: fix regression causing to miss some dependencies from RDEPEND
 
