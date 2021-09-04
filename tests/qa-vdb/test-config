@@ -47,4 +47,4 @@ set_conf c8 exclude-lib libdummy.so
 expect -! "*dev-test/libdummy*" -cUW --confdir=c8 dev-test/alt
 
 set_conf c9 ignore dev-test/dummy
-expect "QA:*dev-test/dummy-1.5 was skipped*" -cUW --confdir=c9 dev-test/dummy
+expect "QA:*skipped*dev-test/dummy-1.5*" -cUW --confdir=c9 dev-test/dummy

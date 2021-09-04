@@ -793,7 +793,7 @@ vdb-skip_ignore() {
 	local catpn=$(vdb-get_atomf "%{CATEGORY}/%{PN}" ${1})
 
 	if vdb-is_excluded ignore ${catpn}; then
-		${OPT[confirm]} && msg "QA: ${1} was skipped due to being in qa-vdb.ignore"
+		${OPT[confirm]} && msg "QA: skipped due to package being in qa-vdb.ignore (${1})"
 		exit 0
 	fi
 }
