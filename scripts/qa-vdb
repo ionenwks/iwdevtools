@@ -16,7 +16,7 @@ usage() {
 		  -b, --no-bind            Exclude binding operators (implies --no-overbind)
 		  -o, --no-overbind        Exclude superfluous binds (i.e. for subslot 0)
 		  -x, --no-extra           Exclude listed dependencies that seem unused
-		  (using all --no-* or -sbx will limit to entirely missing deps)
+		(using all --no-* or -sbx will limit to entirely missing deps)
 
 		  -e, --exclude=LIST       Comma separated list of category/package to
 		                           exclude, can also be specified multiple times
@@ -26,7 +26,7 @@ usage() {
 		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
 		      --exclude-lib=LIST   Similar to --exclude but takes .so libraries
 		                           as arguments and excludes if seen in DT_NEEDED
-		  (packages that provide no shared libraries are always excluded)
+		(packages that provide no shared libraries are always excluded)
 
 		  -D, --depend             Check against DEPEND rather than RDEPEND
 		                           (virtuals will still use RDEPEND)
@@ -39,7 +39,7 @@ usage() {
 
 		      --ldconf=CONF        ld.so.conf to use (default: ${OPT[ldconf]})
 		  -p, --no-ldpath          Disable using ld.so.conf to find libraries' path
-		  (ldpath allows more accurate reports, but may miss rpath-based dependencies)
+		(ldpath allows more accurate reports, but may miss rpath-based dependencies)
 
 		  -U, --unified            Use \`diff -U\` for output instead builtin
 		  -F, --full               When showing differences, display unchanged as well
