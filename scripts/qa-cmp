@@ -94,13 +94,14 @@ export ROOT EROOT EPREFIX
 #	app-misc/pax-utils (scanelf)
 #	app-portage/portage-utils (qatom,qlist)
 #	dev-util/libabigail (abidiff) [optional]
-#	sys-apps/coreutils (basename,cat,cut,dirname,head,readlink,sort,tail,uniq)
+#	sys-apps/coreutils (cat,cut,head,readlink,sort,tail,uniq)
 #	sys-apps/diffutils (diff)
+#	sys-apps/file (file)
 #	sys-apps/grep (grep)
 #	sys-apps/portage (portageq)
 #	sys-apps/util-linux (getopt)
-type basename cat cut diff dirname getopt grep head portageq \
-	qatom qlist readlink scanelf sort tail uniq >/dev/null || die "missing dependencies"
+type cat cut diff file getopt grep head portageq qatom qlist readlink \
+	scanelf sort tail uniq >/dev/null || die "missing dependencies"
 
 declare -A OPT
 OPT[filelist-diff]=true
@@ -386,6 +387,30 @@ cmp-get_normalized_image() {
 #	Wrapper for scanelf to echo `sort | uniq` list and check for errors
 cmp-get_scanelf() {
 	scanelf -q "${@}" | sort | uniq || die "scanelf failed with args: '-q ${*}'"
+}
+
+# cmp-get_shared <possible libraries...>
+#	Echoes back shared libraries from the given list.
+#	Symbolic links will also be skipped as the non-link library is
+#	expected to be in the list.
+cmp-get_shared() {
+	unset IFS
+
+	local -a so=()
+	while (( ${#} )); do
+		# trim list for less checks, not interested in obscure not-.so
+		if [[ ${1} == *.so* && ! -L ${1} ]]; then
+			[[ -r ${1} ]] || die "'${1}' is not readable"
+			so+=("${1}")
+		fi
+		shift
+	done
+
+	(( ${#so[@]} )) || return 0
+
+	file -i0 -- "${so[@]}" | grep -aF 'x-sharedlib' | cut -d '' -f1
+	[[ ${PIPESTATUS[*]} == '0 '[01]' 0' ]] \
+		|| die "file check for shared libraries failed"
 }
 
 # cmp-get_tmp
@@ -816,14 +841,9 @@ cmp-output_size_diff() {
 cmp-output_soname() {
 	${OPT[single-soname]} || return
 
-	local -a new=() tmp
-	local elem
-
-	for elem in "${LIST_NEW[@]:3}"; do
-		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
-	done
-
 	local IFS=$'\n'
+	local -a new=("${LIST_NEW[@]:3}") tmp
+	new=($(cmp-get_shared "${new[@]/#/${LIST_NEW[1]}}"))
 	if (( ${#new[@]} )); then
 		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' -- "${new[@]}"))
 		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' -- "${new[@]}"))
@@ -846,22 +866,15 @@ cmp-output_soname() {
 #	Add to OUTPUT differences between LIST_OLD and LIST_NEW but only
 #	for SONAME changes
 cmp-output_soname_diff() {
-	local -a old=() new=() tmp
-	local elem output report
-
-	# only .so isn't /necessary/ as scanelf will discard, but it's less i/o
-	for elem in "${LIST_OLD[@]:3}"; do
-		[[ ${elem} == *.so* ]] && old+=("${LIST_OLD[1]}${elem}")
-	done
-	for elem in "${LIST_NEW[@]:3}"; do
-		[[ ${elem} == *.so* ]] && new+=("${LIST_NEW[1]}${elem}")
-	done
+	local IFS=$'\n'
+	local -a new=("${LIST_NEW[@]:3}") old=("${LIST_OLD[@]:3}") tmp
+	new=($(cmp-get_shared "${new[@]/#/${LIST_NEW[1]}}"))
+	old=($(cmp-get_shared "${old[@]/#/${LIST_OLD[1]}}"))
 
 	# replace lists with scanelf output, do three runs to differenciate
 	# 32bit/64bit without guessing what the libdir may be, and one more
 	# if got nothing (to handle potential exotic arches)
 	# TODO?: lacks further awareness of different versions with same soname
-	local IFS=$'\n'
 	if (( ${#old[@]} )); then
 		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' -- "${old[@]}"))
 		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' -- "${old[@]}"))
@@ -874,10 +887,12 @@ cmp-output_soname_diff() {
 		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' -- "${new[@]}"))
 		new=("${tmp[@]}")
 	fi
+
 	unset IFS
 
 	# need uniq on field1, and 2+ can have spaces (`rev | uniq -f1` unsafe),
 	# do manually (also save to SCANELF_* to be re-used by cmp-output_abi_diff)
+	local elem
 	local -A uniq=()
 	for elem in "${old[@]}"; do
 		if [[ ! ${uniq[${elem%% *}]:-} ]]; then
@@ -893,6 +908,7 @@ cmp-output_soname_diff() {
 		fi
 	done
 
+	local output report
 	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
 		report=$(cmp-get_makereport "N/A" 0 31 "")
 		report=$(cmp-get_makereport "SONAME" -1 90 "${report}")
