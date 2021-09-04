@@ -85,15 +85,22 @@ expect() {
 	return ${errno}
 }
 
-# get_ebuild <PN> <PVR> <bin:file,ARG:value,cmd:name/args,...>
+# get_ebuild [-v] <PN> <PVR> <bin:file,ARG:value,cmd:name/args,...>
 # 	Echos path to ebuild created as <PN>-<PVR>.ebuild (category = dev-test/)
 #	Lowercase prefix determines do* command to use, e.g. bin: = dobin <file>
 #	Uppercase prefix means to set a variable like "RDEPEND:value"
 #	cmd prefix will run name/args as-is
 #	: on its own means to install nothing
+#	-v indicates to use virtual/ category instead of default
 #	Note: these ebuilds should not actually build anything, use meson
 get_ebuild() {
 	[[ -d ${ROOT} ]]
+
+	local cat=dev-test
+	if [[ ${1} == -v ]]; then
+		cat=virtual
+		shift
+	fi
 
 	local pn=${1} pvr=${2}
 	shift 2
@@ -133,9 +140,9 @@ get_ebuild() {
 		files+="newenvd - 00\${PN} <<<LDPATH=\"\\\"${EPREFIX}/usr/\$(get_libdir)\\\"\";"
 	fi
 
-	mkdir -p "${ROOT}"/overlay/dev-test/${pn}
+	mkdir -p "${ROOT}"/overlay/${cat}/${pn}
 
-	local ebuild=${ROOT}/overlay/dev-test/${pn}/${pn}-${pvr}.ebuild
+	local ebuild=${ROOT}/overlay/${cat}/${pn}/${pn}-${pvr}.ebuild
 	cat > "${ebuild}" <<-EOF
 		EAPI=8
 
@@ -219,7 +226,10 @@ set_portroot() {
 		CHOST="test"
 	EOF
 	echo test > root/overlay/profiles/arch.list
-	echo dev-test > root/overlay/profiles/categories
+	cat > root/overlay/profiles/categories <<-EOF
+		dev-test
+		virtual
+	EOF
 	echo ${PACKAGE} > root/overlay/profiles/repo_name
 
 	ln -s ../../overlay/profiles root/etc/portage/make.profile

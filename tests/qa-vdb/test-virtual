@@ -1,0 +1,11 @@
+set_portroot
+ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
+ebuild "$(get_ebuild -v dummy 1.5 :)" merge
+ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" RDEPEND:virtual/dummy)" merge
+expect "*+dev-test/libdummy" -cUrW dev-test/dummy
+ebuild "$(get_ebuild -v dummy 1.5 : RDEPEND:'
+	|| (
+		dev-test/libuninstalled
+		dev-test/libdummy
+	)')" merge
+expect "QA:*expected*" -cUrW dev-test/dummy

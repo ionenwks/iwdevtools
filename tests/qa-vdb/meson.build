@@ -14,5 +14,6 @@ tests = [
 	'test-no-needed',
 	'test-output',
 	'test-overbind',
-	'test-uninstalled'
+	'test-uninstalled',
+	'test-virtual'
 ]
