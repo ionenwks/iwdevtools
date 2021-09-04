@@ -10,6 +10,7 @@ tests = [
 	'test-missing-depend',
 	'test-missing-slot',
 	'test-missing-slotbind',
+	'test-no-needed',
 	'test-output',
 	'test-overbind',
 	'test-uninstalled'

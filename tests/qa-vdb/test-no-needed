@@ -1,0 +1,4 @@
+set_portroot
+ebuild "$(get_ebuild test 1.5 :)" merge
+expect "Warning:*no DT_NEEDED*" -cW dev-test/test
+expect "QA:*skipped*all possible*" -cW --no-slot dev-test/test

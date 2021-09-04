@@ -4,6 +4,8 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- qa-vdb: skip some checks if package uses no shared libs, e.g. scripts-only
+
 - bashrc information was moved to --help text and man pages of commands
 
 iwdevtools-0.5.1 (2021-09-01)

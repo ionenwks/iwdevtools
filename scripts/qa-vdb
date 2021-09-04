@@ -798,11 +798,35 @@ vdb-skip_ignore() {
 	fi
 }
 
+# vdb-skip_unneeded <CATEGORY/PF>
+#	Skips checks that have no relevance for a package type.
+#	Exit if all checks are disabled.
+vdb-skip_unneeded() {
+	# If no DT_NEEDED (meaning static link, or no ELF files), then there's
+	# really not much we can do but the SLOT check. Binding operators also
+	# rarely matter here (at most maybe if this is a static-only package
+	# that wants to rebuild with new libraries on bumps, but well...)
+	if ! [[ -e ${VDB}/${1}/NEEDED ]]; then
+		OPT[extra]=false
+		OPT[bind]=false
+
+		if ${OPT[slot]}; then
+			${OPT[confirm]} && \
+				msg "Warning: ${1} has no DT_NEEDED libraries, most ${0##*/} checks are disabled"
+		else
+			${OPT[confirm]} && \
+				msg "QA: skipped due to all possible ${0##*/} checks being disabled (${1})"
+			exit 0
+		fi
+	fi
+}
+
 vdb-init
 
 vdbentry=$(vdb-get_entry "${1}")
 
 vdb-skip_ignore ${vdbentry}
+vdb-skip_unneeded ${vdbentry}
 vdb-print_libdiff ${vdbentry}
 
 :
