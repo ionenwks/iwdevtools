@@ -77,7 +77,7 @@ usage() {
 	exit
 }
 
-set -Euo pipefail; shopt -s nullglob
+set -Euo pipefail
 trap '(( ${?} != 166 )) || exit 166' ERR
 trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
 die() {
