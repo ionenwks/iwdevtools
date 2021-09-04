@@ -385,7 +385,7 @@ cmp-get_normalized_image() {
 # cmp-get_scanelf <args>
 #	Wrapper for scanelf to echo `sort | uniq` list and check for errors
 cmp-get_scanelf() {
-	scanelf -q "${@}" | sort | uniq || die "scanelf failed"
+	scanelf -q "${@}" | sort | uniq || die "scanelf failed with args: '-q ${*}'"
 }
 
 # cmp-get_tmp
