@@ -68,7 +68,7 @@ done
 patches=()
 while (( ${#} )); do
 	[[ -f ${1} ]] || die "'${1}' is not a valid file"
-	if ${OPT[sanity]} && [[ $(file -bL "${1}") != 'unified diff output'* ]]; then
+	if ${OPT[sanity]} && [[ $(file -bL -- "${1}") != 'unified diff output'* ]]; then
 		die "'${1}' does not appear to be a unified format patch"
 	fi
 	patches+=(${1})
@@ -137,7 +137,7 @@ if ! ${OPT[dry-run]}; then
 		-e '/^--- /s:\t.*::' \
 		-e '/^---$/,/^--- /{/^--- /!d}' \
 		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}' \
-		${inplace} "${patches[@]}" || die "scrubbed too hard"
+		${inplace} -- "${patches[@]}" || die "scrubbed too hard"
 fi
 
 exec >&2 # done with stdout which may be a file

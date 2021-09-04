@@ -173,7 +173,7 @@ ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 # cmp-get_atomf <format> <atom>
 #   Echos <atom> based on <format> using qatom -F.
 cmp-get_atomf() {
-	qatom -CqF "${@}" || die "q command failed: qatom -CqF ${*}"
+	qatom -CqF "${1}" -- "${@:2}" || die "q command failed: qatom -CqF ${*}"
 }
 
 # cmp-get_compare2readable <compare>
@@ -362,7 +362,7 @@ cmp-get_normalized_image() {
 	local image=${1} atom=0
 
 	if [[ -d ${image} ]]; then
-		image=$(readlink -e "${image}" || die "readlink -e failed for '${image}'")
+		image=$(readlink -e -- "${image}" || die "readlink -e failed for '${image}'")
 	elif [[ -d $(cmp-get_tmp)/${image#=} ]]; then
 		image=$(cmp-get_tmp)/${image#=} # exact tmp dir match
 		atom=2
@@ -414,7 +414,7 @@ cmp-get_tmp() {
 	[[ -d ${CMP_TMP} ]] || die "'${CMP_TMP}' is not a directory"
 
 	# use readlink to normalize (no symlinks, double //, etc..)
-	CMP_TMP=$(readlink -e "${CMP_TMP}" || die "readlink -e failed for '${CMP_TMP}'")
+	CMP_TMP=$(readlink -e -- "${CMP_TMP}" || die "readlink -e failed for '${CMP_TMP}'")
 
 	# portage often uses 700 for tmp/cat/pkg which can lead to confusing errors,
 	# e.g. -d tmp/cat/pkg/image not being a directory
@@ -825,9 +825,9 @@ cmp-output_soname() {
 
 	local IFS=$'\n'
 	if (( ${#new[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' "${new[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' "${new[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S#F' "${new[@]}"))
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' -- "${new[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' -- "${new[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S#F' -- "${new[@]}"))
 		new=("${tmp[@]}")
 	fi
 	unset IFS
@@ -863,15 +863,15 @@ cmp-output_soname_diff() {
 	# TODO?: lacks further awareness of different versions with same soname
 	local IFS=$'\n'
 	if (( ${#old[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' "${old[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' "${old[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' "${old[@]}"))
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' -- "${old[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' -- "${old[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' -- "${old[@]}"))
 		old=("${tmp[@]}")
 	fi
 	if (( ${#new[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' "${new[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' "${new[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' "${new[@]}"))
+		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' -- "${new[@]}"))
+		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' -- "${new[@]}"))
+		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' -- "${new[@]}"))
 		new=("${tmp[@]}")
 	fi
 	unset IFS

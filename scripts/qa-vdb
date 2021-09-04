@@ -162,7 +162,7 @@ done
 # vdb-get_atomf <format> <atom>
 #	Echos <atom> based on <format> using qatom -F.
 vdb-get_atomf() {
-	qatom -CqF "${@}" || die "q command failed: qatom -CqF ${*}"
+	qatom -CqF "${1}" -- "${@:2}" || die "q command failed: qatom -CqF ${*}"
 }
 
 # vdb-get_pf2pn <CATEGORY/PF>
@@ -186,7 +186,7 @@ vdb-get_dep2entry() {
 
 	# don't check for failure as it's normal if dep is not installed,
 	# fickle but this is relevant when checking for || ( ) deps
-	qlist -CqveI "${dep}" | tail -n 1
+	qlist -CqveI -- "${dep}" | tail -n 1
 }
 
 # vdb-get_entry <atom>
@@ -495,7 +495,7 @@ _vdb-get_libneed() {
 
 	# use qfile to find providers
 	local providers
-	providers=$(qfile -CqvP "${req[@]}" | sort | uniq)
+	providers=$(qfile -CqvP -- "${req[@]}" | sort | uniq)
 	if (( ${?} )); then
 		${OPT[ignore-uninstalled]} && return 0 # pretend no libs
 		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
