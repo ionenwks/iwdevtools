@@ -17,7 +17,8 @@ usage() {
 		  -a, --no-abidiff      Do not print per-libraries abidiff
 		  -z, --no-size         Do not print size differences when above threshold
 		  -r, --no-report       Do not report statistics at the end
-		  (unless -r, report will also have statitics for disabled options)
+		  -x, --no-compare      Short for all of the above (intended for --single-*)
+		(unless -r/-x, report will still have statitics for disabled options)
 
 		  -T, --size-thres=%    Size difference percentage at which to display it
 		                        (default: 10.0%, 0 to always display)
@@ -107,6 +108,7 @@ OPT[soname-diff]=true
 OPT[abi-diff]=true
 OPT[size-diff]=true
 OPT[report]=true
+OPT[compare]=true
 OPT[size-thres]=1000
 OPT[full-abidiff]=false
 OPT[warn-debug]=true
@@ -121,8 +123,8 @@ OPT[single-auto]=false
 OPT[color]=true
 
 eval set -- $(getopt \
-	-o hfsazrT:BdIMWFSZLUc \
-	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
+	-o hfsazrxT:BdIMWFSZLUc \
+	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,no-compare,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
 	-- "$@" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
@@ -133,6 +135,7 @@ while (( ${#} )); do
 		-a|--no-abidiff) OPT[abi-diff]=false;;
 		-z|--no-size) OPT[size-diff]=false;;
 		-r|--no-report) OPT[report]=false;;
+		-x|--no-compare) OPT[compare]=false;;
 		-T|--size-thres)
 			printf -v 'OPT[size-thres]' '%.2f' "${2%\%}" 2>/dev/null
 			OPT[size-thres]=${OPT[size-thres]/./}
@@ -162,6 +165,10 @@ done
 
 ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 	&& OPT[single]=true
+
+! ${OPT[filelist-diff]} && ! ${OPT[soname-diff]} && ! ${OPT[abi-diff]} \
+	&& ! ${OPT[size-diff]} && ! ${OPT[report]} \
+	&& OPT[compare]=false
 
 # cmp-get_atomf <format> <atom>
 #   Echos <atom> based on <format> using qatom -F.
@@ -971,7 +978,7 @@ if ${OPT[single]}; then
 	fi
 fi
 
-if (( ${#} == 2 )); then
+if (( ${#} == 2 )) && ${OPT[compare]}; then
 	cmp-output_filelist_diff
 	cmp-output_soname_diff
 	cmp-output_abi_diff

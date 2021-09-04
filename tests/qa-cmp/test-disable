@@ -7,3 +7,4 @@ expect -! -e "(SONAME:|SIZE:|ABI:|------>)" -cIT0a -szr dev-test/test
 expect -! -e "(FILES:|SIZE:|ABI:|------>)" -cIT0a -fszr dev-test/test
 expect -! -e "(FILES:|SONAME:|ABI:|------>)" -cIT0a -fsr dev-test/test
 expect -! -e "(FILES:|SONAME:|SIZE:|ABI:)" -cIT0a -fsz dev-test/test
+expect -! -e "(FILES:|SONAME:|SIZE:|ABI:|------>)" -cIT0a --no-compare dev-test/test
