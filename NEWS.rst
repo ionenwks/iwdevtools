@@ -4,7 +4,9 @@ Release Notes
 iwdevtools-next
 ---------------
 
-- qa-cmp: new shortcut option (-x/--no-compare) to skip comparing entirely
+- qa-cmp: new shortcut option (-x/--no-compare) that equals -fsazr
+
+- qa-cmp: fix scanelf sporadic failure when passed wrong files (hopefully)
 
 - qa-vdb: skip some checks if package uses no shared libs, e.g. scripts-only
 
