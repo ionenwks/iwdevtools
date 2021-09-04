@@ -663,7 +663,7 @@ cmp-output_abi_diff() {
 			if ${OPT[color]}; then
 				OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]%% *}")
 			else
-				OUTPUT+="   ABI:${old[i]##*/}"
+				OUTPUT+="   ABI: ${old[i]%% *}"
 			fi
 			report=$(cmp-get_makereport "+%d" ${fa} 32 "")
 			report=$(cmp-get_makereport "~%d" ${fc} 33 "${report}")
