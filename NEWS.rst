@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-vdb: fix handling of deps with wildcard slots
+
 iwdevtools-0.5.3 (2021-09-04)
 -----------------------------
 
