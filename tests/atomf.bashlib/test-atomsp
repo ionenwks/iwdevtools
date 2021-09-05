@@ -23,8 +23,9 @@ atomexpect '      a b =' ':a/b='
 atomexpect ' ~ c  0 1  0 ' '~c/-0-r1:/0'
 atomexpect '  cat name 0.1.2 3   ' 'cat/name-0.1.2-r3'
 atomexpect \
-	'!! >= dev-test test-T-123_beta1_-4a-6+-7 1.00.02b_alpha3_pre_p4 5 * 6 =' \
-	'!!>=dev-test/test-T-123_beta1_-4a-6+-7-1.00.02b_alpha3_pre_p4-r5:*/6=[test(+),test(-)]'
-xfail 1 atomsp '@'
+	'!! >= dev-test test-T-123_beta1_-4a-6+-_p 1.00.02b_alpha3_pre_p4 5 * 6 =' \
+	'!!>=dev-test/test-T-123_beta1_-4a-6+-_p-1.00.02b_alpha3_pre_p4-r5:*/6=[test(+),test(-)]'
 xfail 1 atomsp '-c/n'
+xfail 1 atomsp '@'
 xfail 1 atomsp 'c/n-0@'
+xfail 1 atomsp 'c/n-1-1'

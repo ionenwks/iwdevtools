@@ -102,7 +102,12 @@ atomsp() {
 			t+=('' '') # no PVR
 		fi
 
-		[[ ! ${t[3]} =~ ^[+-] ]] || return 1 # invalid PN per PMS
+		# While no parsing issues, refuse PNs invalid per PMS
+		# i.e. can't start with +-, can't end with hyphen then valid version (-1)
+		[[ ! ${t[3]} =~ ^[+-] ]] || return 1
+		if [[ ${t[3]} =~ .*-([0-9]+.*)$ ]]; then
+			! pversp ${BASH_REMATCH[1]} || return 1
+		fi
 	fi
 
 	# SLOT (may also be :* as this is a dep-string check and not real SLOT)
