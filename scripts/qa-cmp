@@ -204,7 +204,8 @@ cmp-get_compare2readable() {
 cmp-get_filelist() {
 	local -i size
 	if [[ ${1:0:1} == = ]]; then
-		echo $(cmp-get_atomf "%{PVR}" "${1}")
+		cmp-get_atomf "%{PVR}" "${1}"
+
 		echo "${ROOT}"/
 
 		local vdb=$(cmp-get_vdb)
@@ -216,19 +217,8 @@ cmp-get_filelist() {
 			qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
 		[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${1}'"
 	else
-		# images may not have any information about what they are, but if used
-		# normally the path will have ${CATEGORY}/${PF} given by image2atomf
-		local pv=$(cmp-get_image2atomf "%{PVR}" "${1}")
-		if [[ ! ${pv} ]]; then
-			# version is an annoyance mostly with docdir, try to check if there
-			local dirs=("${1}"/usr/share/doc/*)
-			if (( ${#dirs[@]} )); then
-				pv=$(cmp-get_atomf "%{PVR}" "${dirs[0]##*/}")
-			else
-				pv="<unset>"
-			fi
-		fi
-		echo ${pv}
+		cmp-get_image2atomf "%{PVR}" "${1}"
+
 		echo "${1}/"
 
 		size=$(<"${1%/image}"/build-info/SIZE) \
@@ -242,21 +232,15 @@ cmp-get_filelist() {
 
 # cmp-get_image2atomf <format> <normalized-image>
 #	Echoes cmp-get_atomf for an image returned by cmp-get_normalized_image()
-#	Returns false and an empty string if not contained within it
 cmp-get_image2atomf() {
-	local img=${2}
+	local catpf
 
-	[[ -d ${img} ]] || return 1
+	catpf=$(<"${2%/image}"/build-info/CATEGORY) \
+		|| die "failed to read '${2%/image}/build-info/CATEGORY', failed build image?"
+	catpf+=/$(<"${2%/image}"/build-info/PF) \
+		|| die "failed to read '${2%/image}/build-info/PF', failed build image?"
 
-	img=${img#$(cmp-get_tmp)/}
-	img=${img%/image}
-
-	if [[ ${img} =~ ^[^/]*/[^/]*$ ]]; then
-		cmp-get_atomf "${1}" "${img}"
-		return
-	fi
-
-	return 1
+	cmp-get_atomf "${1}" "${catpf}"
 }
 
 # cmp-get_images <atom>
@@ -498,9 +482,9 @@ cmp-get_tocompare() {
 		i1[0]=${i1[1]}
 	elif (( ${#i1[@]} )); then
 		# last hope to try to find something to compare with by using
-		# category/pn in the image path and checking if installed
-		local catpn=$(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")
-		[[ ${catpn} ]] && i2=($(cmp-get_images "${catpn}"))
+		# the image's category/pn from build-info
+		[[ ${i1[0]:0:1} != = ]] \
+			&& i2=($(cmp-get_images $(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")))
 	fi
 
 	# shift until i1[0] != i2[0]
