@@ -29,6 +29,10 @@ usage() {
 		  -I, --image-only      When guessing what to compare, ignore system's copy.
 		                        (simplifies comparing two images)
 
+		  -K, --ver-keep        Do not replace filelist's versions in names by <snip>
+		  -O, --ver-dironly     Limit filelist version replacements to directories
+		(default is to try to prevent showing uninteresting version-only changes)
+
 		  -M, --allow-missing   Do nothing and exit normally if lacking a 2nd image
 		                        (intended for automated scripts)
 
@@ -114,6 +118,8 @@ OPT[size-thres]=1000
 OPT[full-abidiff]=false
 OPT[warn-debug]=true
 OPT[image-only]=false
+OPT[ver-keep]=false
+OPT[ver-dironly]=false
 OPT[allow-missing]=false
 OPT[confirm]=false
 OPT[single]=false
@@ -124,8 +130,8 @@ OPT[single-auto]=false
 OPT[color]=true
 
 eval set -- $(getopt \
-	-o hfsazrxT:BdIMWFSZLUc \
-	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,no-compare,size-thres:,full-abidiff,quiet-nodebug,image-only,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
+	-o hfsazrxT:BdIKOMWFSZLUc \
+	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,no-compare,size-thres:,full-abidiff,quiet-nodebug,image-only,ver-keep,ver-dironly,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
 	-- "$@" || die "invalid arguments")
 while (( ${#} )); do
 	case ${1} in
@@ -145,6 +151,8 @@ while (( ${#} )); do
 		-B|--full-abidiff) OPT[full-abidiff]=true;;
 		-d|--quiet-nodebug) OPT[warn-debug]=false;;
 		-I|--image-only) OPT[image-only]=true;;
+		-K|--ver-keep) OPT[ver-keep]=true;;
+		-O|--ver-dironly) OPT[ver-dironly]=true;;
 		-M|--allow-missing) OPT[allow-missing]=true;;
 		-W|--confirm) OPT[confirm]=true;;
 		-F|--single-filelist) OPT[single-filelist]=true;;
@@ -727,12 +735,39 @@ cmp-output_filelist() {
 }
 
 # cmp-output_filelist_diff
-#	Add to OUTPUT differences between LIST_OLD and LIST_NEW while omitting
-#	changes to version in filenames (replaced by literal ${PV})
+#	Add to OUTPUT differences between LIST_OLD and LIST_NEW while optionally
+#	omitting changes to version in filenames (replaced by <snip>)
 cmp-output_filelist_diff() {
-	local -a old=("${LIST_OLD[@]:3}") new=("${LIST_NEW[@]:3}")
-	local output report
+	local -a old=() new=()
 
+	if ${OPT[ver-keep]}; then
+		old=("${LIST_OLD[@]:3}")
+		new=("${LIST_NEW[@]:3}")
+	else
+		# To focus on showing interesting filelist changes rather than "dir
+		# name changed version and all files under it show in the diff", strip
+		# version and replace by placeholder. Unknown which version these use
+		# so try ${PVR}->${PV}->${PV%%_*} for the most common.
+		local file path
+		for file in "${LIST_OLD[@]:3}"; do
+			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
+			path=${path//${LIST_OLD[0]}/<snip>}
+			path=${path//${LIST_OLD[0]%-r[0-9]*}/<snip>}
+			path=${path//${LIST_OLD[0]%%_*}/<snip>}
+			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
+			old+=("${path}")
+		done
+		for file in "${LIST_NEW[@]:3}"; do
+			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
+			path=${path//${LIST_NEW[0]}/<snip>}
+			path=${path//${LIST_NEW[0]%-r[0-9]*}/<snip>}
+			path=${path//${LIST_NEW[0]%%_*}/<snip>}
+			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
+			new+=("${path}")
+		done
+	fi
+
+	local report
 	if ! (( ${#old[@]} || ${#new[@]} )); then
 		# this is rather unlikely
 		report=$(cmp-get_makereport "N/A" 0 31 "")
@@ -741,13 +776,7 @@ cmp-output_filelist_diff() {
 		return
 	fi
 
-	# strip both ${PVR} and ${PV} as plaintext ${PV}
-	old=("${old[@]//${LIST_OLD[0]}/\$\{PV\}}")
-	old=("${old[@]//${LIST_OLD[0]%-r[0-9]*}/\$\{PV\}}")
-	new=("${new[@]//${LIST_NEW[0]}/\$\{PV\}}")
-	new=("${new[@]//${LIST_NEW[0]%-r[0-9]*}/\$\{PV\}}")
-
-	output=$(
+	local output=$(
 		diff -U0 \
 			<(printf "%s" "${old[@]/%/$'\n'}") \
 			<(printf "%s" "${new[@]/%/$'\n'}") \

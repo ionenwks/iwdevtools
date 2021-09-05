@@ -4,6 +4,8 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- qa-cmp: add --ver-keep,--ver-dironly for filelist version-replace behavior
+
 - qa-vdb: fix handling of deps with wildcard slots
 
 - atomf.bashlib: new bash utility library to split portage atoms and versions

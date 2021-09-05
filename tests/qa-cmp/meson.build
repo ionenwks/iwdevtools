@@ -7,6 +7,7 @@ tests = [
 	'test-bashrc',
 	'test-color',
 	'test-diff-filelist',
+	'test-diff-filelist-ver',
 	'test-diff-size',
 	'test-diff-soname',
 	'test-disable',

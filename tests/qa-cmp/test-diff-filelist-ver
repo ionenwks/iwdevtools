@@ -1,0 +1,12 @@
+set_portroot
+ebuild "$(get_ebuild test 1.5_p1-r1 : cmd:'
+	keepdir /usr/share/dir-{1.5,1.5-r1,1.5_p1-r1}
+	newbin - file1.5 <<<""
+	insinto /usr/share/dir-1.5')" install
+ebuild "$(get_ebuild test 2.5_p1-r1 : cmd:'
+	keepdir /usr/share/dir-{2.5,2.5-r1,2.5_p1-r1}
+	newbin - file2.5 <<<""
+	insinto /usr/share/dir-2.5')" install
+expect "*'FILES(+0,-0)'*" -cIW dev-test/test
+expect "*'FILES(+1,-1)'*" -cIW --ver-dironly dev-test/test
+expect "*'FILES(+4,-4)'*" -cIW --ver-keep dev-test/test
