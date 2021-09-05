@@ -5,7 +5,7 @@ ebuild "$(get_ebuild test 1.5 :)" merge
 ebuild "$(get_ebuild test 2.5 :)" install
 expect -! "QA:*" -c dev-test/test
 ebuild "$(get_ebuild test 2.5 bin:file{1..2} lib.so:"${LIBD100}")" clean merge
-expect -2 "Error:*" -c dev-test/test || xfail 1
+xfail 1 expect -2 "Error:*" -c dev-test/test
 expect "*QA: listing*" -c --single-all dev-test/test
 ebuild "$(get_ebuild test 3.5 bin:file{3..4} lib.so:{"${LIBD200}","${LIBA300}"})" install
 expect "*FILES: usr/bin/file3*SONAME: libalt.so.3*FILES:-usr/bin/file1*FILES:+usr/bin/file4*SONAME:-libdummy.so.1*SONAME:+libdummy.so.2*" -c --single-all dev-test/test

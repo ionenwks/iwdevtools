@@ -237,13 +237,15 @@ set_portroot() {
 	touch root/etc/ld.so.conf # need to exist for qa-vdb
 }
 
-# xfail <expected-errno>
-#	Abort if last return value is not <expected-errno>
+# xfail <expected-errno> <command> <args...>
+#	Run command and abort if value is not <expected-errno>
 xfail() {
-	local errno=${?}
+	local errno=0
+
+	"${@:2}" || errno=${?}
 
 	[[ ${errno} == ${1} ]] \
-		|| die "expected return value ${1}, got ${errno}"
+		|| die "expected return value ${1}, got ${errno} for command: '${*:2}'"
 }
 
 # setup per-test work dir in build dir, cleanup previous if exists

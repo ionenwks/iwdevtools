@@ -6,4 +6,4 @@ ebuild "$(get_ebuild test 2.0.0)" merge
 export EOLDNEW_EMERGE_CMD=echo
 expect "*=dev-test/test-1.5.0" - dev-test/test
 expect "*=dev-test/test-1.0.0" 2- dev-test/test
-expect -2 "Error:*older version*" - =dev-test/test-1.0.0 || xfail 1
+xfail 1 expect -2 "Error:*older version*" - =dev-test/test-1.0.0

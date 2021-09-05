@@ -1,10 +1,10 @@
 set_portroot
 ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" RDEPEND:dev-test/libdummy)" merge
-expect -2 "*Error:*no installed provider*" -crW dev-test/dummy || xfail 1
+xfail 1 expect -2 "*Error:*no installed provider*" -crW dev-test/dummy
 expect "QA:*expected*" -crW --ignore-uninstalled dev-test/dummy
 ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
 expect "QA:*expected*" -crW dev-test/dummy
 ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" RDEPEND:'>=dev-test/libdummy-2.5')" merge
-expect -2 "*Error:*no installed provider*" -crW dev-test/dummy || xfail 1
+xfail 1 expect -2 "*Error:*no installed provider*" -crW dev-test/dummy
 ebuild "$(get_ebuild libdummy 2.5 lib.so:"${LIBD100}")" merge
 expect "QA:*expected*" -crW dev-test/dummy
