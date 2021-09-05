@@ -1,0 +1,30 @@
+atomexpect() {
+	local atom
+	atomsp "${2}" atom
+	echo "'${atom[*]}' == '${1}'"
+	(( ${#atom[@]} == 9 )) || die "expected array length 9, got ${#atom[@]}"
+	[[ ${atom[*]} == ${1} ]] || die mismatch
+}
+atomexpect '        ' ''
+atomexpect '!        ' '!'
+atomexpect ' =       ' '='
+atomexpect '  c      ' 'c/'
+atomexpect '   n     ' 'n'
+atomexpect '   0     ' '0'
+atomexpect '    0    ' '-0'
+atomexpect '     0   ' '-r0'
+atomexpect '      0  ' ':0'
+atomexpect '       0 ' '/0'
+atomexpect '        =' ':='
+atomexpect '    1.0    ' '1.0'
+atomexpect '! ~ c      ' '!~c/'
+atomexpect '   n 0 1   ' 'n-0-r1'
+atomexpect '      a b =' ':a/b='
+atomexpect ' ~ c  0 1  0 ' '~c/-0-r1:/0'
+atomexpect '  cat name 0.1.2 3   ' 'cat/name-0.1.2-r3'
+atomexpect \
+	'!! >= dev-test test-T-123_beta1_-4a-6+-7 1.00.02b_alpha3_pre_p4 5 * 6 =' \
+	'!!>=dev-test/test-T-123_beta1_-4a-6+-7-1.00.02b_alpha3_pre_p4-r5:*/6=[test(+),test(-)]'
+xfail 1 atomsp '@'
+xfail 1 atomsp '-c/n'
+xfail 1 atomsp 'c/n-0@'

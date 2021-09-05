@@ -17,6 +17,11 @@ if docdir == ''
 endif
 docdir = get_option('datadir') / 'doc' / docdir
 
+docs = [
+	'NEWS.rst',
+	'README.rst'
+]
+
 conf = configuration_data()
 conf.set('confdir', prefix / confdir)
 conf.set('datadir', prefix / datadir)
@@ -24,7 +29,10 @@ conf.set('package', meson.project_name())
 conf.set('version', meson.project_version())
 conf.set('eprefix', '${EPREFIX=\'' + eprefix + '\'}')
 
+pkgconf = [ 'pkgdatadir=' + prefix / datadir ]
+
 subdir('config')
+subdir('lib')
 subdir('portage')
 subdir('scripts')
 
@@ -32,8 +40,12 @@ if get_option('test')
 	subdir('tests')
 endif
 
-install_data([
-	'NEWS.rst',
-	'README.rst'],
-	install_dir : docdir
+import('pkgconfig').generate(
+	name : meson.project_name(),
+	description : meson.project_name() + ' bash include files',
+	dataonly : true,
+	install_dir : get_option('datadir') / 'pkgconfig',
+	variables : pkgconf
 )
+
+install_data(docs, install_dir : docdir)

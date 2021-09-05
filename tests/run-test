@@ -4,10 +4,11 @@ die() { echo "TestError: ${*} (${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2; exit 1; }
 skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 
 # arguments coming from meson
-[[ ${#} == 2 && -f ${1} && -f ${2} ]] \
+[[ ${#} -ge 2 && -f ${1} && -f ${2} ]] \
 	|| die "invalid usage, attempted to use directly?"
 TEST=${1}
 SCRIPT=${2}
+INCLUDE=${3:-}
 
 PACKAGE='@package@'
 VERSION='@version@'
@@ -266,6 +267,7 @@ export LC_ALL=C EPREFIX=
 
 # run test in work dir
 cd "${WORKDIR}"
+[[ ! ${INCLUDE} ]] || . "${SCRIPT}"
 . "${TEST}"
 
 # vim: ts=4

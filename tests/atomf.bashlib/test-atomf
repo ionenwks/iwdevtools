@@ -1,0 +1,10 @@
+expect -c "''" atomf '' 'c/n-0'
+expect -c "'!,>,c,n,0,-r0,:0,/0,=,%'" atomf '%!,%o,%c,%n,%v,%r,%s,%u,%b,%%' '!>c/n-0-r0:0/0=[u(+)]'
+expect -c "'%name,0,name,0%'" atomf '%%%n,%v,%n,%v%%' 'name-0'
+expect -c "'cat/name-0.1.2-r3'" atomf '%c/%n-%v%r' 'cat/name-0.1.2-r3'
+expect -c "'c
+n
+0'" atomf '%c\n%n\n%v' 'c/n-0'
+xfail 1 atomf '%c' 'n-0'
+xfail 1 atomf '%n' 'c/0.0'
+xfail 1 atomf '%v' 'c/n'

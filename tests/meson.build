@@ -22,16 +22,18 @@ bashrc = configure_file(
 
 bash = find_program('bash')
 
-foreach script : scripts.keys()
+foreach script, run : run_script
 	subdir(script)
 	foreach t : tests
-		test(t, bash, suite : script, timeout : 300,
-			args : [
-				runtest,
-				files(script / t),
-				run_script.get(script)
-			],
-			depends : testelf
-		)
+		test(t, bash, suite : script, depends : testelf, timeout : 300,
+			args : [ runtest, files(script / t), run ])
+	endforeach
+endforeach
+
+foreach lib, inc : inc_lib
+	subdir(lib)
+	foreach t : tests
+		test(t, bash, suite : lib,
+			args : [ runtest, files(lib / t), inc, 'include' ])
 	endforeach
 endforeach

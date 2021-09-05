@@ -1,0 +1,21 @@
+pverexpect() {
+	local ver
+	pversp "${3}" ver
+	echo "'${ver[*]}' == '${2}'"
+	(( ${#ver[@]} == ${1} )) || die "expected array length ${1}, got ${#ver[@]}"
+	[[ ${ver[*]} == ${2} ]] || die mismatch
+}
+pverexpect 1 '0' '0'
+pverexpect 2 '0 _p' '0_p'
+pverexpect 2 '0 -r1' '0-r1'
+pverexpect 3 '0 .1 .2' '0.1.2'
+pverexpect 16 \
+	'0 .1 .2 a _alpha 3 _beta 3 _pre 4 _rc 5 _p 6 _alpha -r7' \
+	'0.1.2a_alpha3_beta3_pre4_rc5_p6_alpha-r7'
+xfail 1 pversp ''
+xfail 1 pversp test
+xfail 1 pversp -r1
+xfail 1 pversp 0-1
+xfail 1 pversp 0.1a.2
+xfail 1 pversp 0_p1.0
+xfail 1 pversp 0-r1-r2

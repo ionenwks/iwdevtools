@@ -15,4 +15,8 @@ configure_file(
 	configuration : conf
 )
 
+foreach bashrc : bashrcs
+	pkgconf += ''.join(bashrc.split('.')[0].split('-')) + '=${pkgdatadir}/' + bashrc
+endforeach
+
 install_data(bashrcs, install_dir : datadir)

@@ -6,6 +6,10 @@ iwdevtools-next
 
 - qa-vdb: fix handling of deps with wildcard slots
 
+- atomf.bashlib: new bash utility library to split portage atoms and versions
+
+- now providing a pkg-config file to get paths to bash include files
+
 iwdevtools-0.5.3 (2021-09-04)
 -----------------------------
 

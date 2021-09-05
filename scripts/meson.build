@@ -9,7 +9,6 @@ scripts = {
 help2man = find_program('help2man', required : false)
 
 run_script = {}
-
 foreach script, desc : scripts
 	run_script += {
 		script :
