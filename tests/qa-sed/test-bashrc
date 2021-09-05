@@ -4,8 +4,8 @@ export QA_SED=y
 export QA_SED_ARGS=
 export QA_SED_CMD="${SCRIPT}"
 export QA_SED_LOG='echo :test-output:'
-expect -b "*:test-output:*sed -i s/kept//*" \
-	"$(get_ebuild test 1.5 : cmd:'
+expect -c "*:test-output:*sed -i s/kept//*" \
+	ebuild "$(get_ebuild test 1.5 : cmd:'
 		echo text > text || die
 		sed -i s/kept// text || die
 		sed s/text/new/ < text > new || die

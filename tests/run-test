@@ -48,7 +48,7 @@ copydat() {
 #	Options:
 #		-! invert match
 #		-2 compare with stderr instead of stdout
-#		-b run ebuild(1) instead of default command
+#		-c take command from [args] instead of default ${SCRIPT}
 #		-e use regex instead of glob
 #		-s do not auto-escape spaces from glob
 expect() {
@@ -60,7 +60,7 @@ expect() {
 		case ${1} in
 			-!) invert='!';;
 			-2) stdout=false;;
-			-b) cmd=(ebuild);;
+			-c) cmd=();;
 			-e) op='=~';;
 			-s) escape=false;;
 			*) break;;

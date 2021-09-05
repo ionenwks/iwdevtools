@@ -5,7 +5,7 @@ export QA_CMP_ARGS=-cL
 export QA_CMP_CMD="${SCRIPT}"
 export QA_CMP_LOG='echo :test-output:'
 touch file{1,2}
-expect -b "*:test-output:*FILES: usr/bin/file1*" \
-	"$(get_ebuild test 1.5 bin:file1)" merge
-expect -b "*:test-output:*FILES:+usr/bin/file2*" \
-	"$(get_ebuild test 1.5 bin:file{1,2})" merge
+expect -c "*:test-output:*FILES: usr/bin/file1*" \
+	ebuild "$(get_ebuild test 1.5 bin:file1)" merge
+expect -c "*:test-output:*FILES:+usr/bin/file2*" \
+	ebuild "$(get_ebuild test 1.5 bin:file{1,2})" merge
