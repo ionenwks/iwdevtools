@@ -2,8 +2,8 @@ atomexpect() {
 	local atom
 	atomsp "${2}" atom
 	echo "'${atom[*]}' == '${1}'"
-	(( ${#atom[@]} == 9 )) || die "expected array length 9, got ${#atom[@]}"
-	[[ ${atom[*]} == ${1} ]] || die mismatch
+	(( ${#atom[@]} == 9 )) || fail "expected array length 9, got ${#atom[@]}"
+	[[ ${atom[*]} == ${1} ]] || fail mismatch
 }
 atomexpect '        ' ''
 atomexpect '!        ' '!'

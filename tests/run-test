@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -efuo pipefail
-die() { echo "TestError: ${*} (${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2; exit 1; }
+fail() { echo "TestFail: ${*} (${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2; exit 1; }
 skip() { echo "TestSkip: ${*}" >&2; exit 77; }
 
 # arguments coming from meson
 [[ ${#} -ge 2 && -f ${1} && -f ${2} ]] \
-	|| die "invalid usage, attempted to use directly?"
+	|| fail "invalid usage, attempted to use directly?"
 TEST=${1}
 SCRIPT=${2}
 INCLUDE=${3:-}
@@ -81,7 +81,7 @@ expect() {
 	local glob=${1}
 	${escape} && glob=${1// /\\ }
 
-	eval "[[ ${invert} \${output} ${op} ${glob} ]]" || die "output mismatch for '${*}'"
+	eval "[[ ${invert} \${output} ${op} ${glob} ]]" || fail "output mismatch for '${*}'"
 
 	return ${errno}
 }
@@ -169,7 +169,7 @@ get_ebuild() {
 # md5cmp <md5sum> <file>
 #	Return true if <file> matches <md5sum>
 md5cmp() {
-	md5sum --quiet -c - <<<"${*}" >/dev/null || die "checksum mismatch for '${2}'"
+	md5sum --quiet -c - <<<"${*}" >/dev/null || fail "checksum mismatch for '${2}'"
 }
 
 # set_bashrc
@@ -246,7 +246,7 @@ xfail() {
 	"${@:2}" || errno=${?}
 
 	[[ ${errno} == ${1} ]] \
-		|| die "expected return value ${1}, got ${errno} for command: '${*:2}'"
+		|| fail "expected return value ${1}, got ${errno} for command: '${*:2}'"
 }
 
 # setup per-test work dir in build dir, cleanup previous if exists

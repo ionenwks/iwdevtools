@@ -1,5 +1,5 @@
 echo text > file
 expect -2 "QA:*" s/kept// file > output
-[[ $(<output) == text ]] || die mismatch1
+[[ $(<output) == text ]] || fail mismatch1
 expect -2 "''" s/text/new/ file > output
-[[ $(<output) == new ]] || die mismatch2
+[[ $(<output) == new ]] || fail mismatch2

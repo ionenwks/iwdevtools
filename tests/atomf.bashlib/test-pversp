@@ -2,8 +2,8 @@ pverexpect() {
 	local ver
 	pversp "${3}" ver
 	echo "'${ver[*]}' == '${2}'"
-	(( ${#ver[@]} == ${1} )) || die "expected array length ${1}, got ${#ver[@]}"
-	[[ ${ver[*]} == ${2} ]] || die mismatch
+	(( ${#ver[@]} == ${1} )) || fail "expected array length ${1}, got ${#ver[@]}"
+	[[ ${ver[*]} == ${2} ]] || fail mismatch
 }
 pverexpect 1 '0' '0'
 pverexpect 2 '0 _p' '0_p'
