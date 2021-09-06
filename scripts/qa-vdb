@@ -123,8 +123,6 @@ OPT[full]=false
 OPT[color]=true
 OPT[default-exclude]=true
 OPT[confdir]=
-OPT[sysconfdir]="@confdir@"
-OPT[userconfdir]="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
 
 eval set -- $(getopt \
 	-o hsboxe:DWupUFcr \
@@ -710,6 +708,16 @@ vdb-print_libdiff() {
 	fi
 }
 
+# vdb-set_confdir
+#	Set VDB_SYSCONFDIR and VDB_USERCONFDIR, empty if not found.
+vdb-set_confdir() {
+	VDB_SYSCONFDIR="@confdir@"
+	VDB_USERCONFDIR="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
+	[[ -d ${VDB_SYSCONFDIR} ]] || VDB_SYSCONFDIR=${0%/*}/../config
+	[[ -d ${VDB_SYSCONFDIR} ]] || VDB_SYSCONFDIR=
+	[[ -d ${VDB_USERCONFDIR} ]] || VDB_USERCONFDIR=
+}
+
 # vdb-set_exclude <exclude-*>
 #   Load exclude configs and prepare supplied ${OPT[exclude*]} for use
 vdb-set_exclude() {
@@ -720,8 +728,10 @@ vdb-set_exclude() {
 		if [[ ${OPT[confdir]} ]]; then
 			[[ -r ${OPT[confdir]}/${file} ]] && conf=("${OPT[confdir]}/${file}")
 		else
-			[[ -r ${OPT[sysconfdir]}/${file} ]] && conf=("${OPT[sysconfdir]}/${file}")
-			[[ -r ${OPT[userconfdir]}/${file} ]] && conf+=("${OPT[userconfdir]}/${file}")
+			[[ ${VDB_SYSCONFDIR} && -r ${VDB_SYSCONFDIR}/${file} ]] \
+				&& conf=("${VDB_SYSCONFDIR}/${file}")
+			[[ ${VDB_USERCONFDIR} && -r ${VDB_USERCONFDIR}/${file} ]] \
+				&& conf+=("${VDB_USERCONFDIR}/${file}")
 		fi
 
 		if [[ ${conf[*]} ]]; then
@@ -779,8 +789,9 @@ vdb-set_vdb() {
 # vdb-init
 #	Init various settings
 vdb-init() {
-	vdb-set_vdb
+	vdb-set_confdir
 	vdb-set_ldpath
+	vdb-set_vdb
 	vdb-set_exclude exclude
 	vdb-set_exclude exclude-slot
 	vdb-set_exclude exclude-bind
