@@ -10,6 +10,8 @@ iwdevtools-next
 
 - atomf.bashlib: new bash utility library to split portage atoms and versions
 
+- atomf: new basic frontend to atomf.bashlib
+
 - now providing a pkg-config file to get paths to bash include files
 
 iwdevtools-0.5.3 (2021-09-04)

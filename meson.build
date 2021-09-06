@@ -27,6 +27,7 @@ conf.set('confdir', prefix / confdir)
 conf.set('datadir', prefix / datadir)
 conf.set('package', meson.project_name())
 conf.set('version', meson.project_version())
+conf.set('include', '${I:=\'' + prefix / datadir + '\'}')
 conf.set('eprefix', '${EPREFIX=\'' + eprefix + '\'}')
 
 pkgconf = [ 'pkgdatadir=' + prefix / datadir ]

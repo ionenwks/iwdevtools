@@ -1,0 +1,9 @@
+expect 'cn11' '%c%n%v%R\n' c/n-1-r1
+expect -s "'
+%c/n-1-r1%
+
+%c/n-2-r2%
+
+%c/n-3-r3%'" '\n%%%f%%\n' c/n-1-r1 c/n-2-r2 c/n-3-r3
+xfail 2 expect -2 'Error:*a/b*missing*' %e c/n-1-r1 a/b c/n-2-r2
+xfail 1 expect -2 'Error:*invalid atom*' %c c/n-1.0-r1-r1

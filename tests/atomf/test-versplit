@@ -1,0 +1,5 @@
+expect "1 .2 .3 a _p 3 -r1" --versplit '1.2.3a_p3-r1'
+expect -s "'1 -r1
+2 .0
+3 _p'" --versplit 1-r1 2.0 3_p
+xfail 1 expect -2 "Error:*invalid version*" --versplit -- -r1-r1

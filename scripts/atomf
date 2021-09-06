@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+I= : @include@ ${I:=${0%/*}/../lib}
+. "${I}"/common.bashlib || exit 1
+usage <<-EOU
+	Usage: ${0##*/} [format] <atom(s)...>
+
+	Format <atom> based on [format], or return 9 elements separated by
+	spaces if a single atom with no format specified.
+
+	atom can be in dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use],
+	but [use] will be discarded.
+
+	atom can be incomplete, but will return 1 if single elements are seen as
+	invalid per the Package Manager Specification (PMS).
+
+	Options:
+	  -x, --expand     Ignore format and expand multiple atoms to elements.
+	  -s, --unset=STR  When expanding, use STR to indicate unset (default: '?').
+	  -v, --versplit   Split a version string into elements instead.
+	                   (no characters are dropped for versions)
+
+	  -h, --help       Display usage information and exit
+	      --version    Display version information and exit
+
+	*Format*
+	 1.  %! Blocker indicator (!, !!, or none)
+	 2.  %o Version range operator (>=, >, etc... or none)
+	 3.  %c Category
+	 4.  %n Name
+	 5.  %v Version
+	 6.  %r Revision (as -rN, or none)
+	 7.  %s Slot (as :0, or none)
+	 8.  %u Subslot (as /0, or none)
+	 9.  %b Binding operator (= or none)
+	 0.  %% Literal %
+	e.g. "%c/%n-%v%r" = category/name-1.0-r1
+
+	 -.  %p Equivalent to %c/%n
+	 -.  %e Equivalent to %v%r
+	 -.  %f Equivalent to %c/%n-%v%r
+
+	%R,%S,%U alternatively display %r,%s,%u without prefixes, and as 0 if unset.
+
+	If one of %c, %n, or %v are requested but missing from atom, will report
+	error for this atom and exit with return status 2.
+
+	*Notes*
+	If need to use this in a bash script extensively, it is recommended to source
+	@datadir@/atomf.bashlib directly rather than call this.
+EOU
+
+init
+include atomf
+
+declare -A OPT
+OPT[expand]=false
+OPT[unset]=?
+OPT[versplit]=false
+
+getopt arg args hxs:v help,version,expand,unset:,versplit "${@}"
+while getopt; do
+	case ${arg} in
+		-h|--help) usage;;
+		   --version) version;;
+		-x|--expand) OPT[expand]=true;;
+		-v|--versplit) OPT[versplit]=true;;
+		-s|--unset) getopt; OPT[unset]=${arg};;
+	esac
+done
+set -- "${args[@]}"; unset args
+
+(( ${#} )) || die "no format/atom specified, see \`${0##*/} --help\`"
+
+exiterrno=
+if ${OPT[versplit]}; then
+	while (( ${#} )); do
+		if pversp "${1}" ver; then
+			echo "${ver[*]}"
+		else
+			: ${exiterrno:=${?}}
+			err "'${1}' is an invalid version string"
+		fi
+		shift
+	done
+elif (( ${#} > 1 )) && ! ${OPT[expand]}; then
+	format=${1}
+	shift
+
+	while (( ${#} )); do
+		atomf "${format}" "${1}" || {
+			errno=${?}
+			: ${exiterrno:=${errno}}
+			if (( errno == 2 )); then
+				err "'${1}' is missing components"
+			else
+				err "'${1}' is an invalid atom"
+			fi
+		}
+		shift
+	done
+else
+	while (( ${#} )); do
+		if atomsp "${1}" atom; then
+			merge=
+			for ((i=0; i<${#atom[@]}; i++)); do
+				: ${atom[i]:=${OPT[unset]}}
+				merge+=${atom[i]:+ ${atom[i]}}
+			done
+			echo "${merge# }"
+		else
+			: ${exiterrno:=${?}}
+			err "'${1}' is an invalid atom"
+		fi
+		shift
+	done
+fi
+
+exit ${exiterrno}
+
+# vim: ts=4

@@ -139,6 +139,21 @@ May possibly do a bit more...
 
 Run ``scrub-patch --help`` or see **scrub-patch(1)** man page for details.
 
+Bashlibs
+========
+
+Primarily intended for internal use, but exposing for anyone that may need.
+May potentially be subject to breaking changes for the time being.
+
+atomf.bashlib
+-------------
+
+Basic bash functions to split portage atoms and version strings for when
+matching on ``-[0-9]*`` is just not cutting it. Similar to qatom(1) in
+term of base functionality.
+
+Run ``atomf --help`` or see **atomf(1)** man page for the minimal frontend.
+
 Installing
 ==========
 
