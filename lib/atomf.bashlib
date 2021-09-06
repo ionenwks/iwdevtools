@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
+[[ ! -v ATOMF_BASHLIB ]] || return 0; ATOMF_BASHLIB=
 
 # atomf <format> <atom>
 #	Echoes back <atom> using <format>
 #	%!(block)    %o(operator)
 #	%c(category) %n(name)     %v(version) %r(-revision)
 #	%s(:slot)    %u(/subslot) %b(bind)    %%(literal%)
-#	Return false without output if %c/%n/%v were requested but are unknown
+#	Compounds:   %p(%c/%n)    %e(%v%r)    %f(%c/%n-%v%r)
+#	Using %R, %S, %U will not add -r,:,/ and set to 0 if unset.
+#	Return 2 without output if %c/%n/%v were requested but are unknown.
 #	<atom> can be in dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use]
 #	See atomsp() and pversp() if need array with all values.
 atomf() {
 	local -a atom
-	atomsp "${2}" atom || return 1
-	vatomf "${1}" "${atom[@]}" || return 1
+	atomsp "${2}" atom || return ${?}
+	vatomf "${1}" "${atom[@]}" || return ${?}
 }
 
 # vatomf <format> "${atom[@]}"
@@ -19,23 +22,29 @@ atomf() {
 vatomf() {
 	local s=${1} format=
 	local -a args=()
-	while [[ ${s} =~ (%.)(.*) ]]; do
-		format+=${s%"${BASH_REMATCH[1]}${BASH_REMATCH[2]}"}
-		s=${BASH_REMATCH[2]}
-		case ${BASH_REMATCH[1]} in
-			%!) args+=("${2}");;
-			%o) args+=("${3}");;
-			%c) [[ ${4} ]] || return 1; args+=("${4}");;
-			%n) [[ ${5} ]] || return 1; args+=("${5}");;
-			%v) [[ ${6} ]] || return 1; args+=("${6}");;
-			%r) args+=("${7:+-r${7}}");;
-			%s) args+=("${8:+:${8}}");;
-			%u) args+=("${9:+/${9}}");;
-			%b) args+=("${10}");;
-			%%) format+=%%;&
-			 *) continue;;
+	while [[ ${s} =~ (%[0-9.-]*)(.)(.*) ]]; do
+		format+=${s%"${BASH_REMATCH[2]}${BASH_REMATCH[3]}"}
+		s=${BASH_REMATCH[3]}
+		case ${BASH_REMATCH[2]} in
+			!) args+=("${2}");;
+			o) args+=("${3}");;
+			c) [[ ${4} ]] || return 2; args+=("${4}");;
+			n) [[ ${5} ]] || return 2; args+=("${5}");;
+			v) [[ ${6} ]] || return 2; args+=("${6}");;
+			r) args+=("${7:+-r${7}}");;
+			R) args+=("${7:-0}"); format+=d; continue;;
+			s) args+=("${8:+:${8}}");;
+			S) args+=("${8:-0}"); format+=d; continue;;
+			u) args+=("${9:+/${9}}");;
+			U) args+=("${9:-0}"); format+=d; continue;;
+			b) args+=("${10}");;
+			p) [[ ${4} && ${5} ]] || return 2; args+=("${4}/${5}");;
+			e) [[ ${6} ]] || return 2; args+=("${6}${7:+-r${7}}");;
+			f) [[ ${4} && ${5} && ${6} ]] || return 2; args+=("${4}/${5}-${6}${7:+-r${7}}");;
+			%) format+=%;&
+			*) continue;;
 		esac
-		format+=%s
+		format+=s
 	done
 
 	printf "${format}${s}" "${args[@]}"
@@ -47,7 +56,7 @@ vatomf() {
 #	[2](category) [3](name)    [4](version) [5](revision)
 #	[6](slot)     [7](subslot) [8](bind)
 #	Elements will be set to empty if not present in <atom>
-#	Return false and set nothing if atom format is invalid.
+#	Return 1 and set nothing if atom format is invalid.
 #	[use,...] in atom is discarded if present, but seen as valid.
 atomsp() {
 	local s=${1}
