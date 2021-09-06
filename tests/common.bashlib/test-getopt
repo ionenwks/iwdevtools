@@ -1,0 +1,14 @@
+extra=()
+declare -i match=0
+getopt arg args abc: dee,eee,eff: x1 -aa x2 -c 1 -bc2 x3 --dee --eee --eff=3 x4 x5
+while getopt; do
+	case ${arg} in
+		-a|-b|--dee|--eee) match+=1;;
+        -c|--eff) getopt; extra+=("${arg}"); match+=2;;
+	esac
+done
+(( match == 11 )) || fail "expected 11 argument match, got '${match}'"
+[[ ${extra[*]} == '1 2 3' ]] || fail "expected '1 2 3', got '${extra[*]}'"
+[[ ${args[*]} == 'x1 x2 x3 x4 x5' ]] || fail "expected x1 to x5, got '${args[*]}'"
+
+xfail -s 1 getopt arg args a aaa -b

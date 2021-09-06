@@ -1,0 +1,1 @@
+expect -c "${0##*/} ${VERSION}" version

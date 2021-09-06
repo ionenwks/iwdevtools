@@ -238,12 +238,18 @@ set_portroot() {
 	touch root/etc/ld.so.conf # need to exist for qa-vdb
 }
 
-# xfail <expected-errno> <command> <args...>
+# xfail [-s] <expected-errno> <command> <args...>
 #	Run command and abort if value is not <expected-errno>
+#	If -s, use a subshell (may not be best if wrapping expect())
 xfail() {
 	local errno=0
 
-	"${@:2}" || errno=${?}
+	if [[ ${1} == -s ]]; then
+		shift
+		("${@:2}") || errno=${?}
+	else
+		"${@:2}" || errno=${?}
+	fi
 
 	[[ ${errno} == ${1} ]] \
 		|| fail "expected return value ${1}, got ${errno} for command: '${*:2}'"

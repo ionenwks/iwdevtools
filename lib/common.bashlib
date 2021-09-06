@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+[[ ! -v _COMMON_BASHLIB ]] || return 0; _COMMON_BASHLIB=
+
+# init
+#	Initiate basic settings / traps (optional)
+init() {
+	set -Efuo pipefail
+
+	trap '(( ${?} != 166 )) || exit 166' ERR
+	trap 'exit 1' USR1
+	trap 'exit 0' USR2
+
+	: @eprefix@
+	: ${ROOT=''}; ROOT=${ROOT%/}
+	: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+	export ROOT EROOT EPREFIX
+
+	_COMMON_INIT=
+}
+
+# depend <executables...>
+#	Check for executables in PATH to die early if any missing.
+depend() {
+	type -f "${@}" >/dev/null || die "missing dependencies"
+}
+
+# die [message]
+#	Exit with error (mostly works in subshells, but requires init())
+#	If no message, display generic error with failed line and backtrace.
+die() {
+	echo "Error: ${*:-unexpected issue happened at the following} (${0##*/}:${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2
+
+	if (( ! ${#} )); then
+		local i
+		showline ${BASH_LINENO[0]} "${BASH_SOURCE[1]}" '  %03d: %s' >&2
+		for ((i=1; i < ${#FUNCNAME[@]}; i++)); do
+			printf "%-$((${i}*4-2))s^^^ %s\n" '' "${FUNCNAME[i]}:${BASH_LINENO[$((i-1))]}" >&2
+		done
+	fi
+
+	end 1
+}
+
+# end [1]
+#	Exit with status 0, or 1 if given (mostly works in subshells, requires init())
+end() {
+	[[ -v _COMMON_INIT && ${$} != ${BASHPID} ]] || exit ${1:-0}
+
+	# USR* for right exit in main, 166 ERR trap for subshells to exit
+	if (( ${1:-0} )); then
+		kill -USR1 ${$}
+	else
+		kill -USR2 ${$}
+	fi
+
+	exit 166
+}
+
+# err <message>
+#	Print error message to stderr
+err() {
+	echo "Error: ${*} (${0##*/})" >&2
+}
+
+# getopt [<variable> <array> <short> <long> <args...>]
+#	Wrapper to external getopt(1), only initial call takes arguments.
+#	<short> and <long> are getopt(1)'s -o and -l options.
+#	If no arguments, set named <variable> to next option with each call.
+#	If reach --, set named <array> to remaining options.
+#	Return 1 when no options left.
+#	Dies if invalid options passed.
+getopt() {
+	if (( ${#} )); then
+		depend getopt
+		eval "
+			_COMMON_SETOPT=($(command getopt -o "${3}" -l "${4}" -- "${@:5}"))
+			(( ! ${?} )) || die 'invalid arguments'
+			${2}=()"
+		_COMMON_SETOPT_V=${1}
+		_COMMON_SETOPT_A=${2}
+		declare -gi _COMMON_SETOPT_P=0
+		return 0
+	fi
+
+	[[ -v _COMMON_SETOPT ]] || return 1
+
+	if (( _COMMON_SETOPT_P >= ${#_COMMON_SETOPT[@]} )); then
+		eval "unset _COMMON_SETOPT{,_V,_A} ${_COMMON_SETOPT_V}"
+		return 1
+	fi
+
+	if [[ ${_COMMON_SETOPT[_COMMON_SETOPT_P]} == -- ]]; then
+		(( ++_COMMON_SETOPT_P >= ${#_COMMON_SETOPT[@]} )) \
+			|| eval "${_COMMON_SETOPT_A}"'=("${_COMMON_SETOPT[@]:${_COMMON_SETOPT_P}}")'
+		eval "unset _COMMON_SETOPT{,_V,_A} ${_COMMON_SETOPT_V}"
+		return 1
+	fi
+
+	eval "${_COMMON_SETOPT_V}"'=${_COMMON_SETOPT[((_COMMON_SETOPT_P++))]}'
+}
+
+# include <files...>
+#	Include files from current bashlib dir, exit on failure
+include() {
+	while (( ${#} )); do
+		. "${BASH_SOURCE[0]%/*}"/${1}.bashlib || exit 1
+		shift
+	done
+}
+
+# msg <message>
+#	Echoes message based on setmsg() defaults.
+msg() {
+	printf "${_COMMON_MSG_FMT:-%s\n}" "${@}" >&${_COMMON_MSG_STD:-1}
+}
+
+# setmsg [12] [format]
+#	Set how to output messages from msg()
+#	Default if not used: 1(stdout) '%s\n'
+setmsg() {
+	if [[ ${1} == [12] ]]; then
+		_COMMON_MSG_STD=${1}
+		shift
+	fi
+	(( ! ${#} )) || _COMMON_MSG_FMT=${1}
+}
+
+# showline <lineno> <source> [format]
+#	Echoes line(s) at, may be multiple lines if terminated by \
+#	Format can contain one %d for line number, then %s for the line.
+#	Return 1 if failed to read source file
+showline() {
+	local d= format=${3:-%03d: %s}
+	local -a source output
+
+	[[ ${format} =~ %+[0-9.-]*d ]] || unset d
+
+	mapfile -tn ${1} source < "${2}" || return 1
+
+	output=(${d+${1}} "${source[$((${1} - 1))]//$'\t'/    }")
+
+	local -i i
+	for ((i=${1} - 1; --i >= 0;)); do
+		[[ ${source[i]} =~ \\$ ]] || break
+		output=(${d+$((${i} + 1))} "${source[i]//$'\t'/    }" "${output[@]}")
+	done
+
+	printf "${format}\n" "${output[@]}"
+}
+
+# usage
+#	Read stdin for usage, then subsequent call will display it and exit.
+usage() {
+	if [[ ! -v _COMMON_USAGE ]]; then
+		mapfile _COMMON_USAGE
+		return 0
+	fi
+	printf %s "${_COMMON_USAGE[@]}"
+	exit
+}
+
+# version
+#	Show version and exit
+version() {
+	echo "${0##*/} @version@"
+	exit
+}
+
+# vim: ts=4

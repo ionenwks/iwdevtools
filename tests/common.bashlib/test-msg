@@ -1,0 +1,9 @@
+expect -c "'hello
+world'" msg hello world
+setmsg 2 '@%s@'
+expect -c -2 "'@heaveno
+world@'" msg 'heaveno
+world'
+setmsg 1 '//%-40so/%s'
+expect -c -s "'//こんにちは🅆🄾🅁🄻🄳     o/🤔'" msg 'こんにちは🅆🄾🅁🄻🄳' '🤔'
+expect -c -2 'Error: test*' err 'test'

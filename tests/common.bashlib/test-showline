@@ -1,0 +1,5 @@
+expect -c -s "'expect -c -s '*%s" showline 1 "${BASH_SOURCE[0]}" %s
+expect \
+	-c \
+	-s \
+	"*'002(expect \\)'*'003(    -c \\)'*'004(    -s \\)'*'%03d(%s)'*" showline 5 "${BASH_SOURCE[0]}" '%03d(%s)'

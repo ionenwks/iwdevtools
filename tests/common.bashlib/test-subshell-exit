@@ -1,0 +1,25 @@
+set +e
+trap '' USR1 USR2
+testfunc() {
+	echo -n 0
+	v=$(false || end)
+	echo -n 1
+}
+output=$(
+	init
+	(
+		(
+			testfunc
+			echo -n 2
+		)
+		echo -n 3
+	)
+	echo -n 4
+)
+errno=${?}
+[[ ${output} == 0 ]] || fail "expected output of '0', got '${output}'"
+[[ ${errno} == 166 ]] || fail "expected exit status 166, got ${errno}"
+
+init
+declare v=$(echo $(false || end))
+fail "expected to die, but still around"

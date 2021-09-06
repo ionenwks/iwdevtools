@@ -1,0 +1,4 @@
+usage <<-EOU
+	Usage:test
+EOU
+expect -c 'Usage:test' usage
