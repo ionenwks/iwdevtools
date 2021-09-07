@@ -8,6 +8,10 @@ iwdevtools-next
 
 - qa-vdb: fix handling of deps with wildcard slots
 
+- eoldnew: env vars can now optionally be set in portage's make.conf
+
+- eoldnew: add two new env vars to pass arguments either only to old or new
+
 - atomf.bashlib: new bash utility library to split portage atoms and versions
 
 - atomf: new basic frontend to atomf.bashlib
