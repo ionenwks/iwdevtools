@@ -136,8 +136,8 @@ atomsp() {
 	# binding operator
 	[[ ${s} =~ ^(=|'')(.*) ]] &&  _atomsptok || return 1
 
-	# if ${s} is not empty and contain something other than ^[, invalid
-	[[ ! ${s} || ${s} =~ ^\[ ]] || return 1
+	# if ${s} is not empty and has something other than ^[ or 2nd ^:, invalid
+	[[ ! ${s} || ${s} =~ ^[:\[] ]] || return 1
 
 	(( ${#} != 2 )) || eval "${2}"'=("${t[@]}")'
 }

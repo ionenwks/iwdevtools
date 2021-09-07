@@ -1,7 +1,8 @@
 atomexpect() {
 	local atom
+	echo -n "Checking '${2}'"
 	atomsp "${2}" atom
-	echo "'${atom[*]}' == '${1}'"
+	echo " == '${atom[*]}'"
 	(( ${#atom[@]} == 9 )) || fail "expected array length 9, got ${#atom[@]}"
 	[[ ${atom[*]} == ${1} ]] || fail mismatch
 }
@@ -25,6 +26,7 @@ atomexpect '  cat name 0.1.2 3   ' 'cat/name-0.1.2-r3'
 atomexpect \
 	'!! >= dev-test test-T-123_beta1_-4a-6+-_p 1.00.02b_alpha3_pre_p4 5 * 6 =' \
 	'!!>=dev-test/test-T-123_beta1_-4a-6+-_p-1.00.02b_alpha3_pre_p4-r5:*/6=[test(+),test(-)]'
+atomexpect '  cn     ' 'c/n::test'
 xfail 1 atomsp '-c/n'
 xfail 1 atomsp '@'
 xfail 1 atomsp 'c/n-0@'

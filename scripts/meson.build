@@ -1,5 +1,5 @@
 scripts = {
-	'atomf' : 'format portage atom strings',
+	'atomf' : 'format ebuild atom strings',
 	'eoldnew' : 'emerge wrapper to merge the older then newest version',
 	'qa-cmp' : 'compare portage install images',
 	'qa-sed' : 'sed wrapper to detect if a call did no change',
