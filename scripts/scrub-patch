@@ -71,7 +71,7 @@ while (( ${#} )); do
 	if ${OPT[sanity]} && [[ $(file -bL -- "${1}") != 'unified diff output'* ]]; then
 		die "'${1}' does not appear to be a unified format patch"
 	fi
-	patches+=(${1})
+	patches+=("${1}")
 	shift
 done
 
@@ -94,7 +94,7 @@ fi
 if [[ ${stdin} ]]; then
 	TMPIN=
 	trap '[[ -e ${TMPIN} ]] && rm "${TMPIN}"' EXIT
-	TMPIN=$(mktemp /tmp/.${0##*/}-XXXXXXXX) || die "mktemp failed"
+	TMPIN=$(mktemp "/tmp/.${0##*/}-XXXXXXXX") || die "mktemp failed"
 	cat > "${TMPIN}" || die "writing to ${TMPIN} failed"
 	exec <&-
 
@@ -170,12 +170,12 @@ else
 	if [[ ${inplace} ]]; then
 		for ((i=0; i < ${#patches[@]}; i++)); do
 			newsizes[i]=$(stat -c %s "${patches[i]}") || die "stat failed for '${patches[i]}'"
-			printf -- " - %s (%.2f%% reduction)\n" "${patches[i]}" $(percent ${oldsizes[i]} ${newsizes[i]})e-2
+			printf -- " - %s (%.2f%% reduction)\n" "${patches[i]}" "$(percent "${oldsizes[i]}" "${newsizes[i]}")e-2"
 		done
 	else
 		if [[ -f ${stdout} ]]; then
 			newsizes[0]=$(stat -c %s "${stdout}") || die "stat failed for '${stdout}'"
-			printf -- " - %s (%.2f%% reduction)\n" "${stdin:-${patches[0]}}" $(percent ${oldsizes[0]} ${newsizes[0]})e-2
+			printf -- " - %s (%.2f%% reduction)\n" "${stdin:-${patches[0]}}" "$(percent "${oldsizes[0]}" "${newsizes[0]}")e-2"
 		else
 			newsizes[0]=${oldsizes[0]}
 			echo " - ${stdin:-${patches[0]}}"
@@ -196,7 +196,7 @@ inspect() {
 		else
 			c=${C[a]}
 		fi
-		printf "\n${C[y]}%03d: ${c}%s\n${C[a]}^^^${C[n]} %s\n" ${2} "${3}" "${1}"
+		printf "\n${C[y]}%03d: ${c}%s\n${C[a]}^^^${C[n]} %s\n" "${2}" "${3}" "${1}"
 	}
 	qanl() {
 		printf "\n${C[y]}>>>${C[n]} %s\n" "${1}"
@@ -299,7 +299,7 @@ inspect() {
 }
 
 for ((i=0; i < ${#patches[@]}; i++)); do
-	qa=$(inspect "${patches[i]}" ${newsizes[i]})
+	qa=$(inspect "${patches[i]}" "${newsizes[i]}")
 
 	if [[ ${qa} ]]; then
 		# only ever 1 patch if stdin, display non-tmpfile name

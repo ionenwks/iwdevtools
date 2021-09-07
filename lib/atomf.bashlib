@@ -88,7 +88,7 @@ atomsp() {
 	else
 		if [[ ${s} =~ ^([0-9]+\.|-)([a-z0-9_.]+-r[0-9]+|[a-z0-9_.]+)(.*) ]]; then
 			v=${BASH_REMATCH[1]#-}${BASH_REMATCH[2]}
-			if pversp ${v}; then
+			if pversp "${v}"; then
 				s=-${s#-} # no PN (-0_p1 or 0.1 seen as PV, but 0_p1 is a valid PN)
 				valid=${v}
 			fi
@@ -99,7 +99,7 @@ atomsp() {
 			while [[ ${p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.]+)(.*) ]]; do
 				v=${BASH_REMATCH[1]}
 				p=${v}${BASH_REMATCH[2]}
-				! pversp ${v} || valid=${v} # keep going until last valid version string
+				! pversp "${v}" || valid=${v} # keep going until last valid version string
 			done
 		fi
 
@@ -115,7 +115,7 @@ atomsp() {
 		# i.e. can't start with +-, can't end with hyphen then valid version (-1)
 		[[ ! ${t[3]} =~ ^[+-] ]] || return 1
 		if [[ ${t[3]} =~ .*-([0-9]+.*)$ ]]; then
-			! pversp ${BASH_REMATCH[1]} || return 1
+			! pversp "${BASH_REMATCH[1]}" || return 1
 		fi
 	fi
 
@@ -152,7 +152,7 @@ _atomsptok() {
 #	No characters will be dropped, e.g.
 #		0.1.2a_alpha3_p4-r5 -> 0 .1 .2 a _alpha 3 _p 4 -r5
 pversp() {
-	local IFS=' ' s=${1}
+	local IFS=' ' s=${1} # ensure IFS is for _pversptok
 	local -a t=()
 
 	[[ ${s} =~ ^([0-9]+)(.*) ]] || return 1

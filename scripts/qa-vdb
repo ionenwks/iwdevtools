@@ -83,13 +83,13 @@ trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
 die() {
 	echo "Error: ${*} (${FUNCNAME[1]/#main/${0##*/}}:${BASH_LINENO[0]})" >&2
 	local IFS=' '; eval "set -- \$(</proc/${BASHPID}/stat)"
-	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 ${4}
+	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 "${4}"
 	kill -USR1 ${$}; exit 166
 }
 msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+: "@eprefix@"
+: "${ROOT=}"; ROOT=${ROOT%/}
+: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # Dependencies:
@@ -193,7 +193,7 @@ vdb-get_dep2entry() {
 vdb-get_entry() {
 	# check for exact match first
 	if [[ -r ${VDB}/${1#=}/EAPI ]]; then
-		echo ${1#=}
+		echo "${1#=}"
 		return
 	fi
 
@@ -210,7 +210,7 @@ vdb-get_entry() {
 
 	[[ -r ${VDB}/${match}/EAPI ]] || die "'${1}' was not found in vdb"
 
-	echo ${match}
+	echo "${match}"
 }
 
 # vdb-get_expected_slot <CATEGORY/PN(dep)> <SLOT> <SUBSLOT> <CATEGORY/PN(pkg)> [prebuilt]
@@ -224,10 +224,10 @@ vdb-get_entry() {
 vdb-get_expected_slot() {
 	local slot=${2} subslot=${3}
 
-	if ! ${OPT[slot]} || vdb-is_excluded exclude-slot ${1} ${4}; then
+	if ! ${OPT[slot]} || vdb-is_excluded exclude-slot "${1}" "${4}"; then
 		 slot=0
 	fi
-	if ! ${OPT[bind]} || vdb-is_excluded exclude-bind ${1} ${4} || [[ ${5:-} == prebuilt ]]; then
+	if ! ${OPT[bind]} || vdb-is_excluded exclude-bind "${1}" "${4}" || [[ ${5:-} == prebuilt ]]; then
 		subslot=0
 	fi
 
@@ -244,20 +244,18 @@ vdb-get_expected_slot() {
 #	Output should be identical to vdb-get_libneed if no missing deps.
 vdb-get_libdeps() {
 	# get vdb-get_libneed for multiple comparison (for *-extra)
-	local need=$(vdb-get_libneed ${1})
-
-	local prebuilt=
-	vdb-is_prebuilt ${1} && prebuilt=prebuilt
-
-	local pkg=$(vdb-get_pf2pn ${1})
+	local need pkg prebuilt=
+	need=$(vdb-get_libneed "${1}")
+	pkg=$(vdb-get_pf2pn "${1}")
+	vdb-is_prebuilt "${1}" && prebuilt=prebuilt
 
 	local IFS=$'\n' provides rdep vrdep
-	for rdep in $(vdb-get_deps ${1}); do
+	for rdep in $(vdb-get_deps "${1}"); do
 		IFS=' '
 		rdep=(${rdep})
 
 		# check if requested for exclusion through --exclude
-		vdb-is_excluded exclude ${rdep[1]} ${pkg} && continue
+		vdb-is_excluded exclude "${rdep[1]}" "${pkg}" && continue
 
 		# need to skip entries that do not provide shared libraries but,
 		# to know this, need to check what virtuals resolve to
@@ -265,27 +263,27 @@ vdb-get_libdeps() {
 		if [[ ${rdep[0]} == virtual/* ]]; then
 			IFS=$'\n'
 			for vrdep in $(vdb-get_deps "${rdep[0]}" - RDEPEND); do
-				if vdb-is_providing ${vrdep%% *}; then
+				if vdb-is_providing "${vrdep%% *}"; then
 					provides=true
 					break
 				fi
 			done
-		elif vdb-is_providing ${rdep[0]}; then
+		elif vdb-is_providing "${rdep[0]}"; then
 			provides=true
 		fi
 		${provides} || continue
 
 		# if --no-overbind, discard subslot if vdb's subslot is 0
 		if ! ${OPT[overbind]}; then
-			[[ $(vdb-get_subslot ${rdep[0]}) == 0 ]] && rdep[3]=0
+			[[ $(vdb-get_subslot "${rdep[0]}") == 0 ]] && rdep[3]=0
 		fi
 
 		# if --no-extra, exclude if not found in vdb-get_libneed's output
-		if ! ${OPT[extra]} || vdb-is_excluded exclude-extra ${rdep[1]} ${pkg}; then
+		if ! ${OPT[extra]} || vdb-is_excluded exclude-extra "${rdep[1]}" "${pkg}"; then
 			[[ ${need} == *${rdep[1]}* ]] || continue
 		fi
 
-		echo "${rdep[1]}$(vdb-get_expected_slot ${rdep[1]} ${rdep[2]} ${rdep[3]} ${pkg} ${prebuilt})"
+		echo "${rdep[1]}$(vdb-get_expected_slot "${rdep[1]}" "${rdep[2]}" "${rdep[3]}" "${pkg}" "${prebuilt}")"
 	done | sort || die "sort failed"
 }
 
@@ -293,7 +291,9 @@ vdb-get_libdeps() {
 #	Echoes difference between vdb-get_libdeps and vdb-get_libneed,
 #	or nothing if no changes.
 vdb-get_libdiff() {
-	local f1=($(vdb-get_libdeps ${1})) f2=($(vdb-get_libneed ${1}))
+	local f1 f2
+	f1=($(vdb-get_libdeps "${1}"))
+	f2=($(vdb-get_libneed "${1}"))
 
 	# insert blank line if a line isn't indentical minus slot
 	# same | same
@@ -322,11 +322,11 @@ vdb-get_libdiff() {
 	local -i len=0
 	local o mark changes=false
 	for ((i=0; i < ${#f1[@]}; i++)); do
-		: ${f2[i]:=""}
-		if [[ ${f1[i]} == ${f2[i]} ]]; then
+		: "${f2[i]:=}"
+		if [[ ${f1[i]} == "${f2[i]}" ]]; then
 			${OPT[full]} || continue
 			mark=' '
-		elif [[ ${f1[i]%:*} == ${f2[i]%:*} ]]; then
+		elif [[ ${f1[i]%:*} == "${f2[i]%:*}" ]]; then
 			mark='|'; changes=true
 		elif [[ ! ${f1[i]} ]]; then
 			mark='>'; changes=true
@@ -366,7 +366,7 @@ vdb-get_libdiff() {
 
 				i=0
 				while [[ ${s1s:${i}} || ${s2s:${i}} ]]; do
-					if [[ ${s1s:${i}:1} == ${s2s:${i}:1} ]]; then
+					if [[ ${s1s:${i}:1} == "${s2s:${i}:1}" ]]; then
 						s1sc+=${c[a]}${s1s:${i}:1}
 						s2sc+=${c[a]}${s2s:${i}:1}
 					else
@@ -400,8 +400,8 @@ vdb-get_libdiff_unified() {
 
 	diff=$(
 		diff -U${context} \
-			<(vdb-get_libdeps ${1}) \
-			<(vdb-get_libneed ${1}) \
+			<(vdb-get_libdeps "${1}") \
+			<(vdb-get_libneed "${1}") \
 			| grep -v '@@\|---\|+++'
 		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "diff failed for ${1}"
 	)
@@ -430,7 +430,7 @@ vdb-get_libdiff_unified() {
 #	OPT[ldpath] is disabled.
 declare -A VDB_LDPATH_CACHE
 vdb-get_ldpath() {
-	local found path errno=0
+	local path errno=0
 	while (( ${#} )); do
 		if ! ${OPT[ldpath]}; then
 			echo "${1}"
@@ -448,7 +448,7 @@ vdb-get_ldpath() {
 			[[ ${VDB_LDPATH_CACHE[${1}]:-} ]] || VDB_LDPATH_CACHE[${1}]=${1}
 		fi
 
-		[[ ${VDB_LDPATH_CACHE[${1}]} != ${1} ]] || errno=1
+		[[ ${VDB_LDPATH_CACHE[${1}]} != "${1}" ]] || errno=1
 
 		echo "${VDB_LDPATH_CACHE[${1}]}"
 
@@ -465,7 +465,7 @@ declare -A VDB_LIBNEED=() VDB_LIBNEED_SET=()
 vdb-get_libneed() {
 	# this function is normally ran twice, save last output
 	if [[ ! ${VDB_LIBNEED_SET[${1}]+x} ]]; then
-		VDB_LIBNEED[${1}]=$(_vdb-get_libneed ${1})
+		VDB_LIBNEED[${1}]=$(_vdb-get_libneed "${1}")
 		VDB_LIBNEED_SET[${1}]=y
 	fi
 	[[ ${VDB_LIBNEED[${1}]} ]] && echo "${VDB_LIBNEED[${1}]}"
@@ -474,16 +474,17 @@ _vdb-get_libneed() {
 	[[ -e ${VDB}/${1}/REQUIRES ]] || return 0 # no libs
 
 	local prebuilt=
-	vdb-is_prebuilt ${1} && prebuilt=prebuilt
+	vdb-is_prebuilt "${1}" && prebuilt=prebuilt
 
-	local pkg=$(vdb-get_pf2pn ${1})
+	local pkg
+	pkg=$(vdb-get_pf2pn "${1}")
 
 	# read REQUIRES and strip excluded libraries
 	local -a req=()
 	for entry in $(
-		sed 's/[^ ]*: //g' < "${VDB}"/${1}/REQUIRES \
+		sed 's/[^ ]*: //g' < "${VDB}/${1}/REQUIRES" \
 			|| die "failed to get dependencies from REQUIRES for '${1}'"); do
-		vdb-is_excluded exclude-lib ${entry%.so*}.so ${pkg} || req+=(${entry})
+		vdb-is_excluded exclude-lib "${entry%.so*}.so" "${pkg}" || req+=("${entry}")
 	done
 	(( ${#req[@]} )) || return 0 # all libs excluded
 
@@ -493,8 +494,7 @@ _vdb-get_libneed() {
 
 	# use qfile to find providers
 	local providers
-	providers=$(qfile -CqvP -- "${req[@]}" | sort | uniq)
-	if (( ${?} )); then
+	if ! providers=$(qfile -CqvP -- "${req[@]}" | sort | uniq); then
 		${OPT[ignore-uninstalled]} && return 0 # pretend no libs
 		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
 	fi
@@ -519,19 +519,19 @@ _vdb-get_libneed() {
 		done
 
 		# with final cat/pn, check if requested for exclusion through --exclude
-		vdb-is_excluded exclude ${dep} ${pkg} && continue
+		vdb-is_excluded exclude "${dep}" "${pkg}" && continue
 
 		# get SLOT information
 		slot=0; subslot=0
 		if [[ -e ${VDB}/${entry}/SLOT ]]; then
-			slot=$(<"${VDB}"/${entry}/SLOT) || die "failed to read slot for '${entry}'"
+			slot=$(<"${VDB}/${entry}/SLOT") || die "failed to read slot for '${entry}'"
 			if [[ ${slot} == */* ]]; then
 				subslot=${slot#*/}
 				slot=${slot%/*}
 			fi
 		fi
 
-		echo "${dep}$(vdb-get_expected_slot ${dep} ${slot} ${subslot} ${pkg} ${prebuilt})"
+		echo "${dep}$(vdb-get_expected_slot "${dep}" "${slot}" "${subslot}" "${pkg}" "${prebuilt}")"
 	done | sort | uniq || die "sort/uniq failed"
 }
 
@@ -551,7 +551,7 @@ vdb-get_deps() {
 	local atom entry rdep IFS=' '
 	local -i group=0
 	local -A deps
-	for rdep in $(cat "${VDB}"/${1}/${deptype} || die "failed to read ${deptype} for '${1}'"); do
+	for rdep in $(cat "${VDB}/${1}/${deptype}" || die "failed to read ${deptype} for '${1}'"); do
 		[[ ${rdep} == !* ]] && continue # ignore blockers
 
 		# Handle ( ) and || ( ) deps loosely (allow missing deps within a group)
@@ -584,7 +584,7 @@ vdb-get_deps() {
 		if [[ ${atom[1]} == '<unset>' ]]; then
 			# qatom converts :* to <unset> even if set, check against ${rdep}
 			if [[ ${rdep} == *:\** ]]; then
-				atom[1]=$(vdb-get_slot ${entry})
+				atom[1]=$(vdb-get_slot "${entry}")
 			else
 				atom[1]=0
 			fi
@@ -617,8 +617,8 @@ vdb-get_slot() {
 	local slot
 
 	if [[ -e "${VDB}"/${1}/SLOT ]]; then
-		slot=$(<"${VDB}"/${1}/SLOT) || die "failed to read slot for '${1}'"
-		echo ${slot%/*}
+		slot=$(<"${VDB}/${1}/SLOT") || die "failed to read slot for '${1}'"
+		echo "${slot%/*}"
 		return
 	fi
 
@@ -631,9 +631,9 @@ vdb-get_subslot() {
 	local subslot
 
 	if [[ -e "${VDB}"/${1}/SLOT ]]; then
-		subslot=$(<"${VDB}"/${1}/SLOT) || die "failed to read subslot for '${1}'"
+		subslot=$(<"${VDB}/${1}/SLOT") || die "failed to read subslot for '${1}'"
 		if [[ ${subslot} == */* ]]; then
-			echo ${subslot%*/}
+			echo "${subslot%*/}"
 			return
 		fi
 	fi
@@ -669,7 +669,7 @@ vdb-is_providing() {
 	# interested in and modules sometime have "lib*.so" names.
 	# To rule them out, check if exists in LDPATH
 	local provided IFS=' '
-	for provided in $(cat "${VDB}"/${1}/PROVIDES || die "could not read PROVIDES for ${1}"); do
+	for provided in $(cat "${VDB}/${1}/PROVIDES" || die "could not read PROVIDES for ${1}"); do
 		[[ ${provided} == *.so* ]] || continue
 
 		${OPT[ldpath]} || return 0
@@ -690,9 +690,9 @@ vdb-print_libdiff() {
 	local diff
 
 	if ${OPT[unified]}; then
-		diff=$(vdb-get_libdiff_unified ${1})
+		diff=$(vdb-get_libdiff_unified "${1}")
 	else
-		diff=$(vdb-get_libdiff ${1})
+		diff=$(vdb-get_libdiff "${1}")
 	fi
 
 	if [[ ${diff} ]]; then
@@ -804,9 +804,10 @@ vdb-init() {
 #	Exit if CATEGORY/PF is matched by qa-vdb.ignore config file
 #	Do so silently unless OPT[confirm] is set
 vdb-skip_ignore() {
-	local catpn=$(vdb-get_atomf "%{CATEGORY}/%{PN}" ${1})
+	local catpn
+	catpn=$(vdb-get_atomf "%{CATEGORY}/%{PN}" "${1}")
 
-	if vdb-is_excluded ignore ${catpn}; then
+	if vdb-is_excluded ignore "${catpn}"; then
 		${OPT[confirm]} && msg "QA: skipped due to package being in qa-vdb.ignore (${1})"
 		exit 0
 	fi
@@ -839,9 +840,9 @@ vdb-init
 
 vdbentry=$(vdb-get_entry "${1}")
 
-vdb-skip_ignore ${vdbentry}
-vdb-skip_unneeded ${vdbentry}
-vdb-print_libdiff ${vdbentry}
+vdb-skip_ignore "${vdbentry}"
+vdb-skip_unneeded "${vdbentry}"
+vdb-print_libdiff "${vdbentry}"
 
 :
 

@@ -85,13 +85,13 @@ die() {
 		echo "Error: ${*} (${FUNCNAME[1]/#main/${0##*/}}:${BASH_LINENO[0]})" >&2
 	fi
 	local IFS=' '; eval "set -- \$(</proc/${BASHPID}/stat)"
-	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 ${4}
+	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 "${4}"
 	kill -USR${sig} ${$}; exit 166
 }
 msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+: "@eprefix@"
+: "${ROOT=}"; ROOT=${ROOT%/}
+: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # Dependencies:
@@ -208,10 +208,11 @@ cmp-get_filelist() {
 
 		echo "${ROOT}"/
 
-		local vdb=$(cmp-get_vdb)
+		local vdb
+		vdb=$(cmp-get_vdb)
 		size=$(<"${vdb}/${1#=}"/SIZE) \
 			|| die "failed to read '$(cmp-get_vdb)/${1#=}/SIZE'"
-		echo ${size}
+		echo "${size}"
 
 		Q_VDB=${vdb#${ROOT}} \
 			qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
@@ -223,7 +224,7 @@ cmp-get_filelist() {
 
 		size=$(<"${1%/image}"/build-info/SIZE) \
 				|| die "failed to read '${1%/image}/build-info/SIZE', failed build image?"
-		echo ${size}
+		echo "${size}"
 
 		find "${1}" -path "${1}/usr/lib/debug" -prune -o -not -type d -printf '%P\n' | sort \
 			|| die "find failed for '${1}'"
@@ -466,7 +467,7 @@ cmp-get_tocompare() {
 		;;
 		2)	# matched but if ${2} is same then one of them is meant
 			# to match system (can't tell which), discard and search
-			if [[ ${1} == ${2:-} ]]; then
+			if [[ ${1} == "${2:-}" ]]; then
 				shift
 				i1=($(cmp-get_images "${1}"))
 			fi
@@ -484,7 +485,7 @@ cmp-get_tocompare() {
 		# last hope to try to find something to compare with by using
 		# the image's category/pn from build-info
 		[[ ${i1[0]:0:1} != = ]] \
-			&& i2=($(cmp-get_images $(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")))
+			&& i2=($(cmp-get_images "$(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")"))
 	fi
 
 	# shift until i1[0] != i2[0]
@@ -661,14 +662,14 @@ cmp-output_abi_diff() {
 			else
 				OUTPUT+="   ABI: ${old[i]%% *}"
 			fi
-			report=$(cmp-get_makereport "+%d" ${fa} 32 "")
-			report=$(cmp-get_makereport "~%d" ${fc} 33 "${report}")
-			report=$(cmp-get_makereport "-%d" ${fr} 31 "${report}")
+			report=$(cmp-get_makereport "+%d" "${fa}" 32 '')
+			report=$(cmp-get_makereport "~%d" "${fc}" 33 "${report}")
+			report=$(cmp-get_makereport "-%d" "${fr}" 31 "${report}")
 			report=$(cmp-get_makereport "func" -1 94 "${report}")
 			[[ ${report} ]] && OUTPUT+=" ${report}"
-			report=$(cmp-get_makereport "+%d" ${va} 32 "")
-			report=$(cmp-get_makereport "~%d" ${vc} 33 "${report}")
-			report=$(cmp-get_makereport "-%d" ${vr} 31 "${report}")
+			report=$(cmp-get_makereport "+%d" "${va}" 32 "")
+			report=$(cmp-get_makereport "~%d" "${vc}" 33 "${report}")
+			report=$(cmp-get_makereport "-%d" "${vr}" 31 "${report}")
 			report=$(cmp-get_makereport "vars" -1 94 "${report}")
 			[[ ${report} ]] && OUTPUT+=" ${report}"
 			if (( errno & 8 )); then
@@ -684,9 +685,9 @@ cmp-output_abi_diff() {
 		${OPT[full-abidiff]} && OUTPUT+="${output}"$'\n'
 	done
 
-	report=$(cmp-get_makereport "+%d" ${add} 32 "")
-	report=$(cmp-get_makereport "~%d" ${chg} 33 "${report}")
-	report=$(cmp-get_makereport "-%d" ${del} 31 "${report}")
+	report=$(cmp-get_makereport "+%d" "${add}" 32 '')
+	report=$(cmp-get_makereport "~%d" "${chg}" 33 "${report}")
+	report=$(cmp-get_makereport "-%d" "${del}" 31 "${report}")
 	(( brk )) && report=$(cmp-get_makereport ">B<" 1 31 "${report}")
 	report=$(cmp-get_makereport "ABI" -1 90 "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
@@ -697,7 +698,7 @@ cmp-output_abi_diff() {
 #	If showissue is 0, will only show with --confirm, or always if 1
 cmp-output_abi_diff_issue() {
 	local report
-	report=$(cmp-get_makereport "${1}" ${2} 31 "")
+	report=$(cmp-get_makereport "${1}" "${2}" 31 "")
 	report=$(cmp-get_makereport "ABI" -1 90 "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
@@ -760,7 +761,8 @@ cmp-output_filelist_diff() {
 		return
 	fi
 
-	local output=$(
+	local output
+	output=$(
 		diff -U0 \
 			<(printf "%s" "${old[@]/%/$'\n'}") \
 			<(printf "%s" "${new[@]/%/$'\n'}") \
@@ -805,7 +807,7 @@ cmp-output_size() {
 		cn=$'\e[0m'
 	fi
 	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
-		$((10**2 * ${LIST_NEW[2]} / 1024**2))e-2 $((${#LIST_NEW[@]} - 3)))
+		$((10**2 * LIST_NEW[2] / 1024**2))e-2 $((${#LIST_NEW[@]} - 3)))
 }
 
 # cmp-output_size_diff
@@ -970,8 +972,9 @@ cmp-output_soname_diff() {
 # cmp-print_header <compare1> <compare2>
 #	Print what is being compared using values from cmp-get_tocompare
 cmp-print_header() {
-	local old=$(cmp-get_compare2readable "${1}")
-	local new=$(cmp-get_compare2readable "${2}")
+	local old new
+	old=$(cmp-get_compare2readable "${1}")
+	new=$(cmp-get_compare2readable "${2}")
 	msg "QA: comparing ${old} with ${new}"
 }
 

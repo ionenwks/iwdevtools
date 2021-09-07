@@ -28,9 +28,9 @@ usage() {
 
 set -fuo pipefail
 die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; exit 1; }
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+: "@eprefix@"
+: "${ROOT=}"; ROOT=${ROOT%/}
+: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # Dependencies:
@@ -73,7 +73,7 @@ atom=$(portageq best_visible "${EROOT:-/}" "${1}") \
 
 usevers=()
 for ver in "${vers[@]}"; do
-	[[ ${ver} == ${atom} ]] && break
+	[[ ${ver} == "${atom}" ]] && break
 	usevers+=("${ver}")
 done
 
@@ -94,10 +94,10 @@ export IWDT_ALL=y
 # ignore portageq errors as it return 1 if it wasn't found
 mapfile -t env < <(portageq envvar EOLDNEW_EMERGE_CMD EOLDNEW_EMERGE_ARGS EOLDNEW_EMERGE_ARGS_OLD EOLDNEW_EMERGE_ARGS_NEW)
 
-: ${EOLDNEW_EMERGE_CMD:=${env[0]:-emerge}}
-: ${EOLDNEW_EMERGE_ARGS:=${env[1]:-}}
-: ${EOLDNEW_EMERGE_ARGS_OLD:=${env[2]:-}}
-: ${EOLDNEW_EMERGE_ARGS_NEW:=${env[3]:-}}
+: "${EOLDNEW_EMERGE_CMD:=${env[0]:-emerge}}"
+: "${EOLDNEW_EMERGE_ARGS:=${env[1]:-}}"
+: "${EOLDNEW_EMERGE_ARGS_OLD:=${env[2]:-}}"
+: "${EOLDNEW_EMERGE_ARGS_NEW:=${env[3]:-}}"
 
 if [[ ! ${skip_old} ]]; then
 	cmd=("${EOLDNEW_EMERGE_CMD}" "=${usevers[old]}" "${@:2}" ${EOLDNEW_EMERGE_ARGS} ${EOLDNEW_EMERGE_ARGS_OLD})

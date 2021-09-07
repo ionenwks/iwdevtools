@@ -70,11 +70,11 @@ done
 
 # warning: this must not output anything to stdout if sed-run() is being ran
 sed-run() { sed "${SED_ARGV[@]}"; }
-sed-run_exit() { sed-run; exit $(sed-get_errno ${?}); }
+sed-run_exit() { sed-run; exit "$(sed-get_errno ${?})"; }
 die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; sed-run_exit; }
-: @eprefix@
-: ${ROOT=''}; ROOT=${ROOT%/}
-: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+: "@eprefix@"
+: "${ROOT=}"; ROOT=${ROOT%/}
+: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
 export ROOT EROOT EPREFIX
 
 # Dependencies:
@@ -108,9 +108,9 @@ done
 QA_ERRNO=
 sed-get_errno() {
 	if ${OPT[error-on-qa]} && [[ ${QA_ERRNO} ]]; then
-		echo ${QA_ERRNO}
+		echo "${QA_ERRNO}"
 	else
-		echo ${1}
+		echo "${1}"
 	fi
 }
 

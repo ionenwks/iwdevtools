@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-I= : @include@ ${I:=${0%/*}/../lib}
-. "${I}"/common.bashlib || exit 1
+I= : "@include@" "${I:=${0%/*}/../lib}"
+. "${I}"/common.bashlib || exit 1; unset I
 usage <<-EOU
 	Usage: ${0##*/} [format] <atom(s)...>
 
@@ -54,7 +54,7 @@ include atomf
 
 declare -A OPT
 OPT[expand]=false
-OPT[unset]=?
+OPT[unset]='?'
 OPT[versplit]=false
 
 getopt arg args hxs:v help,version,expand,unset:,versplit "${@}"
@@ -77,7 +77,7 @@ if ${OPT[versplit]}; then
 		if pversp "${1}" ver; then
 			echo "${ver[*]}"
 		else
-			: ${exiterrno:=${?}}
+			: "${exiterrno:=${?}}"
 			err "'${1}' is an invalid version string"
 		fi
 		shift
@@ -89,7 +89,7 @@ elif (( ${#} > 1 )) && ! ${OPT[expand]}; then
 	while (( ${#} )); do
 		atomf "${format}" "${1}" || {
 			errno=${?}
-			: ${exiterrno:=${errno}}
+			: "${exiterrno:=${errno}}"
 			if (( errno == 2 )); then
 				err "'${1}' is missing components"
 			else
@@ -103,18 +103,18 @@ else
 		if atomsp "${1}" atom; then
 			merge=
 			for ((i=0; i<${#atom[@]}; i++)); do
-				: ${atom[i]:=${OPT[unset]}}
+				: "${atom[i]:=${OPT[unset]}}"
 				merge+=${atom[i]:+ ${atom[i]}}
 			done
 			echo "${merge# }"
 		else
-			: ${exiterrno:=${?}}
+			: "${exiterrno:=${?}}"
 			err "'${1}' is an invalid atom"
 		fi
 		shift
 	done
 fi
 
-exit ${exiterrno}
+exit "${exiterrno:-0}"
 
 # vim: ts=4

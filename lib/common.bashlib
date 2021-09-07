@@ -10,9 +10,9 @@ init() {
 	trap 'exit 1' USR1
 	trap 'exit 0' USR2
 
-	: @eprefix@
-	: ${ROOT=''}; ROOT=${ROOT%/}
-	: ${EROOT=${ROOT}${EPREFIX:-}}; EROOT=${EROOT%/}
+	: "@eprefix@"
+	: "${ROOT=}"; ROOT=${ROOT%/}
+	: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
 	export ROOT EROOT EPREFIX
 
 	_COMMON_INIT=
@@ -34,7 +34,7 @@ die() {
 		local i
 		showline ${BASH_LINENO[0]} "${BASH_SOURCE[1]}" '  %03d: %s' >&2
 		for ((i=1; i < ${#FUNCNAME[@]}; i++)); do
-			printf "%-$((${i}*4-2))s^^^ %s\n" '' "${FUNCNAME[i]}:${BASH_LINENO[$((i-1))]}" >&2
+			printf "%-$((i*4-2))s^^^ %s\n" '' "${FUNCNAME[i]}:${BASH_LINENO[$((i-1))]}" >&2
 		done
 	fi
 
@@ -44,7 +44,7 @@ die() {
 # end [1]
 #	Exit with status 0, or 1 if given (mostly works in subshells, requires init())
 end() {
-	[[ -v _COMMON_INIT && ${$} != ${BASHPID} ]] || exit ${1:-0}
+	[[ -v _COMMON_INIT && ${$} != "${BASHPID}" ]] || exit "${1:-0}"
 
 	# USR* for right exit in main, 166 ERR trap for subshells to exit
 	if (( ${1:-0} )); then
@@ -103,7 +103,7 @@ getopt() {
 #	Include files from current bashlib dir, exit on failure
 include() {
 	while (( ${#} )); do
-		. "${BASH_SOURCE[0]%/*}"/${1}.bashlib || exit 1
+		. "${BASH_SOURCE[0]%/*}/${1}.bashlib" || exit 1
 		shift
 	done
 }
@@ -111,7 +111,7 @@ include() {
 # msg <message>
 #	Echoes message based on setmsg() defaults.
 msg() {
-	printf "${_COMMON_MSG_FMT:-%s\n}" "${@}" >&${_COMMON_MSG_STD:-1}
+	printf "${_COMMON_MSG_FMT:-%s\n}" "${@}" >&"${_COMMON_MSG_STD:-1}"
 }
 
 # setmsg [12] [format]
@@ -135,14 +135,14 @@ showline() {
 
 	[[ ${format} =~ %+[0-9.-]*d ]] || unset d
 
-	mapfile -tn ${1} source < "${2}" || return 1
+	mapfile -tn "${1}" source < "${2}" || return 1
 
 	output=(${d+${1}} "${source[$((${1} - 1))]//$'\t'/    }")
 
 	local -i i
 	for ((i=${1} - 1; --i >= 0;)); do
 		[[ ${source[i]} =~ \\$ ]] || break
-		output=(${d+$((${i} + 1))} "${source[i]//$'\t'/    }" "${output[@]}")
+		output=(${d+$((i+1))} "${source[i]//$'\t'/    }" "${output[@]}")
 	done
 
 	printf "${format}\n" "${output[@]}"
