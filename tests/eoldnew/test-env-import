@@ -1,0 +1,11 @@
+set_portroot
+ebuild "$(get_ebuild test 1.5)" merge
+ebuild "$(get_ebuild test 2.5)" merge
+cat >> "${EROOT}"/etc/portage/make.conf <<-EOF
+	EOLDNEW_EMERGE_ARGS=unused
+	EOLDNEW_EMERGE_ARGS_OLD=arg2
+	EOLDNEW_EMERGE_ARGS_NEW=arg3
+EOF
+export EOLDNEW_EMERGE_ARGS=arg1
+export EOLDNEW_EMERGE_CMD=echo
+expect "*arg1 arg2*arg1 arg3*" dev-test/test
