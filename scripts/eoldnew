@@ -21,7 +21,7 @@ usage() {
 		  EOLDNEW_EMERGE_ARGS=       Similar to EMERGE_DEFAULT_OPTS
 		  EOLDNEW_EMERGE_ARGS_OLD=   Only used when emerging old
 		  EOLDNEW_EMERGE_ARGS_NEW=   Only used when emerging new
-		(note: it is possible to set these in portage's make.conf)
+		(note: it is possible to set these in portage's make.conf as well)
 	EOF
 	exit
 }
