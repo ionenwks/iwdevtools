@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.6.0 (2021-09-07)
+-----------------------------
 
 - qa-cmp: add --ver-keep,--ver-dironly for filelist version-replace behavior
 
