@@ -1,111 +1,77 @@
 #!/usr/bin/env bash
-version() { echo "${0##*/} @version@"; exit; }
-usage() {
-	cat <<-EOF
-		Usage: ${0##*/} <atom|image> [atom2|image2]
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend cut diff file getopt grep head portageq qlist readlink scanelf sort tail uniq
+include atomf
+usage <<-EOU
+	Usage: ${0##*/} <atom|image> [atom2|image2]
 
-		Compares an installation image (i.e. \${PORTAGE_TMPDIR}/[...]/image/),
-		with either another image or the currently installed system copy.
+	Compares an installation image (i.e. \${PORTAGE_TMPDIR}/[...]/image/),
+	with either another image or the currently installed system copy.
 
-		Arguments can either be a path to the image, or an atom representing it.
-		If atom is imprecise (i.e. no version), or only one is given, then will
-		guess the right versions based on timestamps (older with newest).
+	Arguments can either be a path to the image, or an atom representing it.
+	If atom is imprecise (i.e. no version), or only one is given, then will
+	guess the right versions based on timestamps (older with newest).
 
-		Options:
-		  -f, --no-filelist     Do not print filelist differences
-		  -s, --no-soname       Do not print SONAME differences
-		  -a, --no-abidiff      Do not print per-libraries abidiff
-		  -z, --no-size         Do not print size differences when above threshold
-		  -r, --no-report       Do not report statistics at the end
-		  -x, --no-compare      Short for all of the above (intended for --single-*)
-		(unless -r/-x, report will still have statitics for disabled options)
+	Options:
+	  -f, --no-filelist     Do not print filelist differences
+	  -s, --no-soname       Do not print SONAME differences
+	  -a, --no-abidiff      Do not print per-libraries abidiff
+	  -z, --no-size         Do not print size differences when above threshold
+	  -r, --no-report       Do not report statistics at the end
+	  -x, --no-compare      Short for all of the above (intended for --single-*)
+	(unless -r/-x, report will still have statitics for disabled options)
 
-		  -T, --size-thres=%    Size difference percentage at which to display it
-		                        (default: 10.0%, 0 to always display)
+	  -T, --size-thres=%    Size difference percentage at which to display it
+	                        (default: 10.0%, 0 to always display)
 
-		  -B, --full-abidiff    Show complete abidiff output
-		  -d, --quiet-nodebug   Do not warn if missing debug for abidiff (unless -W)
+	  -B, --full-abidiff    Show complete abidiff output
+	  -d, --quiet-nodebug   Do not warn if missing debug for abidiff (unless -W)
 
-		  -I, --image-only      When guessing what to compare, ignore system's copy.
-		                        (simplifies comparing two images)
+	  -I, --image-only      When guessing what to compare, ignore system's copy.
+	                        (simplifies comparing two images)
 
-		  -K, --ver-keep        Do not replace filelist's versions in names by <snip>
-		  -O, --ver-dironly     Limit filelist version replacements to directories
-		(default is to try to prevent showing uninteresting version-only changes)
+	  -K, --ver-keep        Do not replace filelist's versions in names by <snip>
+	  -O, --ver-dironly     Limit filelist version replacements to directories
+	(default is to try to prevent showing uninteresting version-only changes)
 
-		  -M, --allow-missing   Do nothing and exit normally if lacking a 2nd image
-		                        (intended for automated scripts)
+	  -M, --allow-missing   Do nothing and exit normally if lacking a 2nd image
+	                        (intended for automated scripts)
 
-		  -W, --confirm         Show all statistics even if no changes as confirmation
+	  -W, --confirm         Show all statistics even if no changes as confirmation
 
-		  -F, --single-filelist Show full filelist for latest
-		  -S, --single-soname	Show full soname list for latest
-		  -Z, --single-size     Show size for latest
-		  -L, --single-all      Short for --single-{filelist,soname,size}
-		  -U, --single-auto     Auto-disable specified --single-* if two images
-		                        (--single-* options can function with a single image)
+	  -F, --single-filelist Show full filelist for latest
+	  -S, --single-soname	Show full soname list for latest
+	  -Z, --single-size     Show size for latest
+	  -L, --single-all      Short for --single-{filelist,soname,size}
+	  -U, --single-auto     Auto-disable specified --single-* if two images
+	                        (--single-* options can function with a single image)
 
-		  -c, --no-color        Disable use of colors
+	  -c, --no-color        Disable use of colors
 
-		  -h, --help            Display usage information and exit
-		      --version         Display version information and exit
+	  -h, --help            Display usage information and exit
+	      --version         Display version information and exit
 
-		*Abidiff Notes*
-		Requires debug symbols for full report (FEATURES=splitdebug and -g).
-		Report showing '[BREAKING]' doesn't necessarily mean it's breaking
-		revdeps without rebuilds, but it warrants testing them while built
-		against old version. Order matters, downgrading often breaks ABI.
+	*Abidiff Notes*
+	Requires debug symbols for full report (FEATURES=splitdebug and -g).
+	Report showing '[BREAKING]' doesn't necessarily mean it's breaking
+	revdeps without rebuilds, but it warrants testing them while built
+	against old version. Order matters, downgrading often breaks ABI.
 
-		*Portage Integration*
-		Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
-		example ${ROOT}@datadir@/bashrc or by manually adding:
-		 >  source @datadir@/${0##*/}.bashrc
-		 >  post_pkg_preinst() {
-		 >      qa-cmp_post_pkg_preinst
-		 >  }
+	*Portage Integration*
+	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
+	example ${ROOT}@datadir@/bashrc or by manually adding:
+	 >  source @datadir@/${0##*/}.bashrc
+	 >  post_pkg_preinst() {
+	 >      qa-cmp_post_pkg_preinst
+	 >  }
 
-		bashrc environment options (export/make.conf/package.env):
-		  QA_CMP=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
-		  QA_CMP_CMD=${0##*/}     This script, needs to be changed if not in PATH
-		  QA_CMP_ARGS=          Extra arguments to pass, see options above
-		  QA_CMP_LOG=ewarn      Portage log level command to use for output
-	EOF
-	exit
-}
-
-set -Efuo pipefail
-trap '(( ${?} != 166 )) || exit 166' ERR
-trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
-trap 'exit 0' USR2
-die() {
-	local sig=1
-	if [[ ${1} == -0 ]]; then
-		sig=2
-	else
-		echo "Error: ${*} (${FUNCNAME[1]/#main/${0##*/}}:${BASH_LINENO[0]})" >&2
-	fi
-	local IFS=' '; eval "set -- \$(</proc/${BASHPID}/stat)"
-	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 "${4}"
-	kill -USR${sig} ${$}; exit 166
-}
-msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
-: "@eprefix@"
-: "${ROOT=}"; ROOT=${ROOT%/}
-: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
-export ROOT EROOT EPREFIX
-
-# Dependencies:
-#	app-misc/pax-utils (scanelf)
-#	app-portage/portage-utils (qatom,qlist)
-#	dev-util/libabigail (abidiff) [optional]
-#	sys-apps/coreutils (cat,cut,head,readlink,sort,tail,uniq)
-#	sys-apps/diffutils (diff)
-#	sys-apps/file (file)
-#	sys-apps/grep (grep)
-#	sys-apps/portage (portageq)
-#	sys-apps/util-linux (getopt)
-type cat cut diff file getopt grep head portageq qatom qlist readlink \
-	scanelf sort tail uniq >/dev/null || die "missing dependencies"
+	bashrc environment options (export/make.conf/package.env):
+	  QA_CMP=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
+	  QA_CMP_CMD=${0##*/}     This script, needs to be changed if not in PATH
+	  QA_CMP_ARGS=          Extra arguments to pass, see options above
+	  QA_CMP_LOG=ewarn      Portage log level command to use for output
+EOU
 
 declare -A OPT
 OPT[filelist-diff]=true
@@ -129,12 +95,12 @@ OPT[single-size]=false
 OPT[single-auto]=false
 OPT[color]=true
 
-eval set -- $(getopt \
-	-o hfsazrxT:BdIKOMWFSZLUc \
-	-l help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,no-compare,size-thres:,full-abidiff,quiet-nodebug,image-only,ver-keep,ver-dironly,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
-	-- "$@" || die "invalid arguments")
-while (( ${#} )); do
-	case ${1} in
+getoptw arg args \
+	hfsazrxT:BdIKOMWFSZLUc \
+	help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,no-compare,size-thres:,full-abidiff,quiet-nodebug,image-only,ver-keep,ver-dironly,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
+	"$@"
+while getoptw; do
+	case ${arg} in
 		-h|--help) usage;;
 		   --version) version;;
 		-f|--no-filelist) OPT[filelist-diff]=false;;
@@ -144,9 +110,9 @@ while (( ${#} )); do
 		-r|--no-report) OPT[report]=false;;
 		-x|--no-compare) OPT[compare]=false;;
 		-T|--size-thres)
-			printf -v 'OPT[size-thres]' '%.2f' "${2%\%}" 2>/dev/null
+			getoptw
+			printf -v 'OPT[size-thres]' '%.2f' "${arg%\%}" 2>/dev/null
 			OPT[size-thres]=${OPT[size-thres]/./}
-			shift
 		;;
 		-B|--full-abidiff) OPT[full-abidiff]=true;;
 		-d|--quiet-nodebug) OPT[warn-debug]=false;;
@@ -165,12 +131,10 @@ while (( ${#} )); do
 		;;
 		-U|--single-auto) OPT[single-auto]=true;;
 		-c|--no-color) OPT[color]=false;;
-		--) shift; break;;
 	esac
-	shift
 done
-(( ${#} >= 1 )) || die "no atom/image specified, see \`${0##*/} --help\`"
-(( ${#} <= 2 )) || die "too many atom/image given, see \`${0##*/} --help\`"
+(( ${#args[@]} >= 1 )) || die "no atom/image specified, see \`${0##*/} --help\`"
+(( ${#args[@]} <= 2 )) || die "too many atom/image given, see \`${0##*/} --help\`"
 
 ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 	&& OPT[single]=true
@@ -178,12 +142,6 @@ ${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
 ! ${OPT[filelist-diff]} && ! ${OPT[soname-diff]} && ! ${OPT[abi-diff]} \
 	&& ! ${OPT[size-diff]} && ! ${OPT[report]} \
 	&& OPT[compare]=false
-
-# cmp-get_atomf <format> <atom>
-#   Echos <atom> based on <format> using qatom -F.
-cmp-get_atomf() {
-	qatom -CqF "${1}" -- "${@:2}" || die "q command failed: qatom -CqF ${*}"
-}
 
 # cmp-get_compare2readable <compare>
 #	Echoes a cmp-get_tocompare converted value to be more readable
@@ -196,39 +154,41 @@ cmp-get_compare2readable() {
 	fi
 }
 
-# cmp-get_filelist <compare>
-#	Echoes sorted filelist from a cmp-get_tocompare value
+# cmp-get_filelist <array> <compare>
+#	Set <array> to sorted filelist from a cmp-get_tocompare value.
 #	First three lines are specially set to:
 #		1. ${PVR} 2. prefix/ 3. size in bytes
-#	usr/lib/debug/ excluded for simplification
+#	usr/lib/debug/ excluded for simplification.
 cmp-get_filelist() {
-	local -i size
-	if [[ ${1:0:1} == = ]]; then
-		cmp-get_atomf "%{PVR}" "${1}"
+	{
+		local -i size
+		if [[ ${2:0:1} == = ]]; then
+			atomf '%e\n' "${2}" || die
 
-		echo "${ROOT}"/
+			echo "${ROOT}"/
 
-		local vdb
-		vdb=$(cmp-get_vdb)
-		size=$(<"${vdb}/${1#=}"/SIZE) \
-			|| die "failed to read '$(cmp-get_vdb)/${1#=}/SIZE'"
-		echo "${size}"
+			local vdb
+			vdb=$(cmp-get_vdb)
+			size=$(<"${vdb}/${2#=}"/SIZE) \
+				|| die "failed to read '$(cmp-get_vdb)/${2#=}/SIZE'"
+			echo "${size}"
 
-		Q_VDB=${vdb#${ROOT}} \
-			qlist -Cqe "${1}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
-		[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${1}'"
-	else
-		cmp-get_image2atomf "%{PVR}" "${1}"
+			Q_VDB=${vdb#${ROOT}} \
+				qlist -Cqe "${2}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
+			[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${2}'"
+		else
+			cmp-get_image2atomf '%e\n' "${2}"
 
-		echo "${1}/"
+			echo "${2}/"
 
-		size=$(<"${1%/image}"/build-info/SIZE) \
-				|| die "failed to read '${1%/image}/build-info/SIZE', failed build image?"
-		echo "${size}"
+			size=$(<"${2%/image}"/build-info/SIZE) \
+					|| die "failed to read '${2%/image}/build-info/SIZE', failed build image?"
+			echo "${size}"
 
-		find "${1}" -path "${1}/usr/lib/debug" -prune -o -not -type d -printf '%P\n' | sort \
-			|| die "find failed for '${1}'"
-	fi
+			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P\n' | sort \
+				|| die "find failed for '${2}'"
+		fi
+	} | map "${1}"
 }
 
 # cmp-get_image2atomf <format> <normalized-image>
@@ -241,55 +201,54 @@ cmp-get_image2atomf() {
 	catpf+=/$(<"${2%/image}"/build-info/PF) \
 		|| die "failed to read '${2%/image}/build-info/PF', failed build image?"
 
-	cmp-get_atomf "${1}" "${catpf}"
+	atomf "${1}" "${catpf}" || die
 }
 
-# cmp-get_images <atom>
-#	Echos 1-3 images full path and/or installed =CATEGORY/PF from newest to older
-#	First exact matches, then cat/pn:slot (if specified) then cat/pn
+# cmp-get_images <array> <atom>
+#	Set <array> to 1-3 images full path and/or installed =CATEGORY/PF from
+#	newest to older. First exact, cat/pn:slot (if specified), then cat/pn.
 cmp-get_images() {
 	{
 		local atom dir match slot
 		local -i ts
 
 		# convert atom to something we can use
-		if [[ ${1} == */* ]]; then
-			match=${1}
+		if [[ ${2} == */* ]]; then
+			match=${2}
 		else
 			# ${CATEGORY} is missing, ask portage for a match
-			match=$(cmp-get_visible "${1}")
-			match+=$(cmp-get_atomf "%[SLOT]" "${1}") # keep explicit slot if given
+			match=$(cmp-get_visible "${2}")
+			match+=$(atomf "%s" "${2}") || die # keep explicit slot if given
 		fi
 
-		local IFS=' ' # may be set to $'\n'
-		atom=($(cmp-get_atomf "%{CATEGORY} %{PN} %[SLOT]" "${match}"))
-		atom[2]=${atom[2]:+:${atom[2]}}
-		unset IFS
+		atomsp atom "${match}" || die
+		atom[6]=${atom[6]:+:${atom[6]}}
 
 		if ! ${OPT[image-only]}; then
-			for match in "${1}" ${atom[0]}/${atom[1]}${atom[2]:-} ${atom[2]:+${atom[0]}/${atom[1]}}; do
+			for match in "${2}" ${atom[2]}/${atom[3]}${atom[6]} ${atom[6]:+${atom[2]}/${atom[3]}}; do
 				match=$(cmp-get_installed "${match}")
 				if [[ ${match} ]]; then
 					ts=$(<"$(cmp-get_vdb)/${match}"/BUILD_TIME) \
 						|| die "failed to read '$(cmp-get_vdb)/${match}/BUILD_TIME'"
-					echo "${atom[2]:-:0} ${ts} =${match}"
+					echo "${atom[6]:-:0} ${ts} =${match}"
 					break
 				fi
 			done
 		fi
 
-		set +f; shopt -s nullglob
-		for dir in "$(cmp-get_tmp)/${atom[0]}"/*; do
+		set +f
+		for dir in "$(cmp-get_tmp)/${atom[2]}"/*; do
 			# need to atomf the directory too, ${PN} can contain -
-			match=$(cmp-get_atomf "%{PN}" "${atom[0]}/${dir##*/}")
-			[[ ${atom[1]} == "${match}" ]] || continue # mismatch
+			match=$(atomf '%n' "${atom[2]}/${dir##*/}") || die
 
-			if [[ ${atom[2]:-} ]]; then
+			[[ ${atom[3]} == "${match}" ]] || continue # mismatch
+
+			if [[ ${atom[6]} ]]; then
 				# try to skip wrong slots
 				[[ -e "${dir}"/build-info/SLOT ]] || continue # likely a failed image
 				slot=$(<"${dir}"/build-info/SLOT) \
 					|| die "failed to read '${dir}/build-info/SLOT'"
-				[[ ${atom[2]} == :${slot%/*} ]] || continue
+				[[ ${atom[6]} == :${slot%/*} ]] || continue
 			fi
 
 			[[ -e "${dir}"/build-info/BUILD_TIME ]] || continue # likely a failed image
@@ -299,10 +258,11 @@ cmp-get_images() {
 			dir+=/image
 			[[ -d "${dir}" ]] || die "found unusable image at '${dir}'"
 
-			echo "${atom[2]:-:0} ${ts} ${dir}"
+			echo "${atom[6]:-:0} ${ts} ${dir}"
 		done
-		set -f; shopt -u nullglob
-	} | sort -nr | head -n 3 | cut -d' ' -f3- || die "failed to get images for '${1}'"
+		set -f
+	} | sort -nr | head -n 3 | cut -d' ' -f3- | map "${1}" \
+		|| die "failed to get images for '${2}'"
 }
 
 # cmp-get_installed <atom>
@@ -378,18 +338,20 @@ cmp-get_normalized_image() {
 	return ${atom}
 }
 
-# cmp-get_scanelf <args>
+# cmp-get_scanelf <array> <args>
 #	Wrapper for scanelf to echo `sort | uniq` list and check for errors
 cmp-get_scanelf() {
-	scanelf -q "${@}" | sort | uniq || die "scanelf failed with args: '-q ${*}'"
+	scanelf -q "${@:2}" | sort | uniq | map "${1}" \
+		|| die "scanelf failed with args: '-q ${*}'"
 }
 
-# cmp-get_shared <possible libraries...>
-#	Echoes back shared libraries from the given list.
+# cmp-get_shared <array> <possible libraries...>
+#	Set <array> to shared libraries from the given list.
 #	Symbolic links will also be skipped as the non-link library is
 #	expected to be in the list.
 cmp-get_shared() {
-	unset IFS
+	local array=${1}
+	shift
 
 	local -a so=()
 	while (( ${#} )); do
@@ -401,10 +363,13 @@ cmp-get_shared() {
 		shift
 	done
 
-	(( ${#so[@]} )) || return 0
+	if (( ! ${#so[@]} )); then
+		eval "${array}=()"
+		return 0
+	fi
 
-	file -i0 -- "${so[@]}" | grep -aF 'x-sharedlib' | cut -d '' -f1
-	[[ ${PIPESTATUS[*]} == '0 '[01]' 0' ]] \
+	file -i0 -- "${so[@]}" | grep -aF 'x-sharedlib' | cut -d '' -f1 | map "${array}"
+	[[ ${PIPESTATUS[*]} == '0 '[01]' 0 0' ]] \
 		|| die "file check for shared libraries failed"
 }
 
@@ -438,45 +403,44 @@ cmp-get_tmp() {
 
 	# portage often uses 700 for tmp/cat/pkg which can lead to confusing errors,
 	# e.g. -d tmp/cat/pkg/image not being a directory
-	set +f; shopt -s nullglob
+	set +f
 	local dirs=("${CMP_TMP}"/*/*)
 	if [[ ${#dirs[@]} != 0 && ! -r ${dirs[0]} ]]; then
 		die "permission denied for image dirs under '${CMP_TMP}'"
 	fi
-	set -f; shopt -u nullglob
+	set -f
 
 	echo "${CMP_TMP}"
 }
 
-# cmp-get_tocompare <atom|image> [atom2|image2]
-#	Echos what to compare based on rough arguments, first line being
-#	oldest, and 2nd line the newest to compare with
+# cmp-get_tocompare <array> <atom|image> [atom2|image2]
+#	Set <array> to what to compare based on rough arguments, first being
+#	oldest, and 2nd the newest to compare with.
 #	Will either be a full path to the image, or =CATEGORY/PF if installed
 cmp-get_tocompare() {
 	local -a i1 i2=()
-	local IFS=$'\n'
 
 	# Given allow user to specify all sort of things (atom, image path,
 	# specific versions or not), need to do a bit of messy guesswork to
 	# find what to compare. Optimally would be two arguments where
 	# cmp-get_normalized_image returned the exact match.
-	i1[0]=$(cmp-get_normalized_image "${1}")
+	i1[0]=$(cmp-get_normalized_image "${2}")
 	case ${?} in
 		1)	# no match, fallback to cat/pn search
-			i1=($(cmp-get_images "${1}"))
+			cmp-get_images i1 "${2}"
 		;;
-		2)	# matched but if ${2} is same then one of them is meant
+		2)	# matched but if ${3} is same then one of them is meant
 			# to match system (can't tell which), discard and search
-			if [[ ${1} == "${2:-}" ]]; then
+			if [[ ${2} == "${3:-}" ]]; then
 				shift
-				i1=($(cmp-get_images "${1}"))
+				cmp-get_images i1 "${2}"
 			fi
 		;;
 	esac
 
-	if (( ${#} == 2 )); then
-		i2[0]=$(cmp-get_normalized_image "${2}")
-		(( ${?} == 1 )) && i2=($(cmp-get_images "${2}"))
+	if (( ${#} == 3 )); then
+		i2[0]=$(cmp-get_normalized_image "${3}")
+		(( ${?} == 1 )) && cmp-get_images i2 "${3}"
 	elif (( ${#i1[@]} >= 2 )); then
 		# use first image as newest (in i2), and 2nd as older (in i1)
 		i2[0]=${i1[0]}
@@ -484,8 +448,11 @@ cmp-get_tocompare() {
 	elif (( ${#i1[@]} )); then
 		# last hope to try to find something to compare with by using
 		# the image's category/pn from build-info
-		[[ ${i1[0]:0:1} != = ]] \
-			&& i2=($(cmp-get_images "$(cmp-get_image2atomf "%{CATEGORY}/%{PN}" "${i1[0]}")"))
+		if [[ ${i1[0]:0:1} != = ]]; then
+			local catpn
+			catpn=$(cmp-get_image2atomf '%p' "${i1[0]}")
+			cmp-get_images i2 "${catpn}"
+		fi
 	fi
 
 	# shift until i1[0] != i2[0]
@@ -500,25 +467,24 @@ cmp-get_tocompare() {
 	if ! (( ${#i1[@]} && ${#i2[@]} )); then
 		if ${OPT[single]}; then
 			if (( ${#i2[@]} )); then
-				echo "${i2[0]}"
-				return
+				eval "${1}"'=("${i2[0]}")'
+				return 0
 			elif (( ${#i1[@]} )); then
-				echo "${i1[0]}"
-				return
+				eval "${1}"'=("${i1[0]}")'
+				return 0
 			fi
 		fi
 
 		if ${OPT[allow-missing]}; then
-			die -0 # exit with 0
+			end
 		elif (( ${#i1[@]} && ${#i2[@]} )); then
-			die "could not find images for '${*}'"
+			die "could not find images for '${*:2}'"
 		else
 			die "found nothing to compare with, did you mean to use --single-*?"
 		fi
 	fi
 
-	echo "${i1[0]}"
-	echo "${i2[0]}"
+	eval "${1}"'=("${i1[0]}" "${i2[0]}")'
 }
 
 # cmp-get_vdb
@@ -585,13 +551,15 @@ cmp-output_abi_diff() {
 	# --stats should always output something /if/ it's going to work
 	# (this include a few changes it can find without debug info)
 	# TODO?: do own check for debug to inform report may be incomplete
+	local output report
 	local debugold=${LIST_OLD[1]}usr/lib/debug
 	local debugnew=${LIST_NEW[1]}usr/lib/debug
 	for ((i=0; i < ${#old[@]}; i++)); do
-		output=$(abidiff --stats \
-			--d1 "${debugold}" \
-			--d2 "${debugnew}" \
-			"${old[i]#* }" "${new[i]#* }" 2>&1)
+		output=$(
+			abidiff --stats \
+				--d1 "${debugold}" \
+				--d2 "${debugnew}" \
+				"${old[i]#* }" "${new[i]#* }" 2>&1)
 
 		# ABIDIFF_ERROR = 1
 		# ABIDIFF_USAGE_ERROR = 2
@@ -599,7 +567,7 @@ cmp-output_abi_diff() {
 		# ABIDIFF_ABI_INCOMPATIBLE_CHANGE = 8
 		if (( ${?} & 3 )); then
 			# give message for troubleshooting, but don't || die
-			msg "${output} (${FUNCNAME[0]})"
+			err "${output}"
 			cmp-output_abi_diff_issue "FAIL" 1
 			return
 		fi
@@ -614,14 +582,15 @@ cmp-output_abi_diff() {
 		fi
 	done
 
-	local IFS=$'\n' errno line output report
+	local output errno line
 	local -i add=0 chg=0 del=0 brk=0
 	local -i fr fc fa vr vc va
 	for ((i=0; i < ${#old[@]}; i++)); do
-		output=$(abidiff \
-			--d1 "${debugold}" \
-			--d2 "${debugnew}" \
-			"${old[i]#* }" "${new[i]#* }" 2>&1)
+		output=$(
+			abidiff \
+				--d1 "${debugold}" \
+				--d2 "${debugnew}" \
+				"${old[i]#* }" "${new[i]#* }" 2>&1)
 		errno=${?}
 		if (( errno & 3 )); then
 			msg "${output} (${FUNCNAME[0]})"
@@ -761,18 +730,17 @@ cmp-output_filelist_diff() {
 		return
 	fi
 
-	local output
-	output=$(
-		diff -U0 \
-			<(printf "%s" "${old[@]/%/$'\n'}") \
-			<(printf "%s" "${new[@]/%/$'\n'}") \
-			| grep -v '@@\|---\|+++'
-		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "failed comparing lists"
-	)
 
-	local IFS=$'\n' color line
+	local -a output
+	diff -U0 \
+		<(printf "%s" "${old[@]/%/$'\n'}") \
+		<(printf "%s" "${new[@]/%/$'\n'}") \
+		| grep -v '@@\|---\|+++' | map output
+		[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
+
+	local color line
 	local -i add=0 del=0
-	for line in ${output}; do
+	for line in "${output[@]}"; do
 		case ${line:0:1} in
 			+) color=32; add+=1;;
 			-) color=31; del+=1;;
@@ -798,7 +766,7 @@ cmp-output_filelist_diff() {
 #	Add to OUTPUT size and filecount for 1 value from cmp-get_tocompare
 #	Simplified version of cmp-output_size_diff
 cmp-output_size() {
-	${OPT[single-size]} || return
+	${OPT[single-size]} || return 0
 
 	local c1= c2= cn=
 	if ${OPT[color]}; then
@@ -806,6 +774,7 @@ cmp-output_size() {
 		c2=$'\e[33m'
 		cn=$'\e[0m'
 	fi
+
 	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
 		$((10**2 * LIST_NEW[2] / 1024**2))e-2 $((${#LIST_NEW[@]} - 3)))
 }
@@ -860,16 +829,14 @@ cmp-output_size_diff() {
 cmp-output_soname() {
 	${OPT[single-soname]} || return
 
-	local IFS=$'\n'
 	local -a new=("${LIST_NEW[@]:3}") tmp
-	new=($(cmp-get_shared "${new[@]/#/${LIST_NEW[1]}}"))
+	cmp-get_shared new "${new[@]/#/${LIST_NEW[1]}}"
 	if (( ${#new[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)#F' -- "${new[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)#F' -- "${new[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S#F' -- "${new[@]}"))
+		cmp-get_scanelf tmp -M32 -F'%S(32)#F' -- "${new[@]}"
+		cmp-get_scanelf +tmp -M64 -F'%S(64)#F' -- "${new[@]}"
+		(( ${#tmp[@]} )) || cmp-get_scanelf tmp -F'%S#F' -- "${new[@]}"
 		new=("${tmp[@]}")
 	fi
-	unset IFS
 
 	local line
 	for line in "${new[@]}"; do
@@ -885,29 +852,26 @@ cmp-output_soname() {
 #	Add to OUTPUT differences between LIST_OLD and LIST_NEW but only
 #	for SONAME changes
 cmp-output_soname_diff() {
-	local IFS=$'\n'
 	local -a new=("${LIST_NEW[@]:3}") old=("${LIST_OLD[@]:3}") tmp
-	new=($(cmp-get_shared "${new[@]/#/${LIST_NEW[1]}}"))
-	old=($(cmp-get_shared "${old[@]/#/${LIST_OLD[1]}}"))
+	cmp-get_shared new "${new[@]/#/${LIST_NEW[1]}}"
+	cmp-get_shared old "${old[@]/#/${LIST_OLD[1]}}"
 
 	# replace lists with scanelf output, do three runs to differenciate
 	# 32bit/64bit without guessing what the libdir may be, and one more
 	# if got nothing (to handle potential exotic arches)
 	# TODO?: lacks further awareness of different versions with same soname
 	if (( ${#old[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' -- "${old[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' -- "${old[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' -- "${old[@]}"))
+		cmp-get_scanelf tmp -M32 -F'%S(32)' -- "${old[@]}"
+		cmp-get_scanelf +tmp -M64 -F'%S(64)' -- "${old[@]}"
+		(( ${#tmp[@]} )) || cmp-get_scanelf tmp -F'%S' -- "${old[@]}"
 		old=("${tmp[@]}")
 	fi
 	if (( ${#new[@]} )); then
-		tmp=($(cmp-get_scanelf -M32 -F'%S(32)' -- "${new[@]}"))
-		tmp+=($(cmp-get_scanelf -M64 -F'%S(64)' -- "${new[@]}"))
-		(( ${#tmp[@]} )) || tmp=($(cmp-get_scanelf -F'%S' -- "${new[@]}"))
+		cmp-get_scanelf tmp -M32 -F'%S(32)' -- "${new[@]}"
+		cmp-get_scanelf +tmp -M64 -F'%S(64)' -- "${new[@]}"
+		(( ${#tmp[@]} )) || cmp-get_scanelf tmp -F'%S' -- "${new[@]}"
 		new=("${tmp[@]}")
 	fi
-
-	unset IFS
 
 	# need uniq on field1, and 2+ can have spaces (`rev | uniq -f1` unsafe),
 	# do manually (also save to SCANELF_* to be re-used by cmp-output_abi_diff)
@@ -927,7 +891,7 @@ cmp-output_soname_diff() {
 		fi
 	done
 
-	local output report
+	local report
 	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
 		report=$(cmp-get_makereport "N/A" 0 31 "")
 		report=$(cmp-get_makereport "SONAME" -1 90 "${report}")
@@ -937,17 +901,17 @@ cmp-output_soname_diff() {
 
 	old=("${SONAME_OLD[@]%% *}")
 	new=("${SONAME_NEW[@]%% *}")
-	output=$(
-		diff -U0 \
-			<(printf "%s" "${old[@]/%/$'\n'}") \
-			<(printf "%s" "${new[@]/%/$'\n'}") \
-			| grep -v '@@\|---\|+++'
-		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "failed comparing lists"
-	)
 
-	local color line IFS=$'\n'
+	local -a output
+	diff -U0 \
+		<(printf "%s" "${old[@]/%/$'\n'}") \
+		<(printf "%s" "${new[@]/%/$'\n'}") \
+		| grep -v '@@\|---\|+++' | map output
+	[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
+
+	local color line
 	local -i add=0 del=0
-	for line in ${output}; do
+	for line in "${output[@]}"; do
 		case ${line:0:1} in
 			+) color=36; add+=1;;
 			-) color=33; del+=1;;
@@ -985,22 +949,20 @@ cmp-print_header_single() {
 }
 
 # normalize arguments to something we can use
-IFS=$'\n'
-set -- $(cmp-get_tocompare "$@")
-unset IFS
+cmp-get_tocompare args "${args[@]}"
+set -- "${args[@]}"; unset args
 
 # init globals used by cmp-output_*
 OUTPUT=
 REPORT=
+declare -a LIST_OLD LIST_NEW SONAME_OLD=() SONAME_NEW=()
 if (( ${#} == 2 )); then
-	declare -a LIST_OLD=($(cmp-get_filelist "${1}"))
-	declare -a LIST_NEW=($(cmp-get_filelist "${2}"))
+	cmp-get_filelist LIST_OLD "${1}"
+	cmp-get_filelist LIST_NEW "${2}"
 	${OPT[single-auto]} && OPT[single]=false
 else
-	declare -a LIST_NEW=($(cmp-get_filelist "${1}"))
+	cmp-get_filelist LIST_NEW "${1}"
 fi
-declare -a SONAME_OLD=()
-declare -a SONAME_NEW=()
 
 if ${OPT[single]}; then
 	cmp-output_filelist
