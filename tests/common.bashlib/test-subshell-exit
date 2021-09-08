@@ -1,5 +1,4 @@
 set +e
-trap '' USR1 USR2
 testfunc() {
 	echo -n 0
 	v=$(false || end)
@@ -17,9 +16,17 @@ output=$(
 	echo -n 4
 )
 errno=${?}
+(( errno == 166 )) || fail "expected exit status 166, got ${errno}"
 [[ ${output} == 0 ]] || fail "expected output of '0', got '${output}'"
-[[ ${errno} == 166 ]] || fail "expected exit status 166, got ${errno}"
+
+(init; var=$(true && end 1))
+errno=${?}
+(( errno == 167 )) || fail "expected exit status 167, got ${errno}"
+
+(var=$(true && end 1))
+errno=${?}
+(( errno == 1 )) || fail "expected exit status 1, got ${errno}"
 
 init
-declare v=$(echo $(false || end))
+(end)
 fail "expected to die, but still around"

@@ -7,9 +7,11 @@ init() {
 	set +m -Efuo pipefail
 	shopt -s lastpipe nullglob
 
-	trap '(( ${?} != 166 )) || exit 166' ERR
-	trap 'exit 1' USR1
-	trap 'exit 0' USR2
+	trap '
+		case ${?} in
+			166) (( BASH_SUBSHELL )) && exit 166 || exit 0;;
+			167) (( BASH_SUBSHELL )) && exit 167 || exit 1;;
+		esac' ERR
 
 	: "@eprefix@"
 	: "${ROOT=}"; ROOT=${ROOT%/}
@@ -26,7 +28,7 @@ depend() {
 }
 
 # die [message]
-#	Exit with error (mostly works in subshells, but requires init())
+#	Exit with error (usable in non-masked subshells with init())
 #	If no message, display generic error with failed line and backtrace.
 die() {
 	echo "Error: ${*:-unexpected issue happened at the following} (${0##*/}:${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2
@@ -42,19 +44,11 @@ die() {
 	end 1
 }
 
-# end [1]
-#	Exit with status 0, or 1 if given (mostly works in subshells, requires init())
+# end [01]
+#	Exit with [01] (default:0, usable in non-masked subshells with init())
 end() {
-	[[ -v _COMMON_INIT && ${$} != "${BASHPID}" ]] || exit "${1:-0}"
-
-	# USR* for right exit in main, 166 ERR trap for subshells to exit
-	if (( ${1:-0} )); then
-		kill -USR1 ${$}
-	else
-		kill -USR2 ${$}
-	fi
-
-	exit 166
+	[[ -v _COMMON_INIT ]] || exit "${1:-0}"
+	(( BASH_SUBSHELL )) && exit "$((166+${1:-0}))" || exit "${1:-0}"
 }
 
 # err <message>
