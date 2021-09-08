@@ -13,7 +13,7 @@
 #	See atomsp() and pversp() if need array with all values.
 atomf() {
 	local -a atom
-	atomsp "${2}" atom || return ${?}
+	atomsp atom "${2}" || return ${?}
 	vatomf "${1}" "${atom[@]}" || return ${?}
 }
 
@@ -50,7 +50,7 @@ vatomf() {
 	printf "${format}${s}" "${args[@]}"
 }
 
-# atomsp <atom> [array]
+# atomsp [array] <atom>
 #	Split <atom> and set it to the array by name [array] (if defined)
 #	[0](block)    [1](operator)
 #	[2](category) [3](name)    [4](version) [5](revision)
@@ -59,7 +59,7 @@ vatomf() {
 #	Return 1 and set nothing if atom format is invalid.
 #	[use,...] in atom is discarded if present, but seen as valid.
 atomsp() {
-	local s=${1}
+	local s=${2-${1}}
 	local -a t=()
 
 	[[ ${s} =~ ^('!!'|'!'|'')(.*) ]] && _atomsptok || return 1
@@ -139,20 +139,20 @@ atomsp() {
 	# if ${s} is not empty and has something other than ^[ or 2nd ^:, invalid
 	[[ ! ${s} || ${s} =~ ^[:\[] ]] || return 1
 
-	(( ${#} != 2 )) || eval "${2}"'=("${t[@]}")'
+	(( ${#} != 2 )) || eval "${1}"'=("${t[@]}")'
 }
 _atomsptok() {
 	t+=("${BASH_REMATCH[@]:1:$((${#BASH_REMATCH[@]} - 2))}")
 	s=${BASH_REMATCH[*]: -1}
 }
 
-# pversp <PV> [array]
+# pversp [array] <PV>
 #	Split <PV> components and set to the array by name [array] (if defined)
 #	Return false and set nothing if version is invalid.
 #	No characters will be dropped, e.g.
 #		0.1.2a_alpha3_p4-r5 -> 0 .1 .2 a _alpha 3 _p 4 -r5
 pversp() {
-	local IFS=' ' s=${1} # ensure IFS is for _pversptok
+	local IFS=' ' s=${2-${1}} # ensure IFS is for _pversptok
 	local -a t=()
 
 	[[ ${s} =~ ^([0-9]+)(.*) ]] || return 1
@@ -172,7 +172,7 @@ pversp() {
 
 	[[ ! ${s} ]] || return 1
 
-	(( ${#} != 2 )) || eval "${2}"'=("${t[@]}")'
+	(( ${#} != 2 )) || eval "${1}"'=("${t[@]}")'
 }
 _pversptok() {
 	# varies from _atomsptok by skipping quotes (drop empty)

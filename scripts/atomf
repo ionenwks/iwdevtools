@@ -73,7 +73,7 @@ set -- "${args[@]}"; unset args
 exiterrno=
 if ${OPT[versplit]}; then
 	while (( ${#} )); do
-		if pversp "${1}" ver; then
+		if pversp ver "${1}"; then
 			echo "${ver[*]}"
 		else
 			: "${exiterrno:=${?}}"
@@ -99,7 +99,7 @@ elif (( ${#} > 1 )) && ! ${OPT[expand]}; then
 	done
 else
 	while (( ${#} )); do
-		if atomsp "${1}" atom; then
+		if atomsp atom "${1}"; then
 			merge=
 			for ((i=0; i<${#atom[@]}; i++)); do
 				: "${atom[i]:=${OPT[unset]}}"

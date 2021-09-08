@@ -1,6 +1,6 @@
 pverexpect() {
 	local ver
-	pversp "${3}" ver
+	pversp ver "${3}"
 	echo "'${ver[*]}' == '${2}'"
 	(( ${#ver[@]} == ${1} )) || fail "expected array length ${1}, got ${#ver[@]}"
 	[[ ${ver[*]} == ${2} ]] || fail mismatch
