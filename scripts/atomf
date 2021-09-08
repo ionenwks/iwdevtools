@@ -50,6 +50,7 @@ usage <<-EOU
 EOU
 
 init
+depend getopt
 include atomf
 
 declare -A OPT
@@ -57,14 +58,14 @@ OPT[expand]=false
 OPT[unset]='?'
 OPT[versplit]=false
 
-getopt arg args hxs:v help,version,expand,unset:,versplit "${@}"
-while getopt; do
+getoptw arg args hxs:v help,version,expand,unset:,versplit "${@}"
+while getoptw; do
 	case ${arg} in
 		-h|--help) usage;;
 		   --version) version;;
 		-x|--expand) OPT[expand]=true;;
 		-v|--versplit) OPT[versplit]=true;;
-		-s|--unset) getopt; OPT[unset]=${arg};;
+		-s|--unset) getoptw; OPT[unset]=${arg};;
 	esac
 done
 set -- "${args[@]}"; unset args
