@@ -4,7 +4,8 @@
 # init
 #	Initiate basic settings / traps (optional)
 init() {
-	set -Efuo pipefail
+	set +m -Efuo pipefail
+	shopt -s lastpipe nullglob
 
 	trap '(( ${?} != 166 )) || exit 166' ERR
 	trap 'exit 1' USR1
