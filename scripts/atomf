@@ -25,16 +25,16 @@ usage <<-EOU
 	      --version    Display version information and exit
 
 	*Format*
-	 1.  %! Blocker indicator (!, !!, or none)
-	 2.  %o Version range operator (>=, >, etc... or none)
-	 3.  %c Category
-	 4.  %n Name
-	 5.  %v Version
-	 6.  %r Revision (as -rN, or none)
-	 7.  %s Slot (as :0, or none)
-	 8.  %u Subslot (as /0, or none)
-	 9.  %b Binding operator (= or none)
-	 0.  %% Literal %
+	 0.  %! Blocker indicator (!, !!, or none)
+	 1.  %o Version range operator (>=, >, etc... or none)
+	 2.  %c Category
+	 3.  %n Name
+	 4.  %v Version
+	 5.  %r Revision (as -rN, or none)
+	 6.  %s Slot (as :0, or none)
+	 7.  %u Subslot (as /0, or none)
+	 8.  %b Binding operator (= or none)
+	 -.  %% Literal %
 	e.g. "%c/%n-%v%r" = category/name-1.0-r1
 
 	 -.  %p Equivalent to %c/%n
