@@ -1,0 +1,5 @@
+array=(1 2)
+map +array <<<'3'
+[[ ${array[*]} == '1 2 3' ]] || fail "expected '1 2 3', got '${array[*]}'"
+map array <<<'4'
+[[ ${array[*]} == 4 ]] || fail "expected '4', got '${array[*]}'"
