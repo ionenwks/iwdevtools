@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 I= : "@include@" "${I:=${0%/*}/../lib}"
 . "${I}"/common.bashlib || exit 1; unset I
+init
+depend getopt
+include atomf
 usage <<-EOU
 	Usage: ${0##*/} [format] <atom(s)...>
 
@@ -48,10 +51,6 @@ usage <<-EOU
 	If need to use this in a bash script extensively, it is recommended to source
 	@datadir@/atomf.bashlib directly rather than call this.
 EOU
-
-init
-depend getopt
-include atomf
 
 declare -A OPT
 OPT[expand]=false
