@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-I= : "@include@" "${I:=${0%/*}/../lib}"
-. "${I}"/common.bashlib || exit 1; unset I
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
 depend getopt
 include atomf
