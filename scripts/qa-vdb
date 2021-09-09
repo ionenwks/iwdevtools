@@ -51,7 +51,7 @@ usage <<-EOU
 	  -r, --no-default-exclude Ignore configuration files for excludes
 	      --confdir=PATH       Configuration dir to use instead of defaults
 	                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
-	                           Note: portage will use a different \$HOME
+	      --dumpconfig         Display config and exit (> ${0##*/}.conf)
 
 	  -h, --help               Display usage information and exit
 	      --version            Display version information and exit
@@ -76,60 +76,29 @@ usage <<-EOU
 	  QA_VDB_ARGS=          Extra arguments to pass, see options above
 	  QA_VDB_LOG=ewarn      Portage log level command to use for output
 EOU
+optauto args "${@}" <<-EOO
+	s|!slot=bool:true
+	b|!bind=bool:true
+	o|!overbind=bool:true
+	x|!extra=bool:true
+	e|exclude=str:
+	exclude-slot=str:
+	exclude-bind=str:
+	exclude-extra=str:
+	exclude-lib=str:
+	ignore=str:
+	D|depend=bool:false
+	W|confirm=bool:false
+	u|ignore-uninstalled=bool:false
+	ldconf=str:${EROOT}/etc/ld.so.conf
+	p|!ldpath=bool:true
+	U|unified=bool:false
+	F|full=bool:false
+	r|!default-exclude=bool:true
+	c|!color=bool:true
+EOO
+set -- "${args[@]}"; unset args
 
-declare -A OPT
-OPT[slot]=true
-OPT[bind]=true
-OPT[overbind]=true
-OPT[extra]=true
-OPT[exclude]=
-OPT[exclude-slot]=
-OPT[exclude-bind]=
-OPT[exclude-extra]=
-OPT[exclude-lib]=
-OPT[ignore]=
-OPT[depend]=RDEPEND
-OPT[confirm]=false
-OPT[ignore-uninstalled]=false
-OPT[ldconf]="${EROOT}/etc/ld.so.conf"
-OPT[ldpath]=true
-OPT[unified]=false
-OPT[full]=false
-OPT[color]=true
-OPT[default-exclude]=true
-OPT[confdir]=
-
-eval set -- $(getopt \
-	-o hsboxe:DWupUFcr \
-	-l help,version,no-slot,no-bind,no-overbind,no-extra,exclude:,exclude-slot:,exclude-bind:,exclude-extra:,exclude-lib:,depend,confirm,ignore-uninstalled,ldconf:,no-ldpath,unified,full,no-color,no-default-exclude,confdir: \
-	-- "${@}" || die "invalid arguments")
-while (( ${#} )); do
-	case ${1} in
-		-h|--help) usage;;
-		   --version) version;;
-		-s|--no-slot) OPT[slot]=false;;
-		-b|--no-bind) OPT[bind]=false;;
-		-o|--no-overbind) OPT[overbind]=false;;
-		-x|--no-extra) OPT[extra]=false;;
-		-e|--exclude) OPT[exclude]+=,${2}; shift;;
-		   --exclude-slot) OPT[exclude-slot]+=,${2}; shift;;
-		   --exclude-bind) OPT[exclude-bind]+=,${2}; shift;;
-		   --exclude-extra) OPT[exclude-extra]+=,${2}; shift;;
-		   --exclude-lib) OPT[exclude-lib]+=,${2}; shift;;
-		-D|--depend) OPT[depend]=DEPEND;;
-		-W|--confirm) OPT[confirm]=true;;
-		   --ldconf) OPT[ldconf]=${2}; shift;;
-		-p|--no-ldpath) OPT[ldpath]=false;;
-		-U|--unified) OPT[unified]=true;;
-		-F|--full) OPT[full]=true;;
-		-u|--ignore-uninstalled) OPT[ignore-uninstalled]=true;;
-		-c|--no-colors) OPT[color]=false;;
-		-r|--no-default-exclude) OPT[default-exclude]=false;;
-		   --confdir) OPT[confdir]=${2}; shift;;
-		--) shift; break;;
-	esac
-	shift
-done
 (( ${#} == 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
 # vdb-get_dep2entry <dependency>
@@ -183,10 +152,10 @@ vdb-get_entry() {
 vdb-get_expected_slot() {
 	local slot=${2} subslot=${3}
 
-	if ! ${OPT[slot]} || vdb-is_excluded exclude-slot "${1}" "${4}"; then
+	if ! ${O[slot]} || vdb-is_excluded exclude-slot "${1}" "${4}"; then
 		 slot=0
 	fi
-	if ! ${OPT[bind]} || vdb-is_excluded exclude-bind "${1}" "${4}" || [[ ${5:-} == prebuilt ]]; then
+	if ! ${O[bind]} || vdb-is_excluded exclude-bind "${1}" "${4}" || [[ ${5:-} == prebuilt ]]; then
 		subslot=0
 	fi
 
@@ -237,7 +206,7 @@ vdb-get_libdiff() {
 	for ((i=0; i < ${#f1[@]}; i++)); do
 		: "${f2[i]:=}"
 		if [[ ${f1[i]} == "${f2[i]}" ]]; then
-			${OPT[full]} || continue
+			${O[full]} || continue
 			mark=' '
 		elif [[ ${f1[i]%:*} == "${f2[i]%:*}" ]]; then
 			mark='|'; changes=true
@@ -257,13 +226,8 @@ vdb-get_libdiff() {
 
 	# colorize, done last so not considered for alignment
 	local s1s s1sc s2s s2sc
-	if ${OPT[color]}; then
+	if ${O[color]}; then
 		local -A c
-		c[n]=$'\e[0m'
-		c[r]=$'\e[31m'
-		c[g]=$'\e[32m'
-		c[y]=$'\e[33m'
-		c[a]=$'\e[90m'
 		for o in "${o[@]}"; do
 			if [[ ${o} == *\|* ]]; then
 				s1=${o%|*}; s1s=; s1sc=
@@ -279,22 +243,22 @@ vdb-get_libdiff() {
 				i=0
 				while [[ ${s1s:${i}} || ${s2s:${i}} ]]; do
 					if [[ ${s1s:${i}:1} == "${s2s:${i}:1}" ]]; then
-						s1sc+=${c[a]}${s1s:${i}:1}
-						s2sc+=${c[a]}${s2s:${i}:1}
+						s1sc+=${C[a]}${s1s:${i}:1}
+						s2sc+=${C[a]}${s2s:${i}:1}
 					else
-						s1sc+=${c[r]}${s1s:${i}:1}
-						s2sc+=${c[g]}${s2s:${i}:1}
+						s1sc+=${C[r]}${s1s:${i}:1}
+						s2sc+=${C[g]}${s2s:${i}:1}
 					fi
 					((i++))
 				done
 
-				o="${c[a]}${s1//${s1s}/${s1sc}}${c[y]}|${c[a]}${s2//${s2s}/${s2sc}}${c[n]}"
+				o="${C[a]}${s1//${s1s}/${s1sc}}${C[y]}|${C[a]}${s2//${s2s}/${s2sc}}${C[n]}"
 			elif [[ ${o} == *\<* ]]; then
-				o=${c[r]}${o}${c[n]}
+				o=${C[r]}${o}${C[n]}
 			elif [[ ${o} == *\>* ]]; then
-				o=${c[g]}${o}${c[n]}
+				o=${C[g]}${o}${C[n]}
 			else
-				o=${c[a]}${o}${c[n]}
+				o=${C[a]}${o}${C[n]}
 			fi
 			echo "${o}"
 		done
@@ -310,7 +274,7 @@ vdb-get_libdiff_unified() {
 	vdb-set_libdeps "${1}"
 
 	local context=0
-	${OPT[full]} && context=9999
+	${O[full]} && context=9999
 
 	local output
 	diff -U${context} \
@@ -324,15 +288,11 @@ vdb-get_libdiff_unified() {
 	local color
 	for output in "${output[@]}"; do
 		case ${output:0:1} in
-			+) color=32;;
-			-) color=31;;
-			*) color=90;;
+			+) color=${C[g]};;
+			-) color=${C[r]};;
+			*) color=${C[a]};;
 		esac
-		if ${OPT[color]}; then
-			printf "\e[${color}m%s\e[0m\n" "${output}"
-		else
-			echo "${output}"
-		fi
+		echo "${color}${output}${C[n]}"
 	done
 }
 
@@ -340,14 +300,14 @@ vdb-get_libdiff_unified() {
 #	Set <array> to full path first match for all libraries based on
 #	VDB_LDPATH, or keep same without path if not found.
 #	Returns true if all paths were found, false otherwise unless
-#	OPT[ldpath] is disabled.
+#	O[ldpath] is disabled.
 declare -A VDB_LDPATH_CACHE
 vdb-get_ldpath() {
 	local fullpath setarray=${1} errno=0
 	shift
 	eval "${setarray}=()"
 	while (( ${#} )); do
-		if ! ${OPT[ldpath]}; then
+		if ! ${O[ldpath]}; then
 			eval "${setarray}"'+=("${1}")'
 			shift
 			continue
@@ -378,9 +338,9 @@ vdb-get_ldpath() {
 #	- If slot is '*', will be converted to vdb's current slot
 #	- When unspecified, SLOT/SUBSLOT will default to 0
 #	- if glob is set, only return matching dependencies (- to pass)
-#   - if *DEPEND is set, match against it rather than ${OPT[depend]}
+#   - if *DEPEND is set, match against it rather than default
 vdb-get_deps() {
-	local deptype=${OPT[depend]}
+	${O[depend]} && deptype=DEPEND || deptype=RDEPEND
 	(( ${#} >= 3 )) && deptype=${3}
 
 	[[ -e ${VDB}/${1}/${deptype} ]] || return 0
@@ -412,7 +372,7 @@ vdb-get_deps() {
 
 		if [[ ! ${entry} ]]; then
 			(( group )) && continue
-			${OPT[ignore-uninstalled]} && continue
+			${O[ignore-uninstalled]} && continue
 			die "no installed provider in vdb for '${rdep}' (may be due to binpkgs ordering)"
 		fi
 
@@ -473,11 +433,11 @@ vdb-get_subslot() {
 #	Types are based on --exclude* options and qa-vdb.* config files
 #	(dep) can be missing for ignore type
 vdb-is_excluded() {
-	[[ ${OPT[${1}]} ]] || return 1
+	[[ ${O[${1}]} ]] || return 1
 
 	# strip = prefixes if matches package to activate them
 	# eval is needed to enable globs
-	eval "[[ \${2%:*} =~ ^(${OPT[${1}]//${3:-nil}=/})$ ]]"
+	eval "[[ \${2%:*} =~ ^(${O[${1}]//${3:-nil}=/})$ ]]"
 }
 
 # vdb-is_prebuilt <CATEGORY/PF>
@@ -500,7 +460,7 @@ vdb-is_providing() {
 	for provided in "${provided[@]}"; do
 		[[ ${provided} == *.so* ]] || continue
 
-		${OPT[ldpath]} || return 0
+		${O[ldpath]} || return 0
 
 		vdb-get_ldpath provides "${provided}" && return 0
 
@@ -515,64 +475,52 @@ vdb-is_providing() {
 # vdb-print_libdiff <CATEGORY/PF>
 # 	Prints output of vdb_get_libdiff (if any) with header
 vdb-print_libdiff() {
-	local diff
-	if ${OPT[unified]}; then
+	local diff deptype
+
+	if ${O[unified]}; then
 		diff=$(vdb-get_libdiff_unified "${1}")
 	else
 		diff=$(vdb-get_libdiff "${1}")
 	fi
 
+	${O[depend]} && deptype=DEPEND || deptype=RDEPEND
+
 	if [[ ${diff} ]]; then
-		msg "QA: detected possibly incorrect ${OPT[depend]} (${1})"
+		msg "QA: detected possibly incorrect ${deptype} (${1})"
 		msg "${diff}"
 
-		if ! [[ ${OPT[exclude]} || ${OPT[exclude-slot]} || ${OPT[exclude-bind]} || ${OPT[exclude-extra]} || ${OPT[exclude-lib]} ]] &&
-			${OPT[default-exclude]}; then
+		if ! [[ ${O[exclude]} || ${O[exclude-slot]} || ${O[exclude-bind]} || ${O[exclude-extra]} || ${O[exclude-lib]} ]] &&
+			${O[default-exclude]}; then
 			msg "Note: no exclusions set (e.g. glibc/gcc), please verify configuration files"
 		fi
-	elif ${OPT[confirm]}; then
-		msg "QA: ${OPT[depend]} is as expected, no issues here (${1})"
+	elif ${O[confirm]}; then
+		msg "QA: ${deptype} is as expected, no issues here (${1})"
 	fi
 }
 
-# vdb-set_confdir
-#	Set VDB_SYSCONFDIR and VDB_USERCONFDIR, empty if not found.
-vdb-set_confdir() {
-	VDB_SYSCONFDIR="@confdir@"
-	VDB_USERCONFDIR="${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
-	[[ -d ${VDB_SYSCONFDIR} ]] || VDB_SYSCONFDIR=${0%/*}/../config
-	[[ -d ${VDB_SYSCONFDIR} ]] || VDB_SYSCONFDIR=
-	[[ -d ${VDB_USERCONFDIR} ]] || VDB_USERCONFDIR=
-}
-
 # vdb-set_exclude <exclude-*>
-#   Load exclude configs and prepare supplied ${OPT[exclude*]} for use
+#   Load exclude configs and prepare supplied ${O[exclude*]} for use
 vdb-set_exclude() {
-	if ${OPT[default-exclude]}; then
-    	local -a conf=()
-		local file=qa-vdb.${1}
+	if ${O[default-exclude]}; then
+		local file
+		local -a conf=()
 
-		if [[ ${OPT[confdir]} ]]; then
-			[[ -r ${OPT[confdir]}/${file} ]] && conf=("${OPT[confdir]}/${file}")
-		else
-			[[ ${VDB_SYSCONFDIR} && -r ${VDB_SYSCONFDIR}/${file} ]] \
-				&& conf=("${VDB_SYSCONFDIR}/${file}")
-			[[ ${VDB_USERCONFDIR} && -r ${VDB_USERCONFDIR}/${file} ]] \
-				&& conf+=("${VDB_USERCONFDIR}/${file}")
-		fi
+		for file in "${CONFDIRS[@]/%//${0##*/}.${1}}"; do
+			[[ -r ${file} ]] && conf+=("${file}")
+		done
 
-		if [[ ${conf[*]} ]]; then
-			OPT[${1}]+=,$(sed 's/#.*//' "${conf[@]}" | tr '\r\n' ',,' \
-				|| die "failed reading configuration files")
+		if (( ${#conf[@]} )); then
+			O[${1}]+=,$(sed 's/#.*//' "${conf[@]}" | tr '\r\n' ',,' \
+				|| die "failed reading exclude configuration files")
 		fi
 	fi
 
 	# create a simple a|b|c, escape +/., and * -> .*
-	OPT[${1}]=$(sed \
+	O[${1}]=$(sed \
 		-e 's/[^A-Za-z0-9_/.+*,=-]//g' \
 		-e 's/,,*/|/g;s/^|//;s/|$//' \
 		-e 's/+/\\+/g;s/\./\\./g;s/\*/.*/g' \
-		<<< "${OPT[${1}]}") || die "sed failed"
+		<<< "${O[${1}]}") || die "sed failed"
 }
 
 # vdb-set_libdeps <CATEGORY/PF>
@@ -609,12 +557,12 @@ vdb-set_libdeps() {
 		${provides} || continue
 
 		# if --no-overbind, discard subslot if vdb's subslot is 0
-		if ! ${OPT[overbind]}; then
+		if ! ${O[overbind]}; then
 			[[ $(vdb-get_subslot "${rdep[0]}") == 0 ]] && rdep[3]=0
 		fi
 
 		# if --no-extra, exclude if not found in VDB_LIBNEED
-		if ! ${OPT[extra]} || vdb-is_excluded exclude-extra "${rdep[1]}" "${pkg}"; then
+		if ! ${O[extra]} || vdb-is_excluded exclude-extra "${rdep[1]}" "${pkg}"; then
 			[[ " ${VDB_LIBNEED[*]%:*} " == *" ${rdep[1]} "* ]] || continue
 		fi
 
@@ -653,7 +601,7 @@ vdb-set_libneed() {
 	# use qfile to find providers
 	local -a providers
 	if ! qfile -CqvP -- "${req[@]}" | sort | uniq | map providers; then
-		${OPT[ignore-uninstalled]} && return 0 # pretend no libs
+		${O[ignore-uninstalled]} && return 0 # pretend no libs
 		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
 	fi
 
@@ -697,7 +645,7 @@ vdb-set_libneed() {
 VDB_LDPATH=()
 vdb-set_ldpath() {
 	set +f
-	_vdb-set_ldpath "${OPT[ldconf]}"
+	_vdb-set_ldpath "${O[ldconf]}"
 	set -f
 }
 _vdb-set_ldpath() {
@@ -733,7 +681,6 @@ vdb-set_vdb() {
 # vdb-init
 #	Init various settings
 vdb-init() {
-	vdb-set_confdir
 	vdb-set_ldpath
 	vdb-set_vdb
 	vdb-set_exclude exclude
@@ -746,13 +693,13 @@ vdb-init() {
 
 # vdb-skip_ignore <CATEGORY/PF>
 #	Exit if CATEGORY/PF is matched by qa-vdb.ignore config file
-#	Do so silently unless OPT[confirm] is set
+#	Do so silently unless O[confirm] is set
 vdb-skip_ignore() {
 	local catpn
 	catpn=$(atomf %p "${1}") || die
 
 	if vdb-is_excluded ignore "${catpn}"; then
-		${OPT[confirm]} && msg "QA: skipped due to package being in qa-vdb.ignore (${1})"
+		${O[confirm]} && msg "QA: skipped due to package being in qa-vdb.ignore (${1})"
 		exit 0
 	fi
 }
@@ -766,14 +713,14 @@ vdb-skip_unneeded() {
 	# rarely matter here (at most maybe if this is a static-only package
 	# that wants to rebuild with new libraries on bumps, but well...)
 	if ! [[ -e ${VDB}/${1}/NEEDED ]]; then
-		OPT[extra]=false
-		OPT[bind]=false
+		O[extra]=false
+		O[bind]=false
 
-		if ${OPT[slot]}; then
-			${OPT[confirm]} && \
+		if ${O[slot]}; then
+			${O[confirm]} && \
 				msg "Warning: ${1} has no DT_NEEDED libraries, most ${0##*/} checks are disabled"
 		else
-			${OPT[confirm]} && \
+			${O[confirm]} && \
 				msg "QA: skipped due to all possible ${0##*/} checks being disabled (${1})"
 			exit 0
 		fi
