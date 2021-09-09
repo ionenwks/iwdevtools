@@ -1,106 +1,81 @@
 #!/usr/bin/env bash
-version() { echo "${0##*/} @version@"; exit; }
-usage() {
-	cat <<-EOF
-		Usage: ${0##*/} [options] <atom>
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend diff getopt grep portageq qfile qlist sed sort tr uniq
+include atomf
+usage <<-EOU
+	Usage: ${0##*/} [options] <atom>
 
-		Perform basic QA checks based on vdb's contents (/var/db/pkg). Currently
-		supports comparing RDEPEND with DT_NEEDED (i.e. from \`scanelf -n\`), and
-		doing simple verification of binding operators / slots.
+	Perform basic QA checks based on vdb's contents (/var/db/pkg). Currently
+	supports comparing RDEPEND with DT_NEEDED (i.e. from \`scanelf -n\`), and
+	doing simple verification of binding operators / slots.
 
-		<atom> can be the exact vdb entry, or anything portage accepts
-		  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
+	<atom> can be the exact vdb entry, or anything portage accepts
+	  e.g. sys-devel/gcc:10, portage-utils, ~sys-apps/portage-3.0.20
 
-		Options:
-		  -s, --no-slot            Exclude slots (e.g. needing :3 on gtk+, or :*)
-		  -b, --no-bind            Exclude binding operators (implies --no-overbind)
-		  -o, --no-overbind        Exclude superfluous binds (i.e. for subslot 0)
-		  -x, --no-extra           Exclude listed dependencies that seem unused
-		(using all --no-* or -sbx will limit to entirely missing deps)
+	Options:
+	  -s, --no-slot            Exclude slots (e.g. needing :3 on gtk+, or :*)
+	  -b, --no-bind            Exclude binding operators (implies --no-overbind)
+	  -o, --no-overbind        Exclude superfluous binds (i.e. for subslot 0)
+	  -x, --no-extra           Exclude listed dependencies that seem unused
+	(using all --no-* or -sbx will limit to entirely missing deps)
 
-		  -e, --exclude=LIST       Comma separated list of category/package to
-		                           exclude, can also be specified multiple times
-		                           (example: dev-python/*,sys-libs/glibc,*/gcc)
-		      --exclude-slot=LIST  Like --exclude but to selectively --no-slot
-		      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
-		      --exclude-extra=LIST Like --exclude but to selectively --no-extra
-		      --exclude-lib=LIST   Similar to --exclude but takes .so libraries
-		                           as arguments and excludes if seen in DT_NEEDED
-		(packages that provide no shared libraries are always excluded)
+	  -e, --exclude=LIST       Comma separated list of category/package to
+	                           exclude, can also be specified multiple times
+	                           (example: dev-python/*,sys-libs/glibc,*/gcc)
+	      --exclude-slot=LIST  Like --exclude but to selectively --no-slot
+	      --exclude-bind=LIST  Like --exclude but to selectively --no-bind
+	      --exclude-extra=LIST Like --exclude but to selectively --no-extra
+	      --exclude-lib=LIST   Similar to --exclude but takes .so libraries
+	                           as arguments and excludes if seen in DT_NEEDED
+	(packages that provide no shared libraries are always excluded)
 
-		  -D, --depend             Check against DEPEND rather than RDEPEND
-		                           (virtuals will still use RDEPEND)
+	  -D, --depend             Check against DEPEND rather than RDEPEND
+	                           (virtuals will still use RDEPEND)
 
-		  -W, --confirm            Show confirmation if no issues rather than silence
+	  -W, --confirm            Show confirmation if no issues rather than silence
 
-		  -u, --ignore-uninstalled Allows to keep going if a dependency that should
-		                           be in vdb, isn't. In theory this should never
-		                           happen without package.provided or bugs.
+	  -u, --ignore-uninstalled Allows to keep going if a dependency that should
+	                           be in vdb, isn't. In theory this should never
+	                           happen without package.provided or bugs.
 
-		      --ldconf=CONF        ld.so.conf to use (default: ${OPT[ldconf]})
-		  -p, --no-ldpath          Disable using ld.so.conf to find libraries' path
-		(ldpath allows more accurate reports, but may miss rpath-based dependencies)
+	      --ldconf=CONF        ld.so.conf to use (default: ${EROOT}/etc/ld.so.conf)
+	  -p, --no-ldpath          Disable using ld.so.conf to find libraries' path
+	(ldpath allows more accurate reports, but may miss rpath-based dependencies)
 
-		  -U, --unified            Use \`diff -U\` for output instead builtin
-		  -F, --full               When showing differences, display unchanged as well
+	  -U, --unified            Use \`diff -U\` for output instead builtin
+	  -F, --full               When showing differences, display unchanged as well
 
-		  -c, --no-color           Disable use of colors
+	  -c, --no-color           Disable use of colors
 
-		  -r, --no-default-exclude Ignore configuration files for excludes
-		      --confdir=PATH       Configuration dir to use instead of defaults
-		                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
-		                           Note: portage will use a different \$HOME
+	  -r, --no-default-exclude Ignore configuration files for excludes
+	      --confdir=PATH       Configuration dir to use instead of defaults
+	                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	                           Note: portage will use a different \$HOME
 
-		  -h, --help               Display usage information and exit
-		      --version            Display version information and exit
+	  -h, --help               Display usage information and exit
+	      --version            Display version information and exit
 
-		*Notes*
-		Output is not a hard indication that something needs fixing (especially
-		with seemingly unused dependencies that may still be using dlopen(),
-		executables, or data files) and needs a human to interpret it. Exclusions
-		can be used if something is known to be right.
+	*Notes*
+	Output is not a hard indication that something needs fixing (especially
+	with seemingly unused dependencies that may still be using dlopen(),
+	executables, or data files) and needs a human to interpret it. Exclusions
+	can be used if something is known to be right.
 
-		*Portage Integration*
-		Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
-		example ${ROOT}@datadir@/bashrc or by manually adding:
-		 >  source @datadir@/${0##*/}.bashrc
-		 >  post_pkg_postinst() {
-		 >      qa-vdb_post_pkg_postinst
-		 >  }
+	*Portage Integration*
+	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
+	example ${ROOT}@datadir@/bashrc or by manually adding:
+	 >  source @datadir@/${0##*/}.bashrc
+	 >  post_pkg_postinst() {
+	 >      qa-vdb_post_pkg_postinst
+	 >  }
 
-		bashrc environment options (export/make.conf/package.env):
-		  QA_VDB=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
-		  QA_VDB_CMD=${0##*/}     This script, needs to be changed if not in PATH
-		  QA_VDB_ARGS=          Extra arguments to pass, see options above
-		  QA_VDB_LOG=ewarn      Portage log level command to use for output
-	EOF
-	exit
-}
-
-set -Efuo pipefail
-trap '(( ${?} != 166 )) || exit 166' ERR
-trap '(( BASH_SUBSHELL )) && exit 166 || exit 1' USR1
-die() {
-	echo "Error: ${*} (${FUNCNAME[1]/#main/${0##*/}}:${BASH_LINENO[0]})" >&2
-	local IFS=' '; eval "set -- \$(</proc/${BASHPID}/stat)"
-	(( ! ${4:-} || ${4} == PPID || ${4} == ${$} )) || kill -USR1 "${4}"
-	kill -USR1 ${$}; exit 166
-}
-msg() { local IFS=$'\n'; set -- "${*}"; printf "%s\n" "${@}"; }
-: "@eprefix@"
-: "${ROOT=}"; ROOT=${ROOT%/}
-: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
-export ROOT EROOT EPREFIX
-
-# Dependencies:
-#	app-portage/portage-utils (qatom,qfile,qlist)
-#	sys-apps/coreutils (cat,sort,tr,uniq)
-#	sys-apps/diffutils (diff)
-#	sys-apps/grep (grep)
-#	sys-apps/portage (portageq)
-#	sys-apps/sed (sed)
-#	sys-apps/util-linux (getopt)
-type cat diff getopt grep portageq qatom qfile qlist sed sort tr uniq >/dev/null || die "missing dependencies"
+	bashrc environment options (export/make.conf/package.env):
+	  QA_VDB=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
+	  QA_VDB_CMD=${0##*/}     This script, needs to be changed if not in PATH
+	  QA_VDB_ARGS=          Extra arguments to pass, see options above
+	  QA_VDB_LOG=ewarn      Portage log level command to use for output
+EOU
 
 declare -A OPT
 OPT[slot]=true
@@ -157,34 +132,18 @@ while (( ${#} )); do
 done
 (( ${#} == 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
-# vdb-get_atomf <format> <atom>
-#	Echos <atom> based on <format> using qatom -F.
-vdb-get_atomf() {
-	qatom -CqF "${1}" -- "${@:2}" || die "q command failed: qatom -CqF ${*}"
-}
-
-# vdb-get_pf2pn <CATEGORY/PF>
-#	Echos CATEGORY/PN after removing version from PF, wrapper to vdb-get_atomf
-vdb-get_pf2pn() {
-	vdb-get_atomf '%{CATEGORY}/%{PN}' "${1}"
-}
-
 # vdb-get_dep2entry <dependency>
 #	Echos the conversion of a full ">=category/package-ver:slot/sub[use]"
 #	to a matching vdb entry. May not always be a perfect match.
 vdb-get_dep2entry() {
-	local dep
-
-	# qlist understands slots/ranges, but can't handle subslots, :*, and [use]
-	# not using qatom due to how it strips wildcards from versions
-	dep=${1%\[*}
-	dep=${dep%=}
-	dep=${dep%:\**}
-	[[ ${dep} == */*/* ]] && dep=${dep%/*}
-
-	# don't check for failure as it's normal if dep is not installed,
-	# fickle but this is relevant when checking for || ( ) deps
-	qlist -CqveI -- "${dep}" | tail -n 1
+	# qlist understands slots/ranges, but can't handle subslots, :* without
+	# range operators, or [use]. Try to use closest sanitized dep possible.
+	# Also ignore failure as it's normal if dep is not installed,
+	# fickle but relevant when checking for || ( ) deps.
+	local a
+	atomsp a "${1}" || die
+	[[ ${a[6]} == '*' ]] && a[6]=
+	qlist -CqveI -- "${a[1]}${a[2]}/${a[3]}${a[4]:+-${a[4]}}${a[5]:+-r${a[5]}}${a[6]:+:${a[6]}}" | tail -n 1
 }
 
 # vdb-get_entry <atom>
@@ -238,62 +197,16 @@ vdb-get_expected_slot() {
 	fi
 }
 
-# vdb-get_libdeps <CATEGORY/PF>
-#	Echos package list providing shared libraries based
-#	on <CATEGORY/PF>'s vdb RDEPEND.
-#	Output should be identical to vdb-get_libneed if no missing deps.
-vdb-get_libdeps() {
-	# get vdb-get_libneed for multiple comparison (for *-extra)
-	local need pkg prebuilt=
-	need=$(vdb-get_libneed "${1}")
-	pkg=$(vdb-get_pf2pn "${1}")
-	vdb-is_prebuilt "${1}" && prebuilt=prebuilt
-
-	local IFS=$'\n' provides rdep vrdep
-	for rdep in $(vdb-get_deps "${1}"); do
-		IFS=' '
-		rdep=(${rdep})
-
-		# check if requested for exclusion through --exclude
-		vdb-is_excluded exclude "${rdep[1]}" "${pkg}" && continue
-
-		# need to skip entries that do not provide shared libraries but,
-		# to know this, need to check what virtuals resolve to
-		provides=false
-		if [[ ${rdep[0]} == virtual/* ]]; then
-			IFS=$'\n'
-			for vrdep in $(vdb-get_deps "${rdep[0]}" - RDEPEND); do
-				if vdb-is_providing "${vrdep%% *}"; then
-					provides=true
-					break
-				fi
-			done
-		elif vdb-is_providing "${rdep[0]}"; then
-			provides=true
-		fi
-		${provides} || continue
-
-		# if --no-overbind, discard subslot if vdb's subslot is 0
-		if ! ${OPT[overbind]}; then
-			[[ $(vdb-get_subslot "${rdep[0]}") == 0 ]] && rdep[3]=0
-		fi
-
-		# if --no-extra, exclude if not found in vdb-get_libneed's output
-		if ! ${OPT[extra]} || vdb-is_excluded exclude-extra "${rdep[1]}" "${pkg}"; then
-			[[ ${need} == *${rdep[1]}* ]] || continue
-		fi
-
-		echo "${rdep[1]}$(vdb-get_expected_slot "${rdep[1]}" "${rdep[2]}" "${rdep[3]}" "${pkg}" "${prebuilt}")"
-	done | sort || die "sort failed"
-}
-
 # vdb-get_libdiff_unified <CATEGORY/PN>
-#	Echoes difference between vdb-get_libdeps and vdb-get_libneed,
+#	Echoes difference between vdb-get_libdeps and VDB_LIBNEED,
 #	or nothing if no changes.
 vdb-get_libdiff() {
+	vdb-set_libneed "${1}"
+	vdb-set_libdeps "${1}"
+
 	local f1 f2
-	f1=($(vdb-get_libdeps "${1}"))
-	f2=($(vdb-get_libneed "${1}"))
+	f1=("${VDB_LIBDEPS[@]}")
+	f2=("${VDB_LIBNEED[@]}")
 
 	# insert blank line if a line isn't indentical minus slot
 	# same | same
@@ -340,7 +253,7 @@ vdb-get_libdiff() {
 
 	${changes} || return 1
 
-	printf -v o "%-${len}s %s\n" "${o[@]}"
+	printf "%-${len}s %s\n" "${o[@]}" | map o
 
 	# colorize, done last so not considered for alignment
 	local s1s s1sc s2s s2sc
@@ -351,8 +264,7 @@ vdb-get_libdiff() {
 		c[g]=$'\e[32m'
 		c[y]=$'\e[33m'
 		c[a]=$'\e[90m'
-		local IFS=$'\n'
-		for o in ${o}; do
+		for o in "${o[@]}"; do
 			if [[ ${o} == *\|* ]]; then
 				s1=${o%|*}; s1s=; s1sc=
 				s2=${o#*|}; s2s=; s2sc=
@@ -387,61 +299,64 @@ vdb-get_libdiff() {
 			echo "${o}"
 		done
 	else
-		echo "${o%$'\n'}"
+		printarray o
 	fi
 }
 
 # vdb-get_libdiff_unified <CATEGORY/PN>
 #	Same as vdb-get_libdiff but uses `diff -U` for output
 vdb-get_libdiff_unified() {
-	local diff context=0
+	vdb-set_libneed "${1}"
+	vdb-set_libdeps "${1}"
 
+	local context=0
 	${OPT[full]} && context=9999
 
-	diff=$(
-		diff -U${context} \
-			<(vdb-get_libdeps "${1}") \
-			<(vdb-get_libneed "${1}") \
-			| grep -v '@@\|---\|+++'
-		[[ ${PIPESTATUS[*]} == [01]\ [01] ]] || die "diff failed for ${1}"
-	)
+	local output
+	diff -U${context} \
+		<(printarray VDB_LIBDEPS) \
+		<(printarray VDB_LIBNEED) \
+		| grep -v '@@\|---\|+++' | map output
+	[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die "diff failed for ${1}"
 
-	[[ ${diff} ]] || return 0
+	[[ ${output} ]] || return 0
 
-	local IFS=$'\n' line color
-	for line in ${diff}; do
-		case ${line:0:1} in
+	local color
+	for output in "${output[@]}"; do
+		case ${output:0:1} in
 			+) color=32;;
 			-) color=31;;
 			*) color=90;;
 		esac
 		if ${OPT[color]}; then
-			printf "\e[${color}m%s\e[0m\n" "${line}"
+			printf "\e[${color}m%s\e[0m\n" "${output}"
 		else
-			echo "${line}"
+			echo "${output}"
 		fi
 	done
 }
 
-# vdb-get_ldpath <libraries...>
-#	Echos full path first match for all libraries based on VDB_LDPATH, or
-#	echos back library without path if not found.
+# vdb-get_ldpath <array> <libraries...>
+#	Set <array> to full path first match for all libraries based on
+#	VDB_LDPATH, or keep same without path if not found.
 #	Returns true if all paths were found, false otherwise unless
 #	OPT[ldpath] is disabled.
 declare -A VDB_LDPATH_CACHE
 vdb-get_ldpath() {
-	local path errno=0
+	local fullpath setarray=${1} errno=0
+	shift
+	eval "${setarray}=()"
 	while (( ${#} )); do
 		if ! ${OPT[ldpath]}; then
-			echo "${1}"
+			eval "${setarray}"'+=("${1}")'
 			shift
 			continue
 		fi
 
 		if [[ ! ${VDB_LDPATH_CACHE[${1}]:-} ]]; then
-			for path in "${VDB_LDPATH[@]/%//${1}}"; do
-				if [[ -e ${path} ]]; then
-					VDB_LDPATH_CACHE[${1}]=${path#${ROOT}}
+			for fullpath in "${VDB_LDPATH[@]/%//${1}}"; do
+				if [[ -e ${fullpath} ]]; then
+					VDB_LDPATH_CACHE[${1}]=${fullpath#${ROOT}}
 					break
 				fi
 			done
@@ -450,89 +365,11 @@ vdb-get_ldpath() {
 
 		[[ ${VDB_LDPATH_CACHE[${1}]} != "${1}" ]] || errno=1
 
-		echo "${VDB_LDPATH_CACHE[${1}]}"
+		eval "${setarray}"'+=("${VDB_LDPATH_CACHE[${1}]}")'
 
 		shift
 	done
 	return ${errno}
-}
-
-# vdb-get_libneed <CATEGORY/PF>
-# 	Echos package list providing shared libraries based
-#	on <CATEGORY/PF>'s vdb REQUIRES.
-#	- If a virtual is used, attempts to list it instead of real package.
-declare -A VDB_LIBNEED=() VDB_LIBNEED_SET=()
-vdb-get_libneed() {
-	# this function is normally ran twice, save last output
-	if [[ ! ${VDB_LIBNEED_SET[${1}]+x} ]]; then
-		VDB_LIBNEED[${1}]=$(_vdb-get_libneed "${1}")
-		VDB_LIBNEED_SET[${1}]=y
-	fi
-	[[ ${VDB_LIBNEED[${1}]} ]] && echo "${VDB_LIBNEED[${1}]}"
-}
-_vdb-get_libneed() {
-	[[ -e ${VDB}/${1}/REQUIRES ]] || return 0 # no libs
-
-	local prebuilt=
-	vdb-is_prebuilt "${1}" && prebuilt=prebuilt
-
-	local pkg
-	pkg=$(vdb-get_pf2pn "${1}")
-
-	# read REQUIRES and strip excluded libraries
-	local -a req=()
-	for entry in $(
-		sed 's/[^ ]*: //g' < "${VDB}/${1}/REQUIRES" \
-			|| die "failed to get dependencies from REQUIRES for '${1}'"); do
-		vdb-is_excluded exclude-lib "${entry%.so*}.so" "${pkg}" || req+=("${entry}")
-	done
-	(( ${#req[@]} )) || return 0 # all libs excluded
-
-	# try to use LDPATH to find full paths, lets qfile ignore private libraries
-	local IFS=$'\n'
-	req=($(vdb-get_ldpath "${req[@]}"))
-
-	# use qfile to find providers
-	local providers
-	if ! providers=$(qfile -CqvP -- "${req[@]}" | sort | uniq); then
-		${OPT[ignore-uninstalled]} && return 0 # pretend no libs
-		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
-	fi
-
-	local dep entry slot subslot virtual
-	for entry in ${providers}; do
-		dep=$(vdb-get_pf2pn "${entry}")
-
-		# check rdepend for virtuals and the the virtual's rdepend for this dep
-		IFS=$'\n'
-		for virtual in $(vdb-get_deps "${1}" "virtual/*"); do
-			IFS=' '
-			virtual=(${virtual})
-
-			# special exception for mesa "providing" libglvnd (not really)
-			if [[ $(vdb-get_deps "${virtual%% *}" "${dep}" RDEPEND) ]] ||
-				[[ ${dep} == media-libs/libglvnd && ${virtual[1]} == virtual/opengl ]]; then
-				entry=${virtual[0]}
-				dep=${virtual[1]}
-				break
-			fi
-		done
-
-		# with final cat/pn, check if requested for exclusion through --exclude
-		vdb-is_excluded exclude "${dep}" "${pkg}" && continue
-
-		# get SLOT information
-		slot=0; subslot=0
-		if [[ -e ${VDB}/${entry}/SLOT ]]; then
-			slot=$(<"${VDB}/${entry}/SLOT") || die "failed to read slot for '${entry}'"
-			if [[ ${slot} == */* ]]; then
-				subslot=${slot#*/}
-				slot=${slot%/*}
-			fi
-		fi
-
-		echo "${dep}$(vdb-get_expected_slot "${dep}" "${slot}" "${subslot}" "${pkg}" "${prebuilt}")"
-	done | sort | uniq || die "sort/uniq failed"
 }
 
 # vdb-get_deps <CATEGORY/PF> [glob|-] [DEPEND|BDEPEND]
@@ -548,10 +385,11 @@ vdb-get_deps() {
 
 	[[ -e ${VDB}/${1}/${deptype} ]] || return 0
 
-	local atom entry rdep IFS=' '
-	local -i group=0
+	local atom entry rdep
 	local -A deps
-	for rdep in $(cat "${VDB}/${1}/${deptype}" || die "failed to read ${deptype} for '${1}'"); do
+	local -i group=0
+	split- rdep < "${VDB}/${1}/${deptype}" || die "failed to read ${deptype} for '${1}'"
+	for rdep in "${rdep[@]}"; do
 		[[ ${rdep} == !* ]] && continue # ignore blockers
 
 		# Handle ( ) and || ( ) deps loosely (allow missing deps within a group)
@@ -566,7 +404,7 @@ vdb-get_deps() {
 		fi
 
 		# check for [glob] against atom
-		# note: would prefer to do this post-qatom but this gets slow
+		# note: would prefer to do this post-atomsp but this gets ~30x slower
 		[[ ${#} -ge 2 && ${2} != - ]] && eval "[[ \${rdep} != *${2}* ]] && continue"
 
 		# find vdb entry for dep
@@ -578,37 +416,26 @@ vdb-get_deps() {
 			die "no installed provider in vdb for '${rdep}' (may be due to binpkgs ordering)"
 		fi
 
-		# ${rdep} can be something like ">=dev-libs/libevent-2.0:0/2.1-7=[threads]"
-		# use qatom to split without direct parsing here (esp versions)
-		atom=($(vdb-get_atomf '%{CATEGORY}/%{PN} %{SLOT} %{SUBSLOT}' "${rdep}"))
-		if [[ ${atom[1]} == '<unset>' ]]; then
-			# qatom converts :* to <unset> even if set, check against ${rdep}
-			if [[ ${rdep} == *:\** ]]; then
-				atom[1]=$(vdb-get_slot "${entry}")
-			else
-				atom[1]=0
-			fi
-		fi
-		# :* sets subslot to <unset>*, just glob in case there's more garbage
-		if [[ ${atom[2]} == '<unset>'* ]]; then
-			atom[2]=0
-		elif [[ ${atom[2]: -1} == = ]]; then
-			atom[2]=${atom[2]%=}
+		atomsp atom "${rdep}" || die
+		: "${atom[6]:=0}"
+		: "${atom[7]:=0}"
 
-			# pretend have non-zero subslot if bound
-			[[ ${atom[2]} == 0 ]] && atom[2]=1
-		fi
+		# replace wildcard by vdb's used slot
+		[[ ${atom[6]} == \* ]] && atom[6]=$(vdb-get_slot "${entry}")
+
+		# pretend have a non-zero subslot if bound to simplify
+		[[ ${atom[8]} == = && ${atom[7]} == 0 ]] && atom[7]=1
 
 		# in case of duplicates, keep the one that defines a subslot
 		if [[ ${deps[${entry}]:-} ]]; then
-			rdep=(${deps[${entry}]:-})
-			[[ ${atom[2]} == 0 || ${rdep[2]} != 0 ]] && continue
+			split rdep "${deps[${entry}]:-}"
+			[[ ${atom[7]} == 0 || ${rdep[2]} != 0 ]] && continue
 		fi
 
-		deps[${entry}]="${entry} ${atom[*]}"
+		deps[${entry}]="${entry} ${atom[2]}/${atom[3]} ${atom[6]} ${atom[7]}"
 	done
 
-	printf "%s" "${deps[@]/%/$'\n'}"
+	printarray deps
 }
 
 # vdb-get_slot <CATEGORY/PF>
@@ -668,13 +495,14 @@ vdb-is_providing() {
 	# This file can contain modules and executables we aren't
 	# interested in and modules sometime have "lib*.so" names.
 	# To rule them out, check if exists in LDPATH
-	local provided IFS=' '
-	for provided in $(cat "${VDB}/${1}/PROVIDES" || die "could not read PROVIDES for ${1}"); do
+	local provided
+	split- provided < "${VDB}/${1}/PROVIDES" || die "could not read PROVIDES for ${1}"
+	for provided in "${provided[@]}"; do
 		[[ ${provided} == *.so* ]] || continue
 
 		${OPT[ldpath]} || return 0
 
-		vdb-get_ldpath "${provided}" >/dev/null && return 0
+		vdb-get_ldpath provides "${provided}" && return 0
 
 		# special exception for haskell as it doesn't use linker path
 		# TODO: is this going to need a configuration file?
@@ -688,7 +516,6 @@ vdb-is_providing() {
 # 	Prints output of vdb_get_libdiff (if any) with header
 vdb-print_libdiff() {
 	local diff
-
 	if ${OPT[unified]}; then
 		diff=$(vdb-get_libdiff_unified "${1}")
 	else
@@ -748,13 +575,130 @@ vdb-set_exclude() {
 		<<< "${OPT[${1}]}") || die "sed failed"
 }
 
+# vdb-set_libdeps <CATEGORY/PF>
+#	Set VDB_LIBDEPS array to the package list providing shared libraries
+#	based on <CATEGORY/PF>'s vdb RDEPEND.
+#	Output should be identical to VDB_LIBNEED if no missing deps.
+#	Note: vdb-set_libneed must be called first
+vdb-set_libdeps() {
+	VDB_LIBDEPS=()
+
+	local pkg prebuilt=
+	pkg=$(atomf %p "${1}") || die
+	vdb-is_prebuilt "${1}" && prebuilt=prebuilt
+
+	local provides
+	local -a rdep vrdep
+	vdb-get_deps "${1}" | while split- rdep; do
+		# check if requested for exclusion through --exclude
+		vdb-is_excluded exclude "${rdep[1]}" "${pkg}" && continue
+
+		# need to skip entries that do not provide shared libraries but,
+		# to know this, need to check what virtuals resolve to
+		provides=false
+		if [[ ${rdep[0]} == virtual/* ]]; then
+			vdb-get_deps "${rdep[0]}" - RDEPEND | while split- vrdep; do
+				if vdb-is_providing "${vrdep[0]}"; then
+					provides=true
+					break
+				fi
+			done
+		elif vdb-is_providing "${rdep[0]}"; then
+			provides=true
+		fi
+		${provides} || continue
+
+		# if --no-overbind, discard subslot if vdb's subslot is 0
+		if ! ${OPT[overbind]}; then
+			[[ $(vdb-get_subslot "${rdep[0]}") == 0 ]] && rdep[3]=0
+		fi
+
+		# if --no-extra, exclude if not found in VDB_LIBNEED
+		if ! ${OPT[extra]} || vdb-is_excluded exclude-extra "${rdep[1]}" "${pkg}"; then
+			[[ " ${VDB_LIBNEED[*]%:*} " == *" ${rdep[1]} "* ]] || continue
+		fi
+
+		echo "${rdep[1]}$(vdb-get_expected_slot "${rdep[1]}" "${rdep[2]}" "${rdep[3]}" "${pkg}" "${prebuilt}")"
+	done | sort | map VDB_LIBDEPS
+	(( ${?} )) && die # indirect ${?} not to mask ERR trap
+}
+
+# vdb-set_libneed <CATEGORY/PF>
+# 	Set VDB_LIBNEED array to the package list providing shared libraries
+#	based on <CATEGORY/PF>'s vdb REQUIRES.
+#	- If a virtual is used, attempts to list it instead of real package.
+vdb-set_libneed() {
+	VDB_LIBNEED=()
+
+	[[ -e ${VDB}/${1}/REQUIRES ]] || return 0 # no libs
+
+	local prebuilt=
+	vdb-is_prebuilt "${1}" && prebuilt=prebuilt
+
+	local pkg
+	pkg=$(atomf %p "${1}") || die
+
+	# read REQUIRES and strip excluded libraries
+	local -a req=()
+	for entry in $(
+		sed 's/[^ ]*: //g' < "${VDB}/${1}/REQUIRES" \
+			|| die "failed to get dependencies from REQUIRES for '${1}'"); do
+		vdb-is_excluded exclude-lib "${entry%.so*}.so" "${pkg}" || req+=("${entry}")
+	done
+	(( ${#req[@]} )) || return 0 # all libs excluded
+
+	# try to use LDPATH to find full paths, lets qfile ignore private libraries
+	vdb-get_ldpath req "${req[@]}"
+
+	# use qfile to find providers
+	local -a providers
+	if ! qfile -CqvP -- "${req[@]}" | sort | uniq | map providers; then
+		${OPT[ignore-uninstalled]} && return 0 # pretend no libs
+		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
+	fi
+
+	local dep entry slot subslot output
+	local -a vrdep
+	for entry in "${providers[@]}"; do
+		dep=$(atomf %p "${entry}") || die
+
+		# check rdepend for virtuals and the the virtual's rdepend for this dep
+		vdb-get_deps "${1}" "virtual/*" | while split- vrdep; do
+			# special exception for mesa "providing" libglvnd (not really)
+			output=$(vdb-get_deps "${vrdep[0]}" "${dep}" RDEPEND)
+			if [[ ${output} ]] ||
+				[[ ${dep} == media-libs/libglvnd && ${vrdep[1]} == virtual/opengl ]]; then
+				entry=${vrdep[0]}
+				dep=${vrdep[1]}
+				break
+			fi
+		done
+
+		# with final cat/pn, check if requested for exclusion through --exclude
+		vdb-is_excluded exclude "${dep}" "${pkg}" && continue
+
+		# get SLOT information
+		slot=0; subslot=0
+		if [[ -e ${VDB}/${entry}/SLOT ]]; then
+			slot=$(<"${VDB}/${entry}/SLOT") || die "failed to read slot for '${entry}'"
+			if [[ ${slot} == */* ]]; then
+				subslot=${slot#*/}
+				slot=${slot%/*}
+			fi
+		fi
+
+		echo "${dep}$(vdb-get_expected_slot "${dep}" "${slot}" "${subslot}" "${pkg}" "${prebuilt}")"
+	done | sort | uniq | map VDB_LIBNEED
+	(( ${?} )) && die # indirect ${?} not to mask ERR trap
+}
+
 # vdb-set_ldpath
 #	Read paths from ld.so.conf and store them in VDB_LDPATH
 VDB_LDPATH=()
 vdb-set_ldpath() {
-	set +f; shopt -s nullglob # need to glob include paths in ld.so.conf
+	set +f
 	_vdb-set_ldpath "${OPT[ldconf]}"
-	set -f; shopt -u nullglob
+	set -f
 }
 _vdb-set_ldpath() {
 	local path
@@ -805,7 +749,7 @@ vdb-init() {
 #	Do so silently unless OPT[confirm] is set
 vdb-skip_ignore() {
 	local catpn
-	catpn=$(vdb-get_atomf "%{CATEGORY}/%{PN}" "${1}")
+	catpn=$(atomf %p "${1}") || die
 
 	if vdb-is_excluded ignore "${catpn}"; then
 		${OPT[confirm]} && msg "QA: skipped due to package being in qa-vdb.ignore (${1})"
