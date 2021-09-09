@@ -244,6 +244,11 @@ optend() {
 		echo "# ${0##*/}.conf"
 		for key in "${_COMMON_OPT_SORT[@]}"; do
 			[[ ${_COMMON_OPT[${key}]} =~ ^[%@] ]] && l= || l='#'
+
+			if [[ ${_COMMON_OPT[${key}]} =~ ^[%@]*float: ]]; then
+				printf -v "_COMMON_OPT[${key}]" "%.2f" "${_COMMON_OPT[${key}]#*:}e-2"
+			fi
+
 			if [[ ${key} == colormap ]]; then
 				if [[ -v _COMMON_OPT[color] ]]; then
 					echo "# grey,red,green,yellow,blue,magenta,cyan,light*7,white,neutral"

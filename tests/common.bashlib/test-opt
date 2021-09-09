@@ -20,7 +20,7 @@ optset mybool no # overrides both config and default
 
 expect -s -c "'# ${conf}
 mybool = false
-myfloat = 5679
+myfloat = 56.79
 myint = 50
 mystr = \" text \"
 #myextra = extra
