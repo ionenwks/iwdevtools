@@ -261,8 +261,9 @@ cmp-get_images() {
 			echo "${atom[6]:-:0} ${ts} ${dir}"
 		done
 		set -f
-	} | sort -nr | head -n 3 | cut -d' ' -f3- | map "${1}" \
-		|| die "failed to get images for '${2}'"
+	} | sort -nr | head -n 3 | cut -d' ' -f3- | map "${1}"
+    # indirect ${?} to allow {}'s exit code ERR trap first
+    (( ${?} )) && die "failed to get images for '${2}'"
 }
 
 # cmp-get_installed <atom>
@@ -504,7 +505,7 @@ declare -A CMP_VISIBLE=() CMP_VISIBLE_SET=()
 cmp-get_visible() {
 	if [[ ! ${CMP_VISIBLE_SET[${1}]+x} ]]; then
 		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-/}" "${1}") \
-			|| die "portageq best_visible failed for '${1}'"
+			|| die "portageq best_visible failed for '${1}', atom not in tree?"
 		# empty string shouldn't happen as it returns false, but check anyway
 		[[ ${CMP_VISIBLE[${1}]} ]] || die "portageq best_visible returned an empty string for '${1}'"
 		CMP_VISIBLE_SET[${1}]=y
