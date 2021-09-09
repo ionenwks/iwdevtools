@@ -194,16 +194,12 @@ optset() {
 				${2} 2>/dev/null || unset val
 		;;
 		float)
-			# allow errors to some extend unless value is also 0
-			if ! { printf -v val '%.2f' "${2%\%}" 2>/dev/null &&
-					printf -v val '%.0f' "${val}e+2" 2>/dev/null; }; then
-				[[ ${val} != 0.00 && ${val} != 0 ]] || unset val
-			fi
+			printf -v val '%.2f' "${2%\%}" 2>/dev/null \
+				&& printf -v val '%.0f' "${val}e+2" 2>/dev/null \
+				|| unset val
 		;;
 		int)
-			if ! printf -v val '%d' "${2}" 2>/dev/null; then
-				[[ ${val} != 0 ]] || unset val
-			fi
+			printf -v val '%d' "${2}" 2>/dev/null || unset val
 		;;
 		str) val=${2};;
 		*) die;;

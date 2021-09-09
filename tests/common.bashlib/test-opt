@@ -3,7 +3,7 @@ cat > ${conf} <<-EOF
 	# comment
 	mybool=yes
 	myfloat = 12.34
-	myint	=	50trailing text
+	myint	=	50
 	  mystr= ' text '# comment
 	myfloat = 56.789%
 EOF
