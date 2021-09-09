@@ -157,7 +157,7 @@ optstart() {
 		_COMMON_OPT[${key}]=${l#*=}
 	done
 	_COMMON_OPT_SORT+=(colormap)
-	_COMMON_OPT[colormap]="colormap:r31 g32 y33 b34 m35 c36 a90 la37 lr91 lg92 ly93 lb94 lm95 lc96 w97 n0"
+	_COMMON_OPT[colormap]="colormap:a90 r31 g32 y33 b34 m35 c36 la37 lr91 lg92 ly93 lb94 lm95 lc96 w97 n0"
 
 	set -- \
 		"@confdir@" \
@@ -190,7 +190,7 @@ optset() {
 			esac
 		;;
 		colormap)
-			printf -v val 'r%d g%d y%d b%d m%d c%d a%d la%d lr%d lg%d ly%d lb%d lm%d lc%d w%d n%d' \
+			printf -v val 'a%d r%d g%d y%d b%d m%d c%d la%d lr%d lg%d ly%d lb%d lm%d lc%d w%d n%d' \
 				${2} 2>/dev/null || unset val
 		;;
 		float)
@@ -245,8 +245,10 @@ optend() {
 		for key in "${_COMMON_OPT_SORT[@]}"; do
 			[[ ${_COMMON_OPT[${key}]} =~ ^[%@] ]] && l= || l='#'
 			if [[ ${key} == colormap ]]; then
-				[[ ! ${_COMMON_OPT[color]:-} ]] \
-					|| echo "${l}${key} = ${_COMMON_OPT[colormap]//[a-z:]/}"
+				if [[ -v _COMMON_OPT[color] ]]; then
+					echo "# grey,red,green,yellow,blue,magenta,cyan,light*7,white,neutral"
+					echo "${l}${key} = ${_COMMON_OPT[colormap]//[a-z:]/}"
+				fi
 			elif [[ ${_COMMON_OPT[${key}]} =~ (^\ |\ $) ]]; then
 				# quotes only needed if spaces are at end/start
 				echo "${l}${key} = \"${_COMMON_OPT[${key}]#*:}\""

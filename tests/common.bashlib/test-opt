@@ -25,12 +25,13 @@ myint = 50
 mystr = \" text \"
 #myextra = extra
 #color = true
-#colormap = 31 32 33 34 35 36 90 37 91 92 93 94 95 96 97 0'" optend -d
+# grey,red,green,yellow,blue,magenta,cyan,light*7,white,neutral
+#colormap = 90 31 32 33 34 35 36 37 91 92 93 94 95 96 97 0'" optend -d
 
 ( optset color n &&
   optend && [[ ${C[n]} != $'\e[0m' ]] ) || fail "expected no colors, got colors"
 ( optend && [[ ${C[n]} == $'\e[0m' ]] ) || fail "expected color, got none"
-( optset colormap "0 33" && # green -> yellow
+( optset colormap "0 0 33" && # green -> yellow
   optend &&
   [[ ${C[g]} == $'\e[33m' ]] ) || fail "expected yellow, got something else"
 ( optset myextra new &&
