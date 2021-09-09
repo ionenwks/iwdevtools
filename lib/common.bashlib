@@ -310,8 +310,8 @@ optauto() {
 			*)
 				arg=${arg#--}
 				arg=${arg#no-}
-				if [[ ${_COMMON_OPT[${arg}]} =~ ^bool:(true|'') ]]; then
-					if [[ ${BASH_REMATCH[1]} ]]; then
+				if [[ ${_COMMON_OPT[${arg}]} =~ ^[%@]*bool:(.*) ]]; then
+					if [[ ${BASH_REMATCH[1]} == true ]]; then
 						optset "${arg}" false
 					else
 						optset "${arg}" true
