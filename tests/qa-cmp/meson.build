@@ -1,6 +1,4 @@
 tests = [
-	'test-help',
-	'test-version',
 	'test-abi-change',
 	'test-abi-debug',
 	'test-abi-system',
@@ -11,6 +9,7 @@ tests = [
 	'test-diff-size',
 	'test-diff-soname',
 	'test-disable',
+	'test-help',
 	'test-missing',
 	'test-pick',
 	'test-single',
