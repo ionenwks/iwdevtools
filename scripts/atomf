@@ -23,6 +23,7 @@ usage <<-EOU
 
 	  -h, --help       Display usage information and exit
 	      --version    Display version information and exit
+	      --dumpconfig Display configuration and exit
 
 	*Format*
 	 0.  %! Blocker indicator (!, !!, or none)
@@ -50,28 +51,17 @@ usage <<-EOU
 	If need to use this in a bash script extensively, it is recommended to source
 	@datadir@/atomf.bashlib directly rather than call this.
 EOU
-
-declare -A OPT
-OPT[expand]=false
-OPT[unset]='?'
-OPT[versplit]=false
-
-getoptw arg args hxs:v help,version,expand,unset:,versplit "${@}"
-while getoptw; do
-	case ${arg} in
-		-h|--help) usage;;
-		   --version) version;;
-		-x|--expand) OPT[expand]=true;;
-		-v|--versplit) OPT[versplit]=true;;
-		-s|--unset) getoptw; OPT[unset]=${arg};;
-	esac
-done
+optauto args "${@}" <<-EOO
+	x|expand=bool:false
+	s|unset=str:?
+	v|versplit=bool:false
+EOO
 set -- "${args[@]}"; unset args
 
 (( ${#} )) || die "no format/atom specified, see \`${0##*/} --help\`"
 
 exiterrno=
-if ${OPT[versplit]}; then
+if ${O[versplit]}; then
 	while (( ${#} )); do
 		if pversp ver "${1}"; then
 			echo "${ver[*]}"
@@ -81,7 +71,7 @@ if ${OPT[versplit]}; then
 		fi
 		shift
 	done
-elif (( ${#} > 1 )) && ! ${OPT[expand]}; then
+elif (( ${#} > 1 )) && ! ${O[expand]}; then
 	format=${1}
 	shift
 
@@ -102,7 +92,7 @@ else
 		if atomsp atom "${1}"; then
 			merge=
 			for ((i=0; i<${#atom[@]}; i++)); do
-				: "${atom[i]:=${OPT[unset]}}"
+				: "${atom[i]:=${O[unset]}}"
 				merge+=${atom[i]:+ ${atom[i]}}
 			done
 			echo "${merge# }"
