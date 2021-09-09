@@ -455,14 +455,14 @@ vdb-is_providing() {
 	# This file can contain modules and executables we aren't
 	# interested in and modules sometime have "lib*.so" names.
 	# To rule them out, check if exists in LDPATH
-	local provided
+	local unused provided
 	split- provided < "${VDB}/${1}/PROVIDES" || die "could not read PROVIDES for ${1}"
 	for provided in "${provided[@]}"; do
 		[[ ${provided} == *.so* ]] || continue
 
 		${O[ldpath]} || return 0
 
-		vdb-get_ldpath provides "${provided}" && return 0
+		vdb-get_ldpath unused "${provided}" && return 0
 
 		# special exception for haskell as it doesn't use linker path
 		# TODO: is this going to need a configuration file?
