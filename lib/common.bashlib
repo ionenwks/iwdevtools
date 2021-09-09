@@ -124,7 +124,7 @@ msg() {
 #	Usage:
 #		optstart <<-EOO
 #			name=type:default (type = bool, float(int*100), int, str)
-#			short|name=type:default (short| optional and only by optauto())
+#			short|!name=type:default (short| and ! optional for optauto())
 #			...
 #		EOO
 #		optset <key> <val> (override default with arguments, used over configs)
@@ -132,19 +132,27 @@ msg() {
 #		optend (load configs and normalize arrays for usage)
 #	Alternatively, optauto <<-EOO... does all of the above combined.
 #	After optend(), e.g. ${O[boolname]} = true, ${C[g]} = green ansi color
-#	Note: include c|color=bool:true to enable C array
+#	Note: include c|!color=bool:true to enable C array / colormap
 optstart() {
 	_COMMON_OPT_SORT=()
-	declare -gA O C _COMMON_OPT{,_SHORT{,_R}}
+	declare -gA O C _COMMON_OPT{,_NO,_SHORT{,_R}}
 
-	local l key
+	local l key opt
 	while IFS= read -r l; do
-		key=${l%%=*}
-		if [[ ${key} =~ \| ]]; then
-			key=${key#*|}
-			_COMMON_OPT_SHORT[${key}]=${l%%|*}
-			_COMMON_OPT_SHORT_R[${_COMMON_OPT_SHORT[${key}]}]=${key}
+		opt=${l%%=*}
+		key=${opt#*|}
+		key=${key#!}
+
+		if [[ ${opt} =~ '!' ]]; then
+			_COMMON_OPT_NO[${key}]=
 		fi
+
+		if [[ ${opt} =~ '|' ]]; then
+			key=${key#*|}
+			_COMMON_OPT_SHORT[${key}]=${l:0:1}
+			_COMMON_OPT_SHORT_R[${l:0:1}]=${key}
+		fi
+
 		_COMMON_OPT_SORT+=("${key}")
 		_COMMON_OPT[${key}]=${l#*=}
 	done
@@ -266,7 +274,7 @@ optend() {
 		fi
 	done
 
-	unset _COMMON_OPT{,_SHORT,SHORT_R,SORT}
+	unset _COMMON_OPT{,_NO,_SHORT{,_R}}
 }
 
 # optauto <array> <args...> << (depend:getopt)
@@ -274,7 +282,7 @@ optend() {
 #	Named [array] will store remaining arguments, see getoptw().
 #	On top of defined options, will add:
 #		-h|--help, --version, --confdir=PATH, --dumpconfig
-#	Boolean long options will be prefixed by --no-* if enabled by default.
+#	Options prefixed by ! (i.e. s|!long=) will add --no-*
 optauto() {
 	optstart
 
@@ -283,7 +291,7 @@ optauto() {
 		# note: undocumented but no reason to skip --colormap if enabled
 		[[ ${key} != colormap || ${_COMMON_OPT[color]:-} ]] || continue
 		[[ ${_COMMON_OPT[${key}]} =~ ^bool: ]] && hasarg= || hasarg=:
-		[[ ${_COMMON_OPT[${key}]} =~ ^bool:true ]] && long+=,no-${key} || long+=,${key}${hasarg}
+		[[ -v _COMMON_OPT_NO[${key}] ]] && long+=,no-${key} || long+=,${key}${hasarg}
 		short+=${_COMMON_OPT_SHORT[${key}]:+${_COMMON_OPT_SHORT[${key}]}${hasarg}}
 	done
 

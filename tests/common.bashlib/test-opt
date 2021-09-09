@@ -13,7 +13,7 @@ optstart <<-EOO
 	i|myint=int:10
 	mystr=str:default
 	myextra=str:extra
-	c|color=bool:true
+	c|!color=bool:true
 EOO
 optsetconf .
 optset mybool no # overrides both config and default
