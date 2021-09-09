@@ -308,25 +308,25 @@ cmp-get_scanelf() {
 #	Symbolic links will also be skipped as the non-link library is
 #	expected to be in the list.
 cmp-get_shared() {
-	local array=${1}
+	local setarray=${1}
 	shift
 
-	local -a so=()
+	local -a solibs=()
 	while (( ${#} )); do
 		# trim list for less checks, not interested in obscure not-.so
 		if [[ ${1} == *.so* && ! -L ${1} ]]; then
 			[[ -r ${1} ]] || die "'${1}' is not readable"
-			so+=("${1}")
+			solibs+=("${1}")
 		fi
 		shift
 	done
 
-	if (( ! ${#so[@]} )); then
-		eval "${array}=()"
+	if (( ! ${#solibs[@]} )); then
+		eval "${setarray}=()"
 		return 0
 	fi
 
-	file -i0 -- "${so[@]}" | grep -aF 'x-sharedlib' | cut -d '' -f1 | map "${array}"
+	file -i0 -- "${solibs[@]}" | grep -aF 'x-sharedlib' | cut -d '' -f1 | map "${setarray}"
 	[[ ${PIPESTATUS[*]} == '0 '[01]' 0 0' ]] \
 		|| die "file check for shared libraries failed"
 }
