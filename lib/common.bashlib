@@ -260,7 +260,7 @@ optend() {
 
 	for val in ${_COMMON_OPT[colormap]#*:}; do
 		if [[ ${O[color]:-} == true ]]; then
-			printf -v C[${val%%[0-9]*}] "\e[${val##*[a-z]}m"
+			printf -v "C[${val%%[0-9]*}]" "\e[${val##*[a-z]}m"
 		else
 			C[${val%%[0-9]*}]=
 		fi
@@ -307,7 +307,7 @@ optauto() {
 					fi
 				else
 					prev=${arg}; getoptw
-					optset ${prev} "${arg}"
+					optset "${prev}" "${arg}"
 				fi
 			;;
 		esac
