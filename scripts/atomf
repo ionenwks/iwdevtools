@@ -23,7 +23,7 @@ usage <<-EOU
 
 	      --confdir=PATH Configuration dir to use instead of defaults
 	                     (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
-	      --dumpconfig   Display configuration and exit
+	      --dumpconfig   Display config and exit (> ${0##*/}.conf)
 
 	  -h, --help         Display usage information and exit
 	      --version      Display version information and exit
