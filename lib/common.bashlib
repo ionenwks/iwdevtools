@@ -328,6 +328,13 @@ optauto() {
 	optend
 }
 
+# printarray <array>
+#	Echoes named <array> with trailing \n.
+#	Unlike printf '%s\n' "${array[@]}", will not print a newline if empty.
+printarray() {
+	eval "printf %s \"\${${1}[@]/%/$'\n'}\""
+}
+
 # setmsg [12] [format]
 #	Set how to output messages from msg()
 #	Default if not used: 1(stdout) '%s\n'
