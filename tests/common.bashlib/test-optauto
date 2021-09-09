@@ -1,0 +1,32 @@
+conf=${0##*/}.conf
+
+expect -c -s "'# ${conf}
+mybool1 = false
+mybool2 = true
+mybool3 = true
+mystr = new'" optauto args --mystr=new --no-mybool1 --mybool2 -b --dumpconfig <<-EOO
+	B|mybool1=bool:true
+	mybool2=bool:false
+	b|mybool3=bool:false
+	mystr=str:default
+EOO
+
+opttest() {
+	optauto args 1 2 3 </dev/null &&
+	echo "${args[*]}"
+}
+expect -c "1 2 3" opttest
+
+opttest() {
+	usage <<<"test" &&
+	optauto args -h </dev/null
+}
+expect -c "test" opttest
+
+expect -c "${0##*/} ${VERSION}" optauto args --version </dev/null
+
+cat > ${conf} <<-EOF
+	mystr = new
+EOF
+expect -c -s "'# ${conf}
+mystr = new'" optauto args --confdir=. --dumpconfig <<<"mystr=str:text"

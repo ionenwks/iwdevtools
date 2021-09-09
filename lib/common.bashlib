@@ -119,6 +119,203 @@ msg() {
 	printf "${_COMMON_MSG_FMT:-%s\n}" "${@}" >&"${_COMMON_MSG_STD:-1}"
 }
 
+# optstart
+#	Setup O and C associative arrays (option/colors), and CONFDIRS array.
+#	Usage:
+#		optstart <<-EOO
+#			name=type:default (type = bool, float(int*100), int, str)
+#			short|name=type:default (short| optional and only by optauto())
+#			...
+#		EOO
+#		optset <key> <val> (override default with arguments, used over configs)
+#		optsetconf <dir> (override default CONFDIRS by <dir> if needed)
+#		optend (load configs and normalize arrays for usage)
+#	Alternatively, optauto <<-EOO... does all of the above combined.
+#	After optend(), e.g. ${O[boolname]} = true, ${C[g]} = green ansi color
+#	Note: include c|color=bool:true to enable C array
+optstart() {
+	_COMMON_OPT_SORT=()
+	declare -gA O C _COMMON_OPT{,_SHORT{,_R}}
+
+	local l key
+	while IFS= read -r l; do
+		key=${l%%=*}
+		if [[ ${key} =~ \| ]]; then
+			key=${key#*|}
+			_COMMON_OPT_SHORT[${key}]=${l%%|*}
+			_COMMON_OPT_SHORT_R[${_COMMON_OPT_SHORT[${key}]}]=${key}
+		fi
+		_COMMON_OPT_SORT+=("${key}")
+		_COMMON_OPT[${key}]=${l#*=}
+	done
+	_COMMON_OPT_SORT+=(colormap)
+	_COMMON_OPT[colormap]="colormap:r31 g32 y33 b34 m35 c36 a90 la37 lr91 lg92 ly93 lb94 lm95 lc96 w97 n0"
+
+	set -- \
+		"@confdir@" \
+		"${0%/*}/../config" \
+		"${XDG_CONFIG_HOME:-${HOME}/.config}/@package@"
+	declare -ga CONFDIRS=()
+	while (( ${#} )); do
+		[[ ! -d ${1} ]] || CONFDIRS+=("${1}")
+		shift
+	done
+}
+
+# optset <key> <value> [-c]
+#	Set O[<key>] to <value> after sanity checks, die on error, see optstart().
+#	-c indicates set from a config file and will not override non-default/-c
+optset() {
+	local isset='%' type=${_COMMON_OPT[${1}]%:*} val
+
+	if [[ ${3:-} == -c ]]; then
+		[[ ${type} != %* ]] || return 0
+		isset='@'
+	fi
+	type=${type#[%@]}
+
+	case ${type} in
+		bool)
+			case ${2,,} in
+				1|enable|true|yes|y) val=true;;
+				0|disable|false|no|n) val=false;;
+			esac
+		;;
+		colormap)
+			printf -v val 'r%d g%d y%d b%d m%d c%d a%d la%d lr%d lg%d ly%d lb%d lm%d lc%d w%d n%d' \
+				${2} 2>/dev/null || unset val
+		;;
+		float)
+			# allow errors to some extend unless value is also 0
+			if ! { printf -v val '%.2f' "${2%\%}" 2>/dev/null &&
+					printf -v val '%.0f' "${val}e+2" 2>/dev/null; }; then
+				[[ ${val} != 0.00 && ${val} != 0 ]] || unset val
+			fi
+		;;
+		int)
+			if ! printf -v val '%d' "${2}" 2>/dev/null; then
+				[[ ${val} != 0 ]] || unset val
+			fi
+		;;
+		str) val=${2};;
+		*) die;;
+	esac
+
+	[[ -v val ]] || die "unrecognized value '${2}' for option '${1}', expected ${type}"
+
+	_COMMON_OPT[${1}]=${isset}${type}:${val}
+}
+
+# optsetconf <dir>
+#	Override CONFDIRS to use <dir> or die if not a directory, see optstart().
+optsetconf() {
+	[[ -d ${1} ]] || die "configuration directory '${1}' is not a directory"
+	CONFDIRS=("${1}")
+}
+
+# optend [-d]
+#	See optstart()
+#	If -d is specified, dump configuration and exit (usable as .conf)
+optend() {
+	local file l key val
+
+	for file in "${CONFDIRS[@]/%//${0##*/}.conf}"; do
+		[[ -e ${file} ]] || continue
+		while IFS= read -r l; do
+			[[ ! ${l} =~ ^# ]] || continue
+			[[ ${l} =~ ^[[:space:]]*([a-z-]+)[[:space:]]*=[[:space:]]*([^#]*) ]] \
+				|| die "could not parse line from '${file}': ${l}"
+
+			key=${BASH_REMATCH[1]}
+			val=${BASH_REMATCH[2]%"${BASH_REMATCH[2]##*[![:space:]]}"}
+			val=${val//[\"\'\\]/} #"]}#vim
+
+			[[ ${_COMMON_OPT[${key}]:-} =~ : ]] || die "invalid option in '${file}': ${key}"
+
+			optset "${key}" "${val}" -c
+		done < "${file}" || die "failed to read '${file}'"
+	done
+
+	if [[ ${1:-} == -d ]]; then
+		echo "# ${0##*/}.conf"
+		for key in "${_COMMON_OPT_SORT[@]}"; do
+			[[ ${_COMMON_OPT[${key}]} =~ ^[%@] ]] && l= || l='#'
+			if [[ ${key} == colormap ]]; then
+				[[ ! ${_COMMON_OPT[color]:-} ]] \
+					|| echo "${l}${key} = ${_COMMON_OPT[colormap]//[a-z:]/}"
+			elif [[ ${_COMMON_OPT[${key}]} =~ (^\ |\ $) ]]; then
+				# quotes only needed if spaces are at end/start
+				echo "${l}${key} = \"${_COMMON_OPT[${key}]#*:}\""
+			else
+				echo "${l}${key} = ${_COMMON_OPT[${key}]#*:}"
+			fi
+		done
+		exit
+	fi
+
+	for key in "${!_COMMON_OPT[@]}"; do
+		[[ ${key} != colormap ]] || continue
+		O[${key}]=${_COMMON_OPT[${key}]#*:}
+	done
+
+	for val in ${_COMMON_OPT[colormap]#*:}; do
+		if [[ ${O[color]:-} == true ]]; then
+			printf -v C[${val%%[0-9]*}] "\e[${val##*[a-z]}m"
+		else
+			C[${val%%[0-9]*}]=
+		fi
+	done
+
+	unset _COMMON_OPT{,_SHORT,SHORT_R,SORT}
+}
+
+# optauto <array> <args...> << (depend:getopt)
+#	Combines opt* and getoptw(), see optstart().
+#	Named [array] will store remaining arguments, see getoptw().
+#	On top of defined options, will add:
+#		-h|--help, --version, --confdir=PATH, --dumpconfig
+#	Boolean long options will be prefixed by --no-* if enabled by default.
+optauto() {
+	optstart
+
+	local key short=h long=help,version,confdir:,dumpconfig
+	for key in "${_COMMON_OPT_SORT[@]}"; do
+		# note: undocumented but no reason to skip --colormap if enabled
+		[[ ${key} != colormap || ${_COMMON_OPT[color]:-} ]] || continue
+		[[ ${_COMMON_OPT[${key}]} =~ ^bool: ]] && hasarg= || hasarg=:
+		[[ ${_COMMON_OPT[${key}]} =~ ^bool:true ]] && long+=,no-${key} || long+=,${key}${hasarg}
+		short+=${_COMMON_OPT_SHORT[${key}]:+${_COMMON_OPT_SHORT[${key}]}${hasarg}}
+	done
+
+	local arg prev
+	getoptw arg "${1}" "${short}" "${long}" "${@:2}"
+	while getoptw; do
+		case "${arg}" in
+			-h|--help) usage;;
+			--version) version;;
+			--confdir) getoptw; optsetconf "${arg}";;
+			--dumpconfig) optend -d;;
+			-?) arg=${_COMMON_OPT_SHORT_R[${arg#-}]};&
+			*)
+				arg=${arg#--}
+				arg=${arg#no-}
+				if [[ ${_COMMON_OPT[${arg}]} =~ ^bool:(true|'') ]]; then
+					if [[ ${BASH_REMATCH[1]} ]]; then
+						optset "${arg}" false
+					else
+						optset "${arg}" true
+					fi
+				else
+					prev=${arg}; getoptw
+					optset ${prev} "${arg}"
+				fi
+			;;
+		esac
+	done
+
+	optend
+}
+
 # setmsg [12] [format]
 #	Set how to output messages from msg()
 #	Default if not used: 1(stdout) '%s\n'
@@ -153,7 +350,7 @@ showline() {
 	printf "${format}\n" "${output[@]}"
 }
 
-# usage
+# usage [<<]
 #	Read stdin for usage, then subsequent call will display it and exit.
 usage() {
 	if [[ ! -v _COMMON_USAGE ]]; then

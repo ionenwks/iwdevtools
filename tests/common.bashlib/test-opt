@@ -1,0 +1,46 @@
+conf=${0##*/}.conf
+cat > ${conf} <<-EOF
+	# comment
+	mybool=yes
+	myfloat = 12.34
+	myint	=	50trailing text
+	  mystr= ' text '# comment
+	myfloat = 56.789%
+EOF
+optstart <<-EOO
+	b|mybool=bool:false
+	f|myfloat=float:1000
+	i|myint=int:10
+	mystr=str:default
+	myextra=str:extra
+	c|color=bool:true
+EOO
+optsetconf .
+optset mybool no # overrides both config and default
+
+expect -s -c "'# ${conf}
+mybool = false
+myfloat = 5679
+myint = 50
+mystr = \" text \"
+#myextra = extra
+#color = true
+#colormap = 31 32 33 34 35 36 90 37 91 92 93 94 95 96 97 0'" optend -d
+
+( optset color n &&
+  optend && [[ ${C[n]} != $'\e[0m' ]] ) || fail "expected no colors, got colors"
+( optend && [[ ${C[n]} == $'\e[0m' ]] ) || fail "expected color, got none"
+( optset colormap "0 33" && # green -> yellow
+  optend &&
+  [[ ${C[g]} == $'\e[33m' ]] ) || fail "expected yellow, got something else"
+( optset myextra new &&
+  optend &&
+  [[ ${O[myextra]} == new ]] ) || fail "expected 'new', got '${O[myextra]}'"
+
+expect -c -2 "Error:*unrecognized*expected int*" xfail -s 1 optset myint badvalue
+
+echo "badopt=value" > ${conf}
+expect -c -2 "Error:*invalid option*" xfail -s 1 optend
+
+echo "bad line" > ${conf}
+expect -c -2 "Error:*could not parse*" xfail -s 1 optend
