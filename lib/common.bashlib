@@ -190,8 +190,10 @@ optset() {
 			esac
 		;;
 		colormap)
+			local -a colormap
+			split colormap "${2}"
 			printf -v val 'a%d r%d g%d y%d b%d m%d c%d la%d lr%d lg%d ly%d lb%d lm%d lc%d w%d n%d' \
-				${2} 2>/dev/null || unset val
+				"${colormap[@]}" 2>/dev/null || unset val
 		;;
 		float)
 			printf -v val '%.2f' "${2%\%}" 2>/dev/null \
