@@ -1,0 +1,7 @@
+array=(1)
+split +array 2,3 ,
+[[ ${array[*]} == '1 2 3' ]] || fail "expected '1 2 3', got '${array[*]}'"
+split array '4 5'
+[[ ${array[*]} == '4 5' ]] || fail "expected '4 5', got '${array[*]}'"
+split- +array + <<<"6+7"
+[[ ${array[*]} == '4 5 6 7' ]] || fail "expected '4 5 6 7', got '${array[*]}'"

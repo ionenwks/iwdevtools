@@ -6,6 +6,7 @@ tests = [
 	'test-opt',
 	'test-optauto',
 	'test-showline',
+	'test-split',
 	'test-subshell-exit',
 	'test-usage',
 	'test-version'

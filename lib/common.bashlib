@@ -103,8 +103,8 @@ include() {
 }
 
 # map [+]<array>
-#	Wrapper to mapfile using -t by default and opting to add to array
-#	rather than reset if + is prepended.
+#	Wrapper to mapfile using -t by default.
+#	If + is set, add to array rather than replace it.
 map() {
 	if [[ ${1:0:1} == + ]]; then
 		eval 'mapfile -t -O "${#'"${1#+}"'[@]}" "${1#+}"'
@@ -336,6 +336,25 @@ setmsg() {
 		shift
 	fi
 	(( ! ${#} )) || _COMMON_MSG_FMT=${1}
+}
+
+# split [+]<array> <string> [IFS]
+#	Wrapper to split-() to act on <string> rather than stdin.
+split() {
+	split- "${1}" "${3:-}" <<<"${2}"
+}
+
+# split- [+]<array> [IFS]
+#	Split stdin into <array> based on IFS (default IFS=' ')
+#	If + is set, add to array rather than replace it.
+split-() {
+	if [[ ${1:0:1} == + ]]; then
+		local -a _common_split
+		IFS=${2:-' '} read -ra _common_split
+		eval "${1#+}"'+=("${_common_split[@]}")'
+	else
+		IFS=${2:-' '} read -ra "${1}"
+	fi
 }
 
 # showline <lineno> <source> [format]
