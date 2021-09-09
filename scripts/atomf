@@ -16,14 +16,17 @@ usage <<-EOU
 	invalid per the Package Manager Specification (PMS).
 
 	Options:
-	  -x, --expand     Ignore format and expand multiple atoms to elements.
-	  -s, --unset=STR  When expanding, use STR to indicate unset (default: '?').
-	  -v, --versplit   Split a version string into elements instead.
-	                   (no characters are dropped for versions)
+	  -x, --expand       Ignore format and expand multiple atoms to elements.
+	  -s, --unset=STR    When expanding, show STR if unset (default: '?').
+	  -v, --versplit     Split a version string into elements instead.
+	                     (no characters are dropped for versions)
 
-	  -h, --help       Display usage information and exit
-	      --version    Display version information and exit
-	      --dumpconfig Display configuration and exit
+	      --confdir=PATH Configuration dir to use instead of defaults.
+	                     (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig   Display configuration and exit.
+
+	  -h, --help         Display usage information and exit.
+	      --version      Display version information and exit.
 
 	*Format*
 	 0.  %! Blocker indicator (!, !!, or none)
