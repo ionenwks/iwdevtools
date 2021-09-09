@@ -49,6 +49,10 @@ usage <<-EOU
 
 	  -c, --no-color        Disable use of colors
 
+	      --confdir=PATH    Configuration dir to use instead of defaults
+	                        (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig      Display config and exit (> ${0##*/}.conf)
+
 	  -h, --help            Display usage information and exit
 	      --version         Display version information and exit
 
@@ -72,76 +76,43 @@ usage <<-EOU
 	  QA_CMP_ARGS=          Extra arguments to pass, see options above
 	  QA_CMP_LOG=ewarn      Portage log level command to use for output
 EOU
-
-declare -A OPT
-OPT[filelist-diff]=true
-OPT[soname-diff]=true
-OPT[abi-diff]=true
-OPT[size-diff]=true
-OPT[report]=true
-OPT[compare]=true
-OPT[size-thres]=1000
-OPT[full-abidiff]=false
-OPT[warn-debug]=true
-OPT[image-only]=false
-OPT[ver-keep]=false
-OPT[ver-dironly]=false
-OPT[allow-missing]=false
-OPT[confirm]=false
-OPT[single]=false
-OPT[single-filelist]=false
-OPT[single-soname]=false
-OPT[single-size]=false
-OPT[single-auto]=false
-OPT[color]=true
-
-getoptw arg args \
-	hfsazrxT:BdIKOMWFSZLUc \
-	help,version,no-filelist,no-soname,no-abidiff,no-size,no-report,no-compare,size-thres:,full-abidiff,quiet-nodebug,image-only,ver-keep,ver-dironly,allow-missing,confirm,single-filelist,single-soname,single-size,single-all,single-auto,no-color \
-	"$@"
-while getoptw; do
-	case ${arg} in
-		-h|--help) usage;;
-		   --version) version;;
-		-f|--no-filelist) OPT[filelist-diff]=false;;
-		-s|--no-soname) OPT[soname-diff]=false;;
-		-a|--no-abidiff) OPT[abi-diff]=false;;
-		-z|--no-size) OPT[size-diff]=false;;
-		-r|--no-report) OPT[report]=false;;
-		-x|--no-compare) OPT[compare]=false;;
-		-T|--size-thres)
-			getoptw
-			printf -v 'OPT[size-thres]' '%.2f' "${arg%\%}" 2>/dev/null
-			OPT[size-thres]=${OPT[size-thres]/./}
-		;;
-		-B|--full-abidiff) OPT[full-abidiff]=true;;
-		-d|--quiet-nodebug) OPT[warn-debug]=false;;
-		-I|--image-only) OPT[image-only]=true;;
-		-K|--ver-keep) OPT[ver-keep]=true;;
-		-O|--ver-dironly) OPT[ver-dironly]=true;;
-		-M|--allow-missing) OPT[allow-missing]=true;;
-		-W|--confirm) OPT[confirm]=true;;
-		-F|--single-filelist) OPT[single-filelist]=true;;
-		-S|--single-soname) OPT[single-soname]=true;;
-		-Z|--single-size) OPT[single-size]=true;;
-		-L|--single-all)
-			OPT[single-filelist]=true
-			OPT[single-soname]=true
-			OPT[single-size]=true
-		;;
-		-U|--single-auto) OPT[single-auto]=true;;
-		-c|--no-color) OPT[color]=false;;
-	esac
-done
+optauto args "${@}" <<-EOO
+	f|!filelist=bool:true
+	s|!soname=bool:true
+	a|!abidiff=bool:true
+	z|!size=bool:true
+	r|!report=bool:true
+	x|!compare=bool:true
+	T|size-thres=float:1000
+	B|full-abidiff=bool:false
+	d|quiet-nodebug=bool:false
+	I|image-only=bool:false
+	K|ver-keep=bool:false
+	O|ver-dironly=bool:false
+	M|allow-missing=bool:false
+	W|confirm=bool:false
+	F|single-filelist=bool:false
+	S|single-soname=bool:false
+	Z|single-size=bool:false
+	L|single-all=bool:false
+	U|single-auto=bool:false
+	c|!color=bool:true
+EOO
 (( ${#args[@]} >= 1 )) || die "no atom/image specified, see \`${0##*/} --help\`"
 (( ${#args[@]} <= 2 )) || die "too many atom/image given, see \`${0##*/} --help\`"
 
-${OPT[single-filelist]} || ${OPT[single-soname]} || ${OPT[single-size]} \
-	&& OPT[single]=true
+if ${O[single-all]}; then
+	O[single-filelist]=true
+	O[single-soname]=true
+	O[single-size]=true
+fi
 
-! ${OPT[filelist-diff]} && ! ${OPT[soname-diff]} && ! ${OPT[abi-diff]} \
-	&& ! ${OPT[size-diff]} && ! ${OPT[report]} \
-	&& OPT[compare]=false
+${O[single-filelist]} || ${O[single-soname]} || ${O[single-size]} \
+	&& CMP_SINGLE=true || CMP_SINGLE=false
+
+! ${O[filelist]} && ! ${O[soname]} && ! ${O[abidiff]} \
+	&& ! ${O[size]} && ! ${O[report]} \
+	&& O[compare]=false
 
 # cmp-get_compare2readable <compare>
 #	Echoes a cmp-get_tocompare converted value to be more readable
@@ -224,7 +195,7 @@ cmp-get_images() {
 		atomsp atom "${match}" || die
 		atom[6]=${atom[6]:+:${atom[6]}}
 
-		if ! ${OPT[image-only]}; then
+		if ! ${O[image-only]}; then
 			for match in "${2}" ${atom[2]}/${atom[3]}${atom[6]} ${atom[6]:+${atom[2]}/${atom[3]}}; do
 				match=$(cmp-get_installed "${match}")
 				if [[ ${match} ]]; then
@@ -286,28 +257,14 @@ cmp-get_installed() {
 #	If stat is -1, close report
 cmp-get_makereport() {
 	if [[ ${2} == -1 ]]; then
-		if [[ ${4} ]] || ${OPT[confirm]}; then
-			if ${OPT[color]}; then
-				printf -- "\e[${3}m${1}(\e[0m%s\e[${3}m)\e[0m\n" "${4}"
-			else
-				printf -- "${1}(%s)\n" "${4}"
-			fi
+		if [[ ${4} ]] || ${O[confirm]}; then
+			echo "${C[${3}]}${1}(${C[n]}${4}${C[${3}]})${C[n]}"
 		fi
-	elif (( ${2} )) || ${OPT[confirm]}; then
-		if [[ ${4} ]]; then
-			if ${OPT[color]}; then
-				printf -- "%s\e[90m,\e[0m" "${4}"
-			else
-				printf -- "%s," "${4}"
-			fi
-		fi
-		if ${OPT[color]}; then
-			printf -- "\e[${3}m${1}\e[0m" "${2}"
-		else
-			printf -- "${1}" "${2}"
-		fi
+	elif (( ${2} )) || ${O[confirm]}; then
+		[[ ${4} ]] && echo -n "${4}${C[a]},${C[n]}"
+		printf -- "${C[${3}]}${1}${C[n]}" "${2}"
 	else
-		printf -- "%s" "${4}"
+		echo -n "${4}"
 	fi
 }
 
@@ -466,7 +423,7 @@ cmp-get_tocompare() {
 	done
 
 	if ! (( ${#i1[@]} && ${#i2[@]} )); then
-		if ${OPT[single]}; then
+		if ${CMP_SINGLE}; then
 			if (( ${#i2[@]} )); then
 				eval "${1}"'=("${i2[0]}")'
 				return 0
@@ -476,7 +433,7 @@ cmp-get_tocompare() {
 			fi
 		fi
 
-		if ${OPT[allow-missing]}; then
+		if ${O[allow-missing]}; then
 			end
 		elif (( ${#i1[@]} && ${#i2[@]} )); then
 			die "could not find images for '${*:2}'"
@@ -574,10 +531,10 @@ cmp-output_abi_diff() {
 		fi
 
 		if [[ ! ${output} ]]; then
-			if ${OPT[warn-debug]}; then
-				cmp-output_abi_diff_issue "nodebug" 1
-			else
+			if ${O[quiet-nodebug]}; then
 				cmp-output_abi_diff_issue "nodebug" 0
+			else
+				cmp-output_abi_diff_issue "nodebug" 1
 			fi
 			return
 		fi
@@ -626,40 +583,30 @@ cmp-output_abi_diff() {
 		(( chg+=fc+vc ))
 		(( errno & 8 )) && brk+=1
 
-		if ${OPT[abi-diff]}; then
-			if ${OPT[color]}; then
-				OUTPUT+=$(printf "   \e[90mABI:\e[35m %s\e[0m" "${old[i]%% *}")
-			else
-				OUTPUT+="   ABI: ${old[i]%% *}"
-			fi
-			report=$(cmp-get_makereport "+%d" "${fa}" 32 '')
-			report=$(cmp-get_makereport "~%d" "${fc}" 33 "${report}")
-			report=$(cmp-get_makereport "-%d" "${fr}" 31 "${report}")
-			report=$(cmp-get_makereport "func" -1 94 "${report}")
+		if ${O[abidiff]}; then
+			OUTPUT+="   ${C[a]}ABI: ${C[m]}${old[i]%% *}${C[n]}"
+			report=$(cmp-get_makereport "+%d" "${fa}" g '')
+			report=$(cmp-get_makereport "~%d" "${fc}" y "${report}")
+			report=$(cmp-get_makereport "-%d" "${fr}" r "${report}")
+			report=$(cmp-get_makereport "func" -1 lb "${report}")
 			[[ ${report} ]] && OUTPUT+=" ${report}"
-			report=$(cmp-get_makereport "+%d" "${va}" 32 "")
-			report=$(cmp-get_makereport "~%d" "${vc}" 33 "${report}")
-			report=$(cmp-get_makereport "-%d" "${vr}" 31 "${report}")
-			report=$(cmp-get_makereport "vars" -1 94 "${report}")
+			report=$(cmp-get_makereport "+%d" "${va}" g '')
+			report=$(cmp-get_makereport "~%d" "${vc}" y "${report}")
+			report=$(cmp-get_makereport "-%d" "${vr}" r "${report}")
+			report=$(cmp-get_makereport "vars" -1 lb "${report}")
 			[[ ${report} ]] && OUTPUT+=" ${report}"
-			if (( errno & 8 )); then
-				if ${OPT[color]}; then
-					OUTPUT+=$(printf " \e[31m%s\e[0m" "[BREAKING]")
-				else
-					OUTPUT+=" [BREAKING]"
-				fi
-			fi
+			(( errno & 8 )) && OUTPUT+=" ${C[r]}[BREAKING]${C[n]}"
 			OUTPUT+=$'\n'
 		fi
 
-		${OPT[full-abidiff]} && OUTPUT+="${output}"$'\n'
+		${O[full-abidiff]} && OUTPUT+="${output}"$'\n'
 	done
 
-	report=$(cmp-get_makereport "+%d" "${add}" 32 '')
-	report=$(cmp-get_makereport "~%d" "${chg}" 33 "${report}")
-	report=$(cmp-get_makereport "-%d" "${del}" 31 "${report}")
-	(( brk )) && report=$(cmp-get_makereport ">B<" 1 31 "${report}")
-	report=$(cmp-get_makereport "ABI" -1 90 "${report}")
+	report=$(cmp-get_makereport "+%d" "${add}" g '')
+	report=$(cmp-get_makereport "~%d" "${chg}" y "${report}")
+	report=$(cmp-get_makereport "-%d" "${del}" r "${report}")
+	(( brk )) && report=$(cmp-get_makereport ">B<" 1 r "${report}")
+	report=$(cmp-get_makereport "ABI" -1 a "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
 
@@ -668,8 +615,8 @@ cmp-output_abi_diff() {
 #	If showissue is 0, will only show with --confirm, or always if 1
 cmp-output_abi_diff_issue() {
 	local report
-	report=$(cmp-get_makereport "${1}" "${2}" 31 "")
-	report=$(cmp-get_makereport "ABI" -1 90 "${report}")
+	report=$(cmp-get_makereport "${1}" "${2}" r '')
+	report=$(cmp-get_makereport "ABI" -1 a "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
 
@@ -677,15 +624,11 @@ cmp-output_abi_diff_issue() {
 #	Add to OUTPUT filelist for 1 value from cmp-get_tocompare
 #	Simplified version of cmp-output_filelist_diff
 cmp-output_filelist() {
-	${OPT[single-filelist]} || return
+	${O[single-filelist]} || return 0
 
 	local line
 	for line in "${LIST_NEW[@]:3}"; do
-		if ${OPT[color]}; then
-			OUTPUT+=$(printf " \e[90mFILES: \e[32m%s\e[0m" "${line}")$'\n'
-		else
-			OUTPUT+=" FILES: ${line}"$'\n'
-		fi
+		OUTPUT+=" ${C[a]}FILES: ${C[g]}${line}${C[n]}"$'\n'
 	done
 }
 
@@ -695,7 +638,7 @@ cmp-output_filelist() {
 cmp-output_filelist_diff() {
 	local -a old=() new=()
 
-	if ${OPT[ver-keep]}; then
+	if ${O[ver-keep]}; then
 		old=("${LIST_OLD[@]:3}")
 		new=("${LIST_NEW[@]:3}")
 	else
@@ -705,19 +648,19 @@ cmp-output_filelist_diff() {
 		# so try ${PVR}->${PV}->${PV%%_*} for the most common.
 		local file path
 		for file in "${LIST_OLD[@]:3}"; do
-			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
+			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
 			path=${path//${LIST_OLD[0]}/<snip>}
 			path=${path//${LIST_OLD[0]%-r[0-9]*}/<snip>}
 			path=${path//${LIST_OLD[0]%%_*}/<snip>}
-			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
+			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
 			old+=("${path}")
 		done
 		for file in "${LIST_NEW[@]:3}"; do
-			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
+			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
 			path=${path//${LIST_NEW[0]}/<snip>}
 			path=${path//${LIST_NEW[0]%-r[0-9]*}/<snip>}
 			path=${path//${LIST_NEW[0]%%_*}/<snip>}
-			${OPT[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
+			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
 			new+=("${path}")
 		done
 	fi
@@ -725,8 +668,8 @@ cmp-output_filelist_diff() {
 	local report
 	if ! (( ${#old[@]} || ${#new[@]} )); then
 		# this is rather unlikely
-		report=$(cmp-get_makereport "N/A" 0 31 "")
-		report=$(cmp-get_makereport "FILES" -1 90 "${report}")
+		report=$(cmp-get_makereport "N/A" 0 r '')
+		report=$(cmp-get_makereport "FILES" -1 a "${report}")
 		[[ ${report} ]] && REPORT+=" ${report}"
 		return
 	fi
@@ -743,23 +686,16 @@ cmp-output_filelist_diff() {
 	local -i add=0 del=0
 	for line in "${output[@]}"; do
 		case ${line:0:1} in
-			+) color=32; add+=1;;
-			-) color=31; del+=1;;
-			*) color=90;; # unused unless increase -U*
+			+) color=${C[g]}; add+=1;;
+			-) color=${C[r]}; del+=1;;
+			*) color=${C[a]};; # unused unless increase -U*
 		esac
-
-		if ${OPT[filelist-diff]}; then
-			if ${OPT[color]}; then
-				OUTPUT+=$(printf " \e[90mFILES:\e[${color}m%s\e[0m" "${line}")$'\n'
-			else
-				OUTPUT+=" FILES:${line}"$'\n'
-			fi
-		fi
+		${O[filelist]} && OUTPUT+=" ${C[a]}FILES:${color}${line}${C[n]}"$'\n'
 	done
 
-	report=$(cmp-get_makereport "+%d" ${add} 32 "")
-	report=$(cmp-get_makereport "-%d" ${del} 31 "${report}")
-	report=$(cmp-get_makereport "FILES" -1 90 "${report}")
+	report=$(cmp-get_makereport "+%d" ${add} g '')
+	report=$(cmp-get_makereport "-%d" ${del} r "${report}")
+	report=$(cmp-get_makereport "FILES" -1 a "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
 
@@ -767,16 +703,9 @@ cmp-output_filelist_diff() {
 #	Add to OUTPUT size and filecount for 1 value from cmp-get_tocompare
 #	Simplified version of cmp-output_size_diff
 cmp-output_size() {
-	${OPT[single-size]} || return 0
+	${O[single-size]} || return 0
 
-	local c1= c2= cn=
-	if ${OPT[color]}; then
-		c1=$'\e[90m'
-		c2=$'\e[33m'
-		cn=$'\e[0m'
-	fi
-
-	OUTPUT+=$(printf "  ${c1}SIZE: ${c2}%.2fMiB${c1}, ${c2}%d${c1} files${cn}\n" \
+	OUTPUT+=$(printf "  ${C[a]}SIZE: ${C[y]}%.2fMiB${C[a]}, ${C[y]}%d${C[a]} files${C[n]}\n" \
 		$((10**2 * LIST_NEW[2] / 1024**2))e-2 $((${#LIST_NEW[@]} - 3)))
 }
 
@@ -797,29 +726,23 @@ cmp-output_size_diff() {
 		sper=0
 	fi
 
-	if ${OPT[size-diff]} && (( ${sper#-} >= OPT[size-thres] )); then
-		local c1= c2= cn=
-		if ${OPT[color]}; then
-			c1=$'\e[90m'
-			c2=$'\e[33m'
-			cn=$'\e[0m'
-		fi
+	if ${O[size]} && (( ${sper#-} >= O[size-thres] )); then
 		OUTPUT+=$(
-			printf "  ${c1}SIZE: ${c2}%.2fMiB${c1} -> ${c2}%.2fMiB${c1}, ${c2}%d${c1} -> ${c2}%d files${cn}\n" \
+			printf "  ${C[a]}SIZE: ${C[y]}%.2fMiB${C[a]} -> ${C[y]}%.2fMiB${C[a]}, ${C[y]}%d${C[a]} -> ${C[y]}%d files${C[n]}\n" \
 				$((10**2 * sold / 1024**2))e-2 \
 				$((10**2 * snew / 1024**2))e-2 \
 				$((${#LIST_OLD[@]} - 3)) \
 				$((${#LIST_NEW[@]} - 3)))$'\n'
 	fi
 
-	if ${OPT[confirm]} || (( ${sper#-} >= OPT[size-thres] )); then
+	if ${O[confirm]} || (( ${sper#-} >= O[size-thres] )); then
 		printf -v sper "%.2f" ${sper}e-2
 		if (( snew >= sold )); then
-			report=$(cmp-get_makereport "+${sper}%%" 1 32 "")
+			report=$(cmp-get_makereport "+${sper}%%" 1 g '')
 		else
-			report=$(cmp-get_makereport "${sper}%%" 1 31 "")
+			report=$(cmp-get_makereport "${sper}%%" 1 r '')
 		fi
-		report=$(cmp-get_makereport "SIZE" -1 90 "${report}")
+		report=$(cmp-get_makereport "SIZE" -1 a "${report}")
 		[[ ${report} ]] && REPORT+=" ${report}"
 	fi
 }
@@ -828,7 +751,7 @@ cmp-output_size_diff() {
 #	Add to OUTPUT soname list for 1 value from cmp-get_tocompare
 #	Simplified version of cmp-output_soname_diff
 cmp-output_soname() {
-	${OPT[single-soname]} || return
+	${O[single-soname]} || return
 
 	local -a new=("${LIST_NEW[@]:3}") tmp
 	cmp-get_shared new "${new[@]/#/${LIST_NEW[1]}}"
@@ -841,11 +764,7 @@ cmp-output_soname() {
 
 	local line
 	for line in "${new[@]}"; do
-		if ${OPT[color]}; then
-			OUTPUT+=$(printf "\e[90mSONAME: \e[36m%s\e[0m" "${line}")$'\n'
-		else
-			OUTPUT+="SONAME: ${line}"$'\n'
-		fi
+		OUTPUT+="${C[a]}SONAME: ${C[c]}${line}${C[n]}"$'\n'
 	done
 }
 
@@ -894,8 +813,8 @@ cmp-output_soname_diff() {
 
 	local report
 	if [[ ${#SONAME_OLD[@]} == 0 && ${#SONAME_NEW[@]} == 0 ]]; then
-		report=$(cmp-get_makereport "N/A" 0 31 "")
-		report=$(cmp-get_makereport "SONAME" -1 90 "${report}")
+		report=$(cmp-get_makereport "N/A" 0 r '')
+		report=$(cmp-get_makereport "SONAME" -1 a "${report}")
 		[[ ${report} ]] && REPORT+=" ${report}"
 		return # nothing to compare
 	fi
@@ -914,23 +833,16 @@ cmp-output_soname_diff() {
 	local -i add=0 del=0
 	for line in "${output[@]}"; do
 		case ${line:0:1} in
-			+) color=36; add+=1;;
-			-) color=33; del+=1;;
-			*) color=90;; # unused unless increase -U*
+			+) color=${C[c]}; add+=1;;
+			-) color=${C[y]}; del+=1;;
+			*) color=${C[a]};; # unused unless increase -U*
 		esac
-
-		if ${OPT[soname-diff]}; then
-			if ${OPT[color]}; then
-				OUTPUT+=$(printf "\e[90mSONAME:\e[${color}m%s\e[0m" "${line}")$'\n'
-			else
-				OUTPUT+="SONAME:${line}"$'\n'
-			fi
-		fi
+		${O[soname]} && OUTPUT+=" ${C[a]}SONAME:${color}${line}${C[n]}"$'\n'
 	done
 
-	report=$(cmp-get_makereport "+%d" ${add} 36 "")
-	report=$(cmp-get_makereport "-%d" ${del} 33 "${report}")
-	report=$(cmp-get_makereport "SONAME" -1 90 "${report}")
+	report=$(cmp-get_makereport "+%d" ${add} c '')
+	report=$(cmp-get_makereport "-%d" ${del} y "${report}")
+	report=$(cmp-get_makereport "SONAME" -1 a "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
 }
 
@@ -960,12 +872,12 @@ declare -a LIST_OLD LIST_NEW SONAME_OLD=() SONAME_NEW=()
 if (( ${#} == 2 )); then
 	cmp-get_filelist LIST_OLD "${1}"
 	cmp-get_filelist LIST_NEW "${2}"
-	${OPT[single-auto]} && OPT[single]=false
+	${O[single-auto]} && CMP_SINGLE=false
 else
 	cmp-get_filelist LIST_NEW "${1}"
 fi
 
-if ${OPT[single]}; then
+if ${CMP_SINGLE}; then
 	cmp-output_filelist
 	cmp-output_soname
 	cmp-output_size
@@ -977,7 +889,7 @@ if ${OPT[single]}; then
 	fi
 fi
 
-if (( ${#} == 2 )) && ${OPT[compare]}; then
+if (( ${#} == 2 )) && ${O[compare]}; then
 	cmp-output_filelist_diff
 	cmp-output_soname_diff
 	cmp-output_abi_diff
@@ -986,8 +898,8 @@ if (( ${#} == 2 )) && ${OPT[compare]}; then
 	if [[ ${OUTPUT} ]]; then
 		cmp-print_header "$@"
 		msg "${OUTPUT%$'\n'}"
-		${OPT[report]} && msg "------>${REPORT}"
-	elif [[ ${REPORT} ]] && ${OPT[report]}; then
+		${O[report]} && msg "------>${REPORT}"
+	elif [[ ${REPORT} ]] && ${O[report]}; then
 		cmp-print_header "$@"
 		msg "------>${REPORT}"
 	fi
