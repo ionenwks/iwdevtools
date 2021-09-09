@@ -3,9 +3,10 @@ pverexpect() {
 	pversp ver "${3}"
 	echo "'${ver[*]}' == '${2}'"
 	(( ${#ver[@]} == ${1} )) || fail "expected array length ${1}, got ${#ver[@]}"
-	[[ ${ver[*]} == ${2} ]] || fail mismatch
+	[[ ${ver[*]} == "${2}" ]] || fail mismatch
 }
 pverexpect 1 '0' '0'
+pverexpect 2 '0 *' '0*'
 pverexpect 2 '0 _p' '0_p'
 pverexpect 2 '0 -r1' '0-r1'
 pverexpect 3 '0 .1 .2' '0.1.2'

@@ -27,6 +27,7 @@ atomexpect \
 	'!! >= dev-test test-T-123_beta1_-4a-6+-_p 1.00.02b_alpha3_pre_p4 5 * 6 =' \
 	'!!>=dev-test/test-T-123_beta1_-4a-6+-_p-1.00.02b_alpha3_pre_p4-r5:*/6=[test(+),test(-)]'
 atomexpect '  c n     ' 'c/n::test'
+atomexpect '  c n 1*    ' 'c/n-1*'
 xfail 1 atomsp '-c/n'
 xfail 1 atomsp '@'
 xfail 1 atomsp 'c/n-0@'

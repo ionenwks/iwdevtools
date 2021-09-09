@@ -87,7 +87,8 @@ atomsp() {
 			return 1
 		fi
 	else
-		if [[ ${_a_s} =~ ^([0-9]+\.|-)([a-z0-9_.]+-r[0-9]+|[a-z0-9_.]+)(.*) ]]; then
+		# see pversp for \**
+		if [[ ${_a_s} =~ ^([0-9]+\.|-)([a-z0-9_.]+-r[0-9]+|[a-z0-9_.]+\**)(.*) ]]; then
 			_a_v=${BASH_REMATCH[1]#-}${BASH_REMATCH[2]}
 			if pversp "${_a_v}"; then
 				_a_s=-${_a_s#-} # no PN (-0_p1 or 0.1 seen as PV, but 0_p1 is a valid PN)
@@ -97,7 +98,7 @@ atomsp() {
 
 		if [[ ! ${_a_valid} ]]; then
 			local _a_p=${_a_s}
-			while [[ ${_a_p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.]+)(.*) ]]; do
+			while [[ ${_a_p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.]+\**)(.*) ]]; do
 				_a_v=${BASH_REMATCH[1]}
 				_a_p=${_a_v}${BASH_REMATCH[2]}
 				! pversp "${_a_v}" || _a_valid=${_a_v} # keep going until last valid version string
@@ -158,6 +159,9 @@ pversp() {
 
 	[[ ${_a_s} =~ ^([0-9]+)(.*) ]] || return 1
 	_pversptok
+
+	# allow one wildcard at end of <PV> (used in depstrings)
+	[[ ! ${_a_s} =~ ^(\*)('') ]] || _pversptok
 
 	while [[ ${_a_s} =~ ^(\.[0-9]+)(.*) ]]; do
 		_pversptok
