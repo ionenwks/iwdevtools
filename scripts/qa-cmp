@@ -677,8 +677,8 @@ cmp-output_filelist_diff() {
 
 	local -a output
 	diff -U0 \
-		<(printf "%s" "${old[@]/%/$'\n'}") \
-		<(printf "%s" "${new[@]/%/$'\n'}") \
+		<(printarray old) \
+		<(printarray new) \
 		| grep -v '@@\|---\|+++' | map output
 		[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
 
@@ -824,8 +824,8 @@ cmp-output_soname_diff() {
 
 	local -a output
 	diff -U0 \
-		<(printf "%s" "${old[@]/%/$'\n'}") \
-		<(printf "%s" "${new[@]/%/$'\n'}") \
+		<(printarray old) \
+		<(printarray new) \
 		| grep -v '@@\|---\|+++' | map output
 	[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
 
