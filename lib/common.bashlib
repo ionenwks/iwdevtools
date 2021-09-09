@@ -289,36 +289,37 @@ optend() {
 optauto() {
 	optstart
 
-	local key short=h long=help,version,confdir:,dumpconfig
-	for key in "${_COMMON_OPT_SORT[@]}"; do
+	# need to be more careful with namespaces not to mask ${1} array
+	local _c_key _c_hasarg _c_short=h _c_long=help,version,confdir:,dumpconfig
+	for _c_key in "${_COMMON_OPT_SORT[@]}"; do
 		# note: undocumented but no reason to skip --colormap if enabled
-		[[ ${key} != colormap || ${_COMMON_OPT[color]:-} ]] || continue
-		[[ ${_COMMON_OPT[${key}]} =~ ^bool: ]] && hasarg= || hasarg=:
-		[[ -v _COMMON_OPT_NO[${key}] ]] && long+=,no-${key} || long+=,${key}${hasarg}
-		short+=${_COMMON_OPT_SHORT[${key}]:+${_COMMON_OPT_SHORT[${key}]}${hasarg}}
+		[[ ${_c_key} != colormap || ${_COMMON_OPT[color]:-} ]] || continue
+		[[ ${_COMMON_OPT[${_c_key}]} =~ ^bool: ]] && _c_hasarg= || _c_hasarg=:
+		[[ -v _COMMON_OPT_NO[${_c_key}] ]] && _c_long+=,no-${_c_key} || _c_long+=,${_c_key}${_c_hasarg}
+		_c_short+=${_COMMON_OPT_SHORT[${_c_key}]:+${_COMMON_OPT_SHORT[${_c_key}]}${_c_hasarg}}
 	done
 
-	local arg prev
-	getoptw arg "${1}" "${short}" "${long}" "${@:2}"
+	local _c_arg _c_prev
+	getoptw _c_arg "${1}" "${_c_short}" "${_c_long}" "${@:2}"
 	while getoptw; do
-		case "${arg}" in
+		case "${_c_arg}" in
 			-h|--help) usage;;
 			--version) version;;
-			--confdir) getoptw; optsetconf "${arg}";;
+			--confdir) getoptw; optsetconf "${_c_arg}";;
 			--dumpconfig) optend -d;;
-			-?) arg=${_COMMON_OPT_SHORT_R[${arg#-}]};&
+			-?) _c_arg=${_COMMON_OPT_SHORT_R[${_c_arg#-}]};&
 			*)
-				arg=${arg#--}
-				arg=${arg#no-}
-				if [[ ${_COMMON_OPT[${arg}]} =~ ^[%@]*bool:(.*) ]]; then
+				_c_arg=${_c_arg#--}
+				_c_arg=${_c_arg#no-}
+				if [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]*bool:(.*) ]]; then
 					if [[ ${BASH_REMATCH[1]} == true ]]; then
-						optset "${arg}" false
+						optset "${_c_arg}" false
 					else
-						optset "${arg}" true
+						optset "${_c_arg}" true
 					fi
 				else
-					prev=${arg}; getoptw
-					optset "${prev}" "${arg}"
+					_c_prev=${_c_arg}; getoptw
+					optset "${_c_prev}" "${_c_arg}"
 				fi
 			;;
 		esac
@@ -349,9 +350,9 @@ split() {
 #	If + is set, add to array rather than replace it.
 split-() {
 	if [[ ${1:0:1} == + ]]; then
-		local -a _common_split
-		IFS=${2:-' '} read -ra _common_split
-		eval "${1#+}"'+=("${_common_split[@]}")'
+		local -a _c_split
+		IFS=${2:-' '} read -ra _c_split
+		eval "${1#+}"'+=("${_c_split[@]}")'
 	else
 		IFS=${2:-' '} read -ra "${1}"
 	fi

@@ -59,91 +59,92 @@ vatomf() {
 #	Return 1 and set nothing if atom format is invalid.
 #	[use,...] in atom is discarded if present, but seen as valid.
 atomsp() {
-	local s=${2-${1}}
-	local -a t=()
+	# use bit of namespacing to avoid masking [array]
+	local _a_s=${2-${1}}
+	local -a _a_t=()
 
-	[[ ${s} =~ ^('!!'|'!'|'')(.*) ]] && _atomsptok || return 1
-	[[ ${s} =~ ^('<='|'<'|'='|'~'|'>='|'>'|'')(.*) ]] && _atomsptok || return 1
+	[[ ${_a_s} =~ ^('!!'|'!'|'')(.*) ]] && _atomsptok || return 1
+	[[ ${_a_s} =~ ^('<='|'<'|'='|'~'|'>='|'>'|'')(.*) ]] && _atomsptok || return 1
 
 	# CATEGORY
-	if [[ ${s} =~ ^[^:]+/ ]]; then
-		if [[ ! ${s} =~ ^[+.-] && ${s} =~ ^([A-Za-z0-9+_.-]+)/(.*) ]]; then
+	if [[ ${_a_s} =~ ^[^:]+/ ]]; then
+		if [[ ! ${_a_s} =~ ^[+.-] && ${_a_s} =~ ^([A-Za-z0-9+_.-]+)/(.*) ]]; then
 			_atomsptok
 		else
 			return 1
 		fi
 	else
-		t+=('')
+		_a_t+=('')
 	fi
 
 	# PN and PVR
-	local v= valid=
-	if [[ ${s} =~ ^-r([0-9]+)(.*) ]]; then
-		if [[ ${s} =~ ^-r([0-9]+)(.*) ]]; then
-			t+=('' '') # no PN, no PV, revision only
+	local _a_v= _a_valid=
+	if [[ ${_a_s} =~ ^-r([0-9]+)(.*) ]]; then
+		if [[ ${_a_s} =~ ^-r([0-9]+)(.*) ]]; then
+			_a_t+=('' '') # no PN, no PV, revision only
 			_atomsptok
 		else
 			return 1
 		fi
 	else
-		if [[ ${s} =~ ^([0-9]+\.|-)([a-z0-9_.]+-r[0-9]+|[a-z0-9_.]+)(.*) ]]; then
-			v=${BASH_REMATCH[1]#-}${BASH_REMATCH[2]}
-			if pversp "${v}"; then
-				s=-${s#-} # no PN (-0_p1 or 0.1 seen as PV, but 0_p1 is a valid PN)
-				valid=${v}
+		if [[ ${_a_s} =~ ^([0-9]+\.|-)([a-z0-9_.]+-r[0-9]+|[a-z0-9_.]+)(.*) ]]; then
+			_a_v=${BASH_REMATCH[1]#-}${BASH_REMATCH[2]}
+			if pversp "${_a_v}"; then
+				_a_s=-${_a_s#-} # no PN (-0_p1 or 0.1 seen as PV, but 0_p1 is a valid PN)
+				_a_valid=${_a_v}
 			fi
 		fi
 
-		if [[ ! ${valid} ]]; then
-			local p=${s}
-			while [[ ${p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.]+)(.*) ]]; do
-				v=${BASH_REMATCH[1]}
-				p=${v}${BASH_REMATCH[2]}
-				! pversp "${v}" || valid=${v} # keep going until last valid version string
+		if [[ ! ${_a_valid} ]]; then
+			local _a_p=${_a_s}
+			while [[ ${_a_p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.]+)(.*) ]]; do
+				_a_v=${BASH_REMATCH[1]}
+				_a_p=${_a_v}${BASH_REMATCH[2]}
+				! pversp "${_a_v}" || _a_valid=${_a_v} # keep going until last valid version string
 			done
 		fi
 
-		if [[ ${valid} ]]; then
-			[[ ${s} =~ ^([A-Za-z0-9+_-]*)-("${valid%-r[0-9]*}")(-r[0-9]+|'')(.*) ]] && _atomsptok || return 1
-			t[5]=${t[5]#-r}
+		if [[ ${_a_valid} ]]; then
+			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)-("${_a_valid%-r[0-9]*}")(-r[0-9]+|'')(.*) ]] && _atomsptok || return 1
+			_a_t[5]=${_a_t[5]#-r}
 		else
-			[[ ${s} =~ ^([A-Za-z0-9+_-]*)(.*) ]] && _atomsptok
-			t+=('' '') # no PVR
+			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)(.*) ]] && _atomsptok
+			_a_t+=('' '') # no PVR
 		fi
 
 		# While no parsing issues, refuse PNs invalid per PMS
 		# i.e. can't start with +-, can't end with hyphen then valid version (-1)
-		[[ ! ${t[3]} =~ ^[+-] ]] || return 1
-		if [[ ${t[3]} =~ .*-([0-9]+.*)$ ]]; then
+		[[ ! ${_a_t[3]} =~ ^[+-] ]] || return 1
+		if [[ ${_a_t[3]} =~ .*-([0-9]+.*)$ ]]; then
 			! pversp "${BASH_REMATCH[1]}" || return 1
 		fi
 	fi
 
 	# SLOT (may also be :* as this is a dep-string check and not real SLOT)
-	if [[ ! ${s} =~ ^:[+.-] && ${s} =~ ^:(\*|[A-Za-z0-9+_.-]*)(.*) ]]; then
+	if [[ ! ${_a_s} =~ ^:[+.-] && ${_a_s} =~ ^:(\*|[A-Za-z0-9+_.-]*)(.*) ]]; then
 		_atomsptok
 	else
-		t+=('')
+		_a_t+=('')
 	fi
 
 	# subslot
-	if [[ ! ${s} =~ ^/[+.-] && ${s} =~ ^/([A-Za-z0-9+_.-]+)(.*) ]]; then
+	if [[ ! ${_a_s} =~ ^/[+.-] && ${_a_s} =~ ^/([A-Za-z0-9+_.-]+)(.*) ]]; then
 		_atomsptok
 	else
-		t+=('')
+		_a_t+=('')
 	fi
 
 	# binding operator
-	[[ ${s} =~ ^(=|'')(.*) ]] &&  _atomsptok || return 1
+	[[ ${_a_s} =~ ^(=|'')(.*) ]] &&  _atomsptok || return 1
 
-	# if ${s} is not empty and has something other than ^[ or 2nd ^:, invalid
-	[[ ! ${s} || ${s} =~ ^[:\[] ]] || return 1
+	# if ${_a_s} is not empty and has something other than ^[ or 2nd ^:, invalid
+	[[ ! ${_a_s} || ${_a_s} =~ ^[:\[] ]] || return 1
 
-	(( ${#} != 2 )) || eval "${1}"'=("${t[@]}")'
+	(( ${#} != 2 )) || eval "${1}"'=("${_a_t[@]}")'
 }
 _atomsptok() {
-	t+=("${BASH_REMATCH[@]:1:$((${#BASH_REMATCH[@]} - 2))}")
-	s=${BASH_REMATCH[*]: -1}
+	_a_t+=("${BASH_REMATCH[@]:1:$((${#BASH_REMATCH[@]} - 2))}")
+	_a_s=${BASH_REMATCH[*]: -1}
 }
 
 # pversp [array] <PV>
@@ -152,32 +153,31 @@ _atomsptok() {
 #	No characters will be dropped, e.g.
 #		0.1.2a_alpha3_p4-r5 -> 0 .1 .2 a _alpha 3 _p 4 -r5
 pversp() {
-	local IFS=' ' s=${2-${1}} # ensure IFS is for _pversptok
-	local -a t=()
+	local _a_s=${2-${1}}
+	local -a _a_t=()
 
-	[[ ${s} =~ ^([0-9]+)(.*) ]] || return 1
+	[[ ${_a_s} =~ ^([0-9]+)(.*) ]] || return 1
 	_pversptok
 
-	while [[ ${s} =~ ^(\.[0-9]+)(.*) ]]; do
+	while [[ ${_a_s} =~ ^(\.[0-9]+)(.*) ]]; do
 		_pversptok
 	done
 
-	[[ ! ${s} =~ ^([a-z])(.*) ]] || _pversptok
+	[[ ! ${_a_s} =~ ^([a-z])(.*) ]] || _pversptok
 
-	while [[ ${s} =~ ^(_alpha|_beta|_pre|_rc|_p)([0-9]*)(.*) ]]; do
-		_pversptok
+	while [[ ${_a_s} =~ ^(_alpha|_beta|_pre|_rc|_p)([0-9]*)(.*) ]]; do
+		_pversptok "${BASH_REMATCH[2]:+2}"
 	done
 
-	[[ ! ${s} =~ ^(-r[0-9]+)(.*) ]] || _pversptok
+	[[ ! ${_a_s} =~ ^(-r[0-9]+)(.*) ]] || _pversptok
 
-	[[ ! ${s} ]] || return 1
+	[[ ! ${_a_s} ]] || return 1
 
-	(( ${#} != 2 )) || eval "${1}"'=("${t[@]}")'
+	(( ${#} != 2 )) || eval "${1}"'=("${_a_t[@]}")'
 }
 _pversptok() {
-	# varies from _atomsptok by skipping quotes (drop empty)
-	t+=(${BASH_REMATCH[@]:1:$((${#BASH_REMATCH[@]} - 2))})
-	s=${BASH_REMATCH[*]: -1}
+	_a_t+=("${BASH_REMATCH[@]:1:${1:-1}}")
+	_a_s=${BASH_REMATCH[*]: -1}
 }
 
 # vim: ts=4
