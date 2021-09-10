@@ -727,6 +727,8 @@ vdb-skip_unneeded() {
 	fi
 }
 
+unset DEBUG # ensure q* tools don't pick this up if exported
+
 vdb-init
 
 vdbentry=$(vdb-get_entry "${1}")

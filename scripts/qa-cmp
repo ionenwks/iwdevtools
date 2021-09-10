@@ -861,6 +861,8 @@ cmp-print_header_single() {
 	msg "QA: listing $(cmp-get_compare2readable "${1}") info"
 }
 
+unset DEBUG # ensure q* tools don't pick this up if exported
+
 # normalize arguments to something we can use
 cmp-get_tocompare args "${args[@]}"
 set -- "${args[@]}"; unset args
