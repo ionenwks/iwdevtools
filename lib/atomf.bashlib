@@ -160,9 +160,6 @@ pversp() {
 	[[ ${_a_s} =~ ^([0-9]+)(.*) ]] || return 1
 	_pversptok
 
-	# allow one wildcard at end of <PV> (used in depstrings)
-	[[ ! ${_a_s} =~ ^(\*)('') ]] || _pversptok
-
 	while [[ ${_a_s} =~ ^(\.[0-9]+)(.*) ]]; do
 		_pversptok
 	done
@@ -172,6 +169,9 @@ pversp() {
 	while [[ ${_a_s} =~ ^(_alpha|_beta|_pre|_rc|_p)([0-9]*)(.*) ]]; do
 		_pversptok "${BASH_REMATCH[2]:+2}"
 	done
+
+	# allow one wildcard at end of <PV> (used in depstrings)
+	[[ ! ${_a_s} =~ ^(\*)('') ]] || _pversptok
 
 	[[ ! ${_a_s} =~ ^(-r[0-9]+)(.*) ]] || _pversptok
 
