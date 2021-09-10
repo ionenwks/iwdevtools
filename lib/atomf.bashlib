@@ -98,7 +98,7 @@ atomsp() {
 
 		if [[ ! ${_a_valid} ]]; then
 			local _a_p=${_a_s}
-			while [[ ${_a_p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.]+\**)(.*) ]]; do
+			while [[ ${_a_p} =~ ^[A-Za-z0-9+_]+-([A-Za-z0-9+_.]+-r[0-9]+|[A-Za-z0-9+_.-]+\**)(.*) ]]; do
 				_a_v=${BASH_REMATCH[1]}
 				_a_p=${_a_v}${BASH_REMATCH[2]}
 				! pversp "${_a_v}" || _a_valid=${_a_v} # keep going until last valid version string
