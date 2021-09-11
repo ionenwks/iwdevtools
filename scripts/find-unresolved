@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend find scanelf
+usage <<-EOU
+	Usage: ${0##*/} [options] <ROOT>
+
+	Scan <ROOT>'s ELF files for unresolved soname dependencies.
+
+	Requires a valid <ROOT>/etc/ld.so.conf
+
+	Primarily intended for working with embedded systems and ensuring no needed
+	libraries are missing (normally portage verifies this automatically).
+
+	Options:
+	  -s, --search-all    By default will only search relevant paths, e.g. /bin,
+	                      /lib*, /usr/*-* and so on. Setting this will search all
+	                      directories (slow, unless very small ROOT).
+
+	  -e, --exclude=LIST  Comma separated list of soname to ignore if not found
+
+	  -t, --no-tuples     Skip /usr/*-*-*, useful if it's crossdev directories
+
+	  -c, --no-color      Disable use of colors
+
+	      --confdir=PATH  Configuration dir to use instead of defaults
+	                      (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig    Display config and exit (> ${0##*/}.conf)
+
+	   -h, --help         Display usage information and exit
+	       --version      Display version information and exit
+
+	Exit status:
+	 0  Ok
+	 1  Unexpected error
+	 2  Unresolved dependencies found
+EOU
+optauto args "${@}" <<-EOO
+	s|search-all=bool:false
+	e|exclude=str:
+	t|!tuples=bool:true
+	c|!color=bool:true
+EOO
+set -- "${args[@]}"; unset args
+
+(( ${#} == 1 )) || die "invalid arguments, see \`${0##*/} --help\`"
+
+[[ -d ${1} ]] || die "'${1}' is not a directory"
+ROOT=${1%/}
+
+declare -A exclude
+split excludemap "${O[exclude]}" ,
+hasharray exclude excludemap; unset excludemap
+
+# Find paths to use, all paths need to exist (let find handle it).
+if ${O[search-all]}; then
+	paths=(./)
+else
+	${O[tuples]} && tuples=',usr/*-*-' || tuples=
+	set +f
+	eval 'find ${ROOT}/{{,usr/}{,s}bin,{,usr/}lib,opt'"${tuples}"'}* -maxdepth 0 -type d' \
+		| map paths || die "failed to find valid paths"
+	set -f
+fi
+
+# Index all shared libraries for a dirty search if LDPATH/rpath failed.
+declare -A files
+find "${paths[@]}" -name '*.so*' -type f,l -printf "%f\n" \
+	| map filemap || die "failed to find shared libraries"
+hasharray files filemap; unset filemap
+
+setmsg 2
+msg " ${C[lg]}*${C[n]} Scanning ${ROOT:-/} for unresolved soname dependencies..."
+sane=false
+declare -A all_unresolved=()
+declare -A maybe_unresolved=()
+scanelf -q --root "${ROOT:-/}" --use-ldpath -RF'%p,%r,%n' "${paths[@]#${ROOT}}" \
+	| while split- need ,; do
+	unresolved=()
+	for lib in "${need[@]:2}"; do
+		if [[ ${lib} =~ / ]]; then
+			sane=true
+		else
+			[[ -v exclude[${lib}] ]] && continue
+
+			# not in LDPATH, check if it uses rpath
+			split rpath "${need[1]}" :
+			for rpath in "${rpath[@]}"; do
+				[[ ${rpath} == \$ORIGIN ]] && rpath=${need[0]%/*}
+				[[ -e ${ROOT}/${rpath}/${lib} ]] && continue 2
+			done
+
+			# check if it exists anywhere in paths
+			if [[ -v files[${lib}] ]]; then
+				maybe_unresolved[${lib}]=
+				continue
+			fi
+
+			unresolved+=("${lib}")
+			all_unresolved[${lib}]=
+		fi
+	done
+	(( ${#unresolved[@]} )) && echo "${need[0]}:${unresolved[*]}"
+	:
+done || die "scanelf failed"
+
+${sane} || die "found no files or no LDPATH libraries, is ${ROOT}/etc/ld.so.conf valid?"
+
+if (( ${#all_unresolved[@]} )); then
+	msg " ${C[lr]}*${C[n]} Found ${#all_unresolved[@]} missing libraries:"
+	printf "   - ${C[r]}%s${C[n]}\n" "${!all_unresolved[@]}" >&2
+	exit 2
+elif (( ${#maybe_unresolved[@]} )); then
+	msg " ${C[ly]}*${C[n]} Seems all good if the following libraries can be found at runtime:"
+	printf "   - ${C[a]}%s${C[n]}\n" "${!maybe_unresolved[@]}" >&2
+else
+	msg " ${C[lg]}*${C[n]} All good!"
+fi
+
+:
+
+# vim: ts=4

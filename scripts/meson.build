@@ -1,6 +1,7 @@
 scripts = {
 	'atomf' : 'format ebuild atom strings',
 	'eoldnew' : 'emerge wrapper to merge the older then newest version',
+	'find-unresolved' : 'find unresolved soname dependencies',
 	'qa-cmp' : 'compare portage install images',
 	'qa-sed' : 'sed wrapper to detect if a call did no change',
 	'qa-vdb' : 'use portage VDB information to detect RDEPEND issues among others',

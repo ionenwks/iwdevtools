@@ -139,6 +139,26 @@ May possibly do a bit more...
 
 Run ``scrub-patch --help`` or see **scrub-patch(1)** man page for details.
 
+find-unresolved
+---------------
+
+Scan a ROOT path's ELF files for missing soname dependencies.
+Primarily intended for verification of a stripped embedded system::
+
+    $ find-unresolved netboot-hppa32-20200319T011207Z/
+     * Scanning netboot-hppa32-20200319T011207Z for unresolved soname dependencies...
+    bin/nano:libtinfow.so.6
+    sbin/swapon:libsmartcols.so.1
+    sbin/sfdisk:libfdisk.so.1 libsmartcols.so.1 libreadline.so.7
+    <snip>
+     * Found 6 missing libraries:
+       - libfdisk.so.1
+       - libtinfow.so.6
+    <snip>
+
+Run ``find-unresolved --help`` or see **find-unresolved(1)** man page
+for details.
+
 Bashlibs
 ========
 

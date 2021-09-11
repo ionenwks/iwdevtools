@@ -14,6 +14,8 @@ iwdevtools-next
 
 - atomf(+lib): received some usage changes that may break old scripts using it
 
+- find-unresolved: new tool to find unresolved soname dependencies in a ROOT
+
 - fix q tools showing debug if DEBUG is exported, e.g. by openrc-0.43.5.ebuild
 
 - received various internal cleanups and improved error checking
