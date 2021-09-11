@@ -8,7 +8,7 @@
 
 sed() {
 	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} ]]; then
-		env sed "${@}"
+		command sed "${@}"
 		return ${?}
 	fi
 
