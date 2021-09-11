@@ -1,0 +1,13 @@
+checkindex() {
+	output=$(printf "%s\n" "${!index[@]}" | sort | tr -d '\n')
+	[[ ${output} == ${1} ]] || fail "expected '${1}', got '${output}'"
+}
+array=(1 2)
+declare -A index
+hasharray index array
+checkindex '12'
+array=(3)
+hasharray +index array
+checkindex '123'
+hasharray index array
+checkindex '3'

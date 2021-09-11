@@ -100,6 +100,19 @@ getoptw() {
 	eval "${_COMMON_SETOPT_V}"'=${_COMMON_SETOPT[((_COMMON_SETOPT_P++))]}'
 }
 
+# hasharray [+]<associative-array> <array>
+#	Set <array> as keys with empty values (for non-glob -v searching).
+#	If no +, also reset.
+hasharray() {
+	eval '
+		local _c_elem _c_set=true
+		[[ ${1:0:1} == + ]] || '"${1#+}"'=()
+		for _c_elem in "${'"${2}"'[@]}"; do
+			'"${1#+}"'[${_c_elem}]=
+		done
+	'
+}
+
 # include <files...>
 #	Include files from current bashlib dir, exit on failure
 include() {

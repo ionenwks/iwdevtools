@@ -1,6 +1,7 @@
 tests = [
 	'test-die',
 	'test-getoptw',
+	'test-hasharray',
 	'test-map',
 	'test-msg',
 	'test-opt',
