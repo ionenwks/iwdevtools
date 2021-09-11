@@ -280,7 +280,11 @@ optend() {
 				# quotes only needed if spaces are at end/start
 				echo "${l}${key} = \"${_COMMON_OPT[${key}]#*:}\""
 			else
-				echo "${l}${key} = ${_COMMON_OPT[${key}]#*:}"
+				if [[ ${_COMMON_OPT[${key}]#*:} ]]; then
+					echo "${l}${key} = ${_COMMON_OPT[${key}]#*:}"
+				else
+					echo "${l}${key} ="
+				fi
 			fi
 		done
 		exit
