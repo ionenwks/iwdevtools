@@ -161,6 +161,9 @@ term of base functionality.
 	atomsp myarray '>=cat/pn-1.0-r1:3/0'
 	echo "ver:${myarray[4]} slot:${myarray[6]}" # ver:1.0 slot:3
 
+	pversp myarray '1.0b_alpha3_p8-r1'
+	echo "${myarray[*]}" # 1 .0 b _alpha 3 _p 8 -r1
+
 Can also use the command line frontend::
 
 	$ atomf 'cat:%c name:%n pvr:%v%r\n' */*/*.ebuild
