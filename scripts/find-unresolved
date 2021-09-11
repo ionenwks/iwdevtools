@@ -7,7 +7,7 @@ usage <<-EOU
 
 	Scan <ROOT>'s ELF files for unresolved soname dependencies.
 
-	Requires a valid <ROOT>/etc/ld.so.conf
+	Attempts to uses <ROOT>/etc/ld.so.conf to find real library paths.
 
 	Primarily intended for working with embedded systems and ensuring no needed
 	libraries are missing (normally portage verifies this automatically).
@@ -20,6 +20,8 @@ usage <<-EOU
 	  -e, --exclude=LIST  Comma separated list of soname to ignore if not found
 
 	  -t, --no-tuples     Skip /usr/*-*-*, useful if it's crossdev directories
+
+	  -p, --no-ldpath     Disable using ld.so.conf to find libraries' path
 
 	  -c, --no-color      Disable use of colors
 
@@ -39,6 +41,7 @@ optauto args "${@}" <<-EOO
 	s|search-all=bool:false
 	e|exclude=str:
 	t|!tuples=bool:true
+	p|!ldpath=bool:true
 	c|!color=bool:true
 EOO
 set -- "${args[@]}"; unset args
@@ -69,12 +72,19 @@ find "${paths[@]}" -name '*.so*' -type f,l -printf "%f\n" \
 	| map filemap || die "failed to find shared libraries"
 hasharray files filemap; unset filemap
 
+if ${O[ldpath]}; then
+	sane=false
+	ldpath=(--use-ldpath)
+else
+	sane=true
+	ldpath=()
+fi
+
 setmsg 2
 msg " ${C[lg]}*${C[n]} Scanning ${ROOT:-/} for unresolved soname dependencies..."
-sane=false
 declare -A all_unresolved=()
 declare -A maybe_unresolved=()
-scanelf -q --root "${ROOT:-/}" --use-ldpath -RF'%p,%r,%n' "${paths[@]#${ROOT}}" \
+scanelf -q --root "${ROOT:-/}" "${ldpath[@]}" -RF'%p,%r,%n' "${paths[@]#${ROOT}}" \
 	| while split- need ,; do
 	unresolved=()
 	for lib in "${need[@]:2}"; do
@@ -92,7 +102,7 @@ scanelf -q --root "${ROOT:-/}" --use-ldpath -RF'%p,%r,%n' "${paths[@]#${ROOT}}" 
 
 			# check if it exists anywhere in paths
 			if [[ -v files[${lib}] ]]; then
-				maybe_unresolved[${lib}]=
+				${O[ldpath]} && maybe_unresolved[${lib}]=
 				continue
 			fi
 
@@ -104,7 +114,7 @@ scanelf -q --root "${ROOT:-/}" --use-ldpath -RF'%p,%r,%n' "${paths[@]#${ROOT}}" 
 	:
 done || die "scanelf failed"
 
-${sane} || die "found no files or no LDPATH libraries, is ${ROOT}/etc/ld.so.conf valid?"
+${sane} || die "found no files or no LDPATH libraries, is ${ROOT}/etc/ld.so.conf valid? (use --no-ldpath to disable)"
 
 if (( ${#all_unresolved[@]} )); then
 	msg " ${C[lr]}*${C[n]} Found ${#all_unresolved[@]} missing libraries:"

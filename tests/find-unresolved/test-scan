@@ -7,10 +7,10 @@ xfail 2 expect -2 "*missing*libdummy.so.1*" -c ${ROOT}
 xfail 2 expect -2 -! "*libdummy.so.1*" -c --exclude=libdummy.so.1 ${ROOT}
 ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
 xfail 2 expect -2 -! "*libdummy.so.1*" -c ${ROOT}
-ebuild "$(get_ebuild libdummy 1.5 cmd:"exeinto /usr/share; newexe ${LIBD100} libdummy.so.1")" merge
+ebuild "$(get_ebuild libdummy 1.5 cmd:"exeinto /usr/share; newexe '${LIBD100}' libdummy.so.1")" merge
 xfail 2 expect -2 "*missing*libdummy.so.1*" -c ${ROOT}
 xfail 2 expect -2 -! "*libdummy.so.1*" -c --search-all ${ROOT}
-ebuild "$(get_ebuild libdummy 1.5 cmd:"exeinto /usr/aarch64-unknown-linux-gnu; newexe ${LIBD100} libdummy.so.1")" merge
+ebuild "$(get_ebuild libdummy 1.5 cmd:"exeinto /usr/aarch64-unknown-linux-gnu; newexe '${LIBD100}' libdummy.so.1")" merge
 xfail 2 expect -2 "*missing*libdummy.so.1*" -c --no-tuples ${ROOT}
 xfail 2 expect -2 -! "*libdummy.so.1*" -c ${ROOT}
 # note: "all good" tests aren't done due to ROOT always missing a libc
