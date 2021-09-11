@@ -1,42 +1,35 @@
 #!/usr/bin/env bash
-version() { echo "${0##*/} @version@"; exit; }
-usage() {
-	cat <<-EOF
-		Usage: ${0##*/} [2-9][-] <atom> [emerge options]
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend portageq # emerge
+include atomf
+usage <<-EOU
+	Usage: ${0##*/} [2-9][-] <atom> [emerge options]
 
-		Helper for using \`qa-cmp\` which emerges the package defined by <atom> but
-		by first emerging its previous (visible) version if not already installed.
+	Helper for using \`qa-cmp\` which emerges the package defined by <atom> but
+	by first emerging its previous (visible) version if not already installed.
 
-		If [2-9] is provided as first argument, go back N versions.
+	If [2-9] is provided as first argument, go back N versions.
 
-		If \`-\` is specified (e.g. \`${0##*/} -\` or \`${0##*/} 2-\`), will only
-		emerge the previous and not the newest.
+	If \`-\` is specified (e.g. \`${0##*/} -\` or \`${0##*/} 2-\`), will only
+	emerge the previous and not the newest.
 
-		Any options after <atom> are passed to emerge as-is.
+	Any options after <atom> are passed to emerge as-is.
 
-		Note: this exports IWDT_ALL=y (see help text of other @package@ commands)
+	Options:
+	  -h, --help     Display usage information and exit
+	      --version  Display version information and exit
 
-		Environment:
-		  EOLDNEW_EMERGE_CMD=emerge  If need to call something else than emerge(1)
-		  EOLDNEW_EMERGE_ARGS=       Similar to EMERGE_DEFAULT_OPTS
-		  EOLDNEW_EMERGE_ARGS_OLD=   Only used when emerging old
-		  EOLDNEW_EMERGE_ARGS_NEW=   Only used when emerging new
-		(note: it is possible to set these in portage's make.conf as well)
-	EOF
-	exit
-}
+	*Note*
+	This exports IWDT_ALL=y (see help text of other @package@ commands)
 
-set -fuo pipefail
-die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; exit 1; }
-: "@eprefix@"
-: "${ROOT=}"; ROOT=${ROOT%/}
-: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
-export ROOT EROOT EPREFIX
-
-# Dependencies:
-#	app-portage/portage-utils (qatom)
-#	sys-apps/portage (portageq)
-type portageq qatom >/dev/null || die "missing dependencies"
+	Environment:
+	  EOLDNEW_EMERGE_CMD=emerge  If need to call something else than emerge(1)
+	  EOLDNEW_EMERGE_ARGS=       Similar to EMERGE_DEFAULT_OPTS
+	  EOLDNEW_EMERGE_ARGS_OLD=   Only used when emerging old
+	  EOLDNEW_EMERGE_ARGS_NEW=   Only used when emerging new
+	(note: it is possible to set these in portage's make.conf as well)
+EOU
 
 # do crude option parsing not to have to figure out emerge's options
 skip_new=
@@ -58,14 +51,11 @@ if (( ${#} )); then
 fi
 (( ${#} >= 1 )) || die "no atom specified, see \`${0##*/} --help\`"
 
-# reduce atom to category/pn (or just pn) so we can get all vers
-atom=$(qatom -CqF '%[CATEGORY]%{PN}' -- "${1}") || die "qatom failed for '${1}'"
+# reduce atom to category/pn (or just pn) so we can get all versions
+atom=$(atomf -M '%p' "${1}") || die
 
 # could use pkgcore's smarter version but portageq's is enough
-IFS=$'\n'
-vers=($(portageq pquery "${atom}")) \
-	|| die "portageq pquery failed for '${atom}'"
-unset IFS
+portageq pquery "${atom}" | map vers || die "portageq pquery failed for '${atom}'"
 
 # requested atom may not necessarily be latest, resolve it to know its position
 atom=$(portageq best_visible "${EROOT:-/}" "${1}") \
@@ -86,13 +76,14 @@ portageq has_version "${EROOT:-/}" "${usevers[old]}" && skip_old=y
 
 [[ -v skip_old || -v skip_new ]] || die "nothing to do"
 
-echo "old: ${usevers[old]}${skip_old/y/ (skipped)}"
-echo "new: ${atom}${skip_new/y/ (skipped)}"
+msg "old: ${usevers[old]}${skip_old/y/ (skipped)}"
+msg "new: ${atom}${skip_new/y/ (skipped)}"
 
 export IWDT_ALL=y
 
-# ignore portageq errors as it return 1 if it wasn't found
-mapfile -t env < <(portageq envvar EOLDNEW_EMERGE_CMD EOLDNEW_EMERGE_ARGS EOLDNEW_EMERGE_ARGS_OLD EOLDNEW_EMERGE_ARGS_NEW)
+# ignore portageq errors as it return 1 if env is unset
+portageq envvar EOLDNEW_EMERGE_CMD EOLDNEW_EMERGE_ARGS EOLDNEW_EMERGE_ARGS_OLD EOLDNEW_EMERGE_ARGS_NEW \
+	| map env
 
 : "${EOLDNEW_EMERGE_CMD:=${env[0]:-emerge}}"
 : "${EOLDNEW_EMERGE_ARGS:=${env[1]:-}}"
@@ -101,13 +92,13 @@ mapfile -t env < <(portageq envvar EOLDNEW_EMERGE_CMD EOLDNEW_EMERGE_ARGS EOLDNE
 
 if [[ ! ${skip_old} ]]; then
 	cmd=("${EOLDNEW_EMERGE_CMD}" "=${usevers[old]}" "${@:2}" ${EOLDNEW_EMERGE_ARGS} ${EOLDNEW_EMERGE_ARGS_OLD})
-	echo "running: ${cmd[*]}"
+	msg "running: ${cmd[*]}"
 	"${cmd[@]}" || exit $?
 fi
 
 if [[ ! ${skip_new} ]]; then
 	cmd=("${EOLDNEW_EMERGE_CMD}" "${@}" ${EOLDNEW_EMERGE_ARGS} ${EOLDNEW_EMERGE_ARGS_NEW})
-	echo "running: ${cmd[*]}"
+	msg "running: ${cmd[*]}"
 	"${cmd[@]}"
 fi
 
