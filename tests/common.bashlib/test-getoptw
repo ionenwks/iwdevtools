@@ -12,3 +12,4 @@ done
 [[ ${args[*]} == 'x1 x2 x3 x4 x5' ]] || fail "expected x1 to x5, got '${args[*]}'"
 
 xfail -s 1 getoptw arg args a aaa -b
+getoptw -n arg args a aaa -b || fail "expected invalid options to be ignored, got failure"

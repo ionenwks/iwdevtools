@@ -59,18 +59,23 @@ err() {
 	echo "Error: ${*} (${0##*/})" >&2
 }
 
-# getoptw [<variable> <array> <short> <long> <args...>] (depend:getopt)
+# getoptw [[-n] <variable> <array> <short> <long> <args...>] (depend:getopt)
 #	Wrapper to external getopt(1), only initial call takes arguments.
 #	<short> and <long> are getopt(1)'s -o and -l options.
 #	If no arguments, set named <variable> to next option with each call.
 #	If reach --, set named <array> to remaining options.
 #	Return 1 when no options left.
-#	Dies if invalid options passed.
+#	Dies if invalid options passed unless -n.
 getoptw() {
 	if (( ${#} )); then
+		local invalid=false
+		if [[ ${1} == -n ]]; then
+			invalid=true
+			shift
+		fi
 		eval "
 			_COMMON_SETOPT=($(getopt -o "${3}" -l "${4}" -- "${@:5}"))
-			(( ! ${?} )) || die 'invalid arguments'
+			(( ! ${?} )) || \${invalid} || die 'invalid arguments'
 			${2}=()"
 		_COMMON_SETOPT_V=${1}
 		_COMMON_SETOPT_A=${2}
