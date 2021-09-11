@@ -8,4 +8,10 @@ expect -c -s -2 "*'
   003:         false \\
   004:             false || die
   ^^^ testfunc:4'*" xfail -s 1 testfunc
+
 expect -c -2 "Error:*test message*" xfail -s 1 die test message
+
+hook_end() {
+	echo hook >&2
+}
+expect -c -2 "Error:*test*hook*" xfail -s 1 die test
