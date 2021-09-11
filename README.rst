@@ -149,10 +149,25 @@ atomf.bashlib
 -------------
 
 Basic bash functions to split portage atoms and version strings for when
-matching on ``-[0-9]*`` is just not cutting it. Similar to qatom(1) in
+matching on ``-[0-9]*`` is just not cutting it. Similar to **qatom(1)** in
 term of base functionality.
 
-Run ``atomf --help`` or see **atomf(1)** man page for the minimal frontend.
+.. code-block:: bash
+
+	. "$(pkg-config iwdevtools --variable=atomf)"
+
+	atomf 'ver:%v rev:%R\n' 'cat/pn-1.0-r1' # ver:1.0 rev:1
+
+	atomsp myarray '>=cat/pn-1.0-r1:3/0'
+	echo "ver:${myarray[4]} slot:${myarray[6]}" # ver:1.0 slot:3
+
+Can also use the command line frontend::
+
+	$ atomf 'cat:%c name:%n pvr:%v%r\n' */*/*.ebuild
+	cat:acct-group name:abrt pvr:0-r1
+	[...]
+
+Run ``atomf --help`` or see **atomf(1)** man page for details.
 
 Installing
 ==========
