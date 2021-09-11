@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.7.0 (2021-09-11)
+-----------------------------
 
 - all tools with options now support configuration files
 
