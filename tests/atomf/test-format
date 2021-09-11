@@ -8,3 +8,4 @@ expect -s "'
 xfail 2 expect -2 'Error:*a/b*missing*' %e c/n-1-r1 a/b c/n-2-r2
 expect '1-r12-r2' -M %e c/n-1-r1 a/b c/n-2-r2
 xfail 1 expect -2 'Error:*invalid atom*' %c c/n-1.0-r1-r1
+xfail 1 expect -2 "Error:*unrecognized %format*" %T c/n

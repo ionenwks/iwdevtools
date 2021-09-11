@@ -93,11 +93,11 @@ elif (( ${#} > 1 )) && ! ${O[expand]}; then
 		atomf "${miss[@]}" "${format}" "${1}" || {
 			errno=${?}
 			: "${exiterrno:=${errno}}"
-			if (( errno == 2 )); then
-				err "'${1}' is missing components"
-			else
-				err "'${1}' is an invalid atom"
-			fi
+			case ${errno} in
+				3) die "'${format}' has unrecognized %format, see \`${0##*/} --help\`";;
+				2) err "'${1}' is missing components";;
+				*) err "'${1}' is an invalid atom";;
+			esac
 		}
 		shift
 	done

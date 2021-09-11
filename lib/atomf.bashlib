@@ -11,6 +11,7 @@
 #	Using %C, %V, will not add /,- and be empty if unset.
 #	Return 2 without output if %c/%n/%v were requested but are
 #	unknown, unless -M is specified.
+#	Return 3 if invalid format given.
 #	<atom> can use dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use]
 #	<atom> can use tree-format if .ebuild, e.g. cat/name/name-1.2.3-r1.ebuild
 #	See atomsp() and pversp() if need array with all values.
@@ -60,8 +61,8 @@ vatomf() {
 				args+=("${6}${7:+-r${7}}");;
 			f) [[ ${4} && ${5} && ${6} ]] || ${miss} || return 2
 				args+=("${4:+${4}/}${5}${6:+-${6}}${7:+-r${7}}");;
-			%) format+=%;&
-			*) continue;;
+			%) format+=%; continue;;
+			*) return 3;;
 		esac
 		format+=s
 	done
