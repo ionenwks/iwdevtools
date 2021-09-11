@@ -9,7 +9,8 @@
 #	Compounds:   %p(%c/%n)    %e(%v%r)    %f(%c/%n-%v%r)
 #	Using %R, %S, %U will not add -r,:,/ and set to 0 if unset.
 #	Return 2 without output if %c/%n/%v were requested but are unknown.
-#	<atom> can be in dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use]
+#	<atom> can use dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use]
+#	<atom> can use tree-format if .ebuild, e.g. cat/name/name-1.2.3-r1.ebuild
 #	See atomsp() and pversp() if need array with all values.
 atomf() {
 	local -a atom
@@ -63,6 +64,21 @@ atomsp() {
 	local _a_s=${2-${1}}
 	local -a _a_t=()
 
+	if [[ ${_a_s} =~ ^([^:/]+/)([^:/]+/)*([^:/]+) ]]; then
+		local _a_p1=${BASH_REMATCH[1]}
+		local _a_p2=${BASH_REMATCH[3]}
+
+		# if .ebuild, strip and remove duplicate /PN in (CAT)/PN/PF.ebuild
+		if [[ ${_a_s%.ebuild} != "${_a_s}" ]]; then
+			[[ ${BASH_REMATCH[2]} || ! ${_a_p2} =~ ^"${_a_p1%/}"- ]] \
+				|| _a_p1= # pn/pf without cat/
+			_a_s=${_a_p1}${_a_p2%.ebuild}
+		elif [[ ${BASH_REMATCH[2]} ]]; then
+			return 1 # consider */*/* without .ebuild invalid
+		fi
+	fi
+
+	# blocker and range operators
 	[[ ${_a_s} =~ ^('!!'|'!'|'')(.*) ]] && _atomsptok || return 1
 	[[ ${_a_s} =~ ^('<='|'<'|'='|'~'|'>='|'>'|'')(.*) ]] && _atomsptok || return 1
 

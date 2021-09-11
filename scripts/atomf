@@ -9,11 +9,13 @@ usage <<-EOU
 	Format <atom> based on [format], or return 9 elements separated by
 	spaces if a single atom with no format specified.
 
-	atom can be in dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use],
-	but [use] will be discarded.
+	atom can be in dependency-format, or tree-style .ebuild format, e.g.
+	 -  !!>=cat/name-1.2.3-r1:*/0=[use] ([use] will be discarded)
+	 -  cat/name/name-1.2.3-r1.ebuild (.ebuild must be present)
 
 	atom can be incomplete, but will return 1 if single elements are seen as
-	invalid per the Package Manager Specification (PMS).
+	invalid per the Package Manager Specification (PMS) -- not that this
+	should be considered a full atom validator.
 
 	Options:
 	  -x, --expand       Ignore format and expand multiple atoms to elements
