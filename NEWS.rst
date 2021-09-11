@@ -4,6 +4,10 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- atomf(+lib): now accepts category/pn/pf.ebuild tree-style format
+
+- atomf.bashlib: usage change for atomsp()/pversp() now taking array first
+
 - fix q tools showing debug if DEBUG is exported, e.g. by openrc-0.43.5.ebuild
 
 iwdevtools-0.6.0 (2021-09-07)
