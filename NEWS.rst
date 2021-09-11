@@ -4,11 +4,13 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- all tools with options now support configuration files, try --dumpconfig
+
 - atomf(+lib): now accepts category/pn/pf.ebuild tree-style format
 
 - atomf(+lib): new --allow-missing to not abort if missing components
 
-- atomf(+lib): received some breaking usage changes from early stages version
+- atomf(+lib): received some usage changes that may break old scripts using it
 
 - fix q tools showing debug if DEBUG is exported, e.g. by openrc-0.43.5.ebuild
 
