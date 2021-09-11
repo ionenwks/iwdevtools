@@ -1,74 +1,51 @@
 #!/usr/bin/env bash
-version() { echo "${0##*/} @version@"; exit; }
-usage() {
-	cat <<-EOF
-		Usage: ${0##*/} [options] [patches]
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend cat file getopt mktemp readlink rm stat
+usage <<-EOU
+	Usage: ${0##*/} [options] [patches]
 
-		Strip patches of typically useless cruft such as "diff --git"
-		lines and timestamps to reduce size and improve readability.
+	Strip patches of typically useless cruft such as "diff --git"
+	lines and timestamps to reduce size and improve readability.
 
-		Patches can be passed either as arguments or through stdin,
-		and either modified in-place (i.e. sed(1)'s -i) or to stdout.
+	Patches can be passed either as arguments or through stdin,
+	and either modified in-place (i.e. sed(1)'s -i) or to stdout.
 
-		Options:
-		  -q, --quiet       Don't nag about possible QA issues
-		  -n, --dry-run     Don't scrub and only nag about QA instead
+	Options:
+	  -q, --quiet        Don't nag about possible QA issues
+	  -n, --dry-run      Don't scrub and only nag about QA instead
 
-		  -s, --no-sanity   Disable \`file\` check for if being misdetected
+	  -s, --no-sanity    Disable \`file\` check for if being misdetected
 
-		  -i, --in-place    Force using sed -i (no autodetect)
-		  -o, --stdout      Always output to stdout (no autodetect)
+	  -i, --in-place     Force using sed -i (no autodetect)
+	  -o, --stdout       Always output to stdout (no autodetect)
 
-		  -c, --no-color    Disable use of colors
+	  -c, --no-color     Disable use of colors
 
-		  -h, --help        Display usage information and exit
-		      --version     Display version information and exit
-	EOF
-	exit
-}
+	      --confdir=PATH Configuration dir to use instead of defaults
+	                     (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig   Display config and exit (> ${0##*/}.conf)
 
-set -fuo pipefail
-trap 'exit 1' USR1
-die() { echo "Error: ${*} (${0##*/}:${BASH_LINENO[0]})" >&2; kill -USR1 ${$}; exit 1; }
+	  -h, --help         Display usage information and exit
+	      --version      Display version information and exit
+EOU
+optauto args "${@}" <<-EOO
+	q|quiet=bool:false
+	n|dry-run=bool:false
+	s|!sanity=bool:true
+	i|in-place=bool:false
+	o|stdout=bool:false
+	c|!color=bool:true
+EOO
+set -- "${args[@]}"; unset args
 
-# Dependencies:
-#	sys-apps/coreutils (cat, mktemp, readlink, rm)
-#	sys-apps/file (file)
-#	sys-apps/sed (sed)
-#	sys-apps/util-linux (getopt)
-type cat file getopt mktemp readlink rm >/dev/null || die "missing dependencies"
-
-declare -A OPT
-OPT[quiet]=false
-OPT[dry-run]=false
-OPT[sanity]=true
-OPT[color]=true
-OPT[in-place]=
-
-eval set -- $(getopt \
-	-o hqnsioc \
-	-l help,version,quiet,dry-run,no-sanity,in-place,stdout,no-color \
-	-- "$@" || die "invalid arguments")
-while (( ${#} )); do
-	case ${1} in
-		-h|--help) usage;;
-		   --version) version;;
-		-q|--quiet) OPT[quiet]=true;;
-		-n|--dry-run) OPT[dry-run]=true;;
-		-s|--no-sanity) OPT[sanity]=false;;
-		-i|--in-place) OPT[in-place]=true;;
-		-o|--stdout) OPT[in-place]=false;;
-		-c|--no-color) OPT[color]=false;;
-		--) shift; break;;
-	esac
-	shift
-done
+${O[in-place]} && ${O[stdout]} && die "can't in-place and stdout at same time"
 
 # do basic sanity checks on supplied files, safety if going to use in-place
 patches=()
 while (( ${#} )); do
 	[[ -f ${1} ]] || die "'${1}' is not a valid file"
-	if ${OPT[sanity]} && [[ $(file -bL -- "${1}") != 'unified diff output'* ]]; then
+	if ${O[sanity]} && [[ $(file -bL -- "${1}") != 'unified diff output'* ]]; then
 		die "'${1}' does not appear to be a unified format patch"
 	fi
 	patches+=("${1}")
@@ -77,17 +54,18 @@ done
 
 # devmanual's sed has a -i by default, try to preserve this behavior but
 # will drop if input or output is detected to be stdin/stdout
-if [[ ${OPT[in-place]} != true ]]; then
+if ${O[in-place]}; then
+	stdout=
+	stdin=
+	inplace=(-i)
+else
+	# maybe in-place, stdout, or force-stdout
 	stdin=$(readlink -m /proc/$$/fd/0) || die "readlink failed for stdin"
 	[[ -f ${stdin} || ${stdin##*/} == pipe:* ]] || stdin=
 	stdout=$(readlink -m /proc/$$/fd/1) || die "readlink failed for stdout"
 	[[ -f ${stdout} || ${stdout##*/} == pipe:* ]] || stdout=
-	inplace=-i
-	[[ ${stdin} || ${stdout} || ${OPT[in-place]} == false ]] && inplace=
-else
-	stdout=
-	stdin=
-	inplace=-i
+	inplace=(-i)
+	[[ ${stdin} || ${stdout} ]] || ${O[stdout]} && inplace=()
 fi
 
 # copy stdin to a temporary file, simplifies inspection and sed usage
@@ -102,16 +80,17 @@ if [[ ${stdin} ]]; then
 fi
 
 (( ${#patches[@]} )) || die "no patches given"
-[[ ${#patches[@]} -gt 1 && ! ${inplace} ]] && die "no support for multiple files when using stdin/stdout"
+(( ${#patches[@]} > 1 && ! ${#inplace[@]} )) \
+	&& die "no support for multiple files when using stdin/stdout"
 
 # save patch sizes for report
 declare -i i=0
 declare -ia oldsizes=() newsizes=()
 for ((i=0; i < ${#patches[@]}; i++)); do
-	oldsizes+=($(stat -c %s "${patches[i]}")) || die "stat failed for '${patches[i]}'"
+	oldsizes+=("$(stat -c %s "${patches[i]}")") || die "stat failed for '${patches[i]}'"
 done
 
-if ! ${OPT[dry-run]}; then
+if ! ${O[dry-run]}; then
 	# Taken from vapier's clean patches howto (also in Gentoo's devmanual)
 	#  - https://dev.gentoo.org/~vapier/clean-patches
 	#  - https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html
@@ -137,23 +116,12 @@ if ! ${OPT[dry-run]}; then
 		-e '/^--- /s:\t.*::' \
 		-e '/^---$/,/^--- /{/^--- /!d}' \
 		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}' \
-		${inplace} -- "${patches[@]}" || die "scrubbed too hard"
+		"${inplace[@]}" -- "${patches[@]}" || die "scrubbed too hard"
 fi
 
 exec >&2 # done with stdout which may be a file
 
-declare -A C
-if ${OPT[color]}; then
-	C[n]=$'\e[0m'
-	C[r]=$'\e[31m'
-	C[g]=$'\e[32m'
-	C[y]=$'\e[33m'
-	C[a]=$'\e[90m'
-else
-	C=([n]= [r]= [g]= [y]= [a]=)
-fi
-
-if ${OPT[dry-run]}; then
+if ${O[dry-run]}; then
 	newsizes=("${oldsizes[@]}")
 	echo "Would scrub (dry-run):"
 	if [[ ${stdin} ]]; then
@@ -167,7 +135,7 @@ else
 		(( ${1} && ${2} )) && echo $((10**4 - 10**4 * ${2} / ${1})) || echo NaN
 	}
 	echo "Successfully scrubbed:"
-	if [[ ${inplace} ]]; then
+	if (( ${#inplace[@]} )); then
 		for ((i=0; i < ${#patches[@]}; i++)); do
 			newsizes[i]=$(stat -c %s "${patches[i]}") || die "stat failed for '${patches[i]}'"
 			printf -- " - %s (%.2f%% reduction)\n" "${patches[i]}" "$(percent "${oldsizes[i]}" "${newsizes[i]}")e-2"
@@ -184,7 +152,7 @@ else
 	echo "Please verify that header(s) have not lost anything meaningful."
 fi
 
-${OPT[quiet]} && exit # nothing else to do
+${O[quiet]} && end # nothing else to do
 
 inspect() {
 	qa() {
