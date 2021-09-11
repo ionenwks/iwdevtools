@@ -6,7 +6,9 @@ iwdevtools-next
 
 - atomf(+lib): now accepts category/pn/pf.ebuild tree-style format
 
-- atomf.bashlib: usage change for atomsp()/pversp() now taking array first
+- atomf(+lib): new --allow-missing to not abort if missing components
+
+- atomf(+lib): received some breaking usage changes from early stages version
 
 - fix q tools showing debug if DEBUG is exported, e.g. by openrc-0.43.5.ebuild
 

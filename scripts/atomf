@@ -18,39 +18,45 @@ usage <<-EOU
 	should be considered a full atom validator.
 
 	Options:
-	  -x, --expand       Ignore format and expand multiple atoms to elements
-	  -s, --unset=STR    When expanding, show STR if unset (default: '?')
-	  -v, --versplit     Split a version string into elements instead
-	                     (no characters are dropped for versions)
+	  -x, --expand        Ignore format and expand multiple atoms to elements
+	  -s, --unset=STR     When expanding, show STR if unset (default: '?')
 
-	      --confdir=PATH Configuration dir to use instead of defaults
-	                     (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
-	      --dumpconfig   Display config and exit (> ${0##*/}.conf)
+	  -M, --allow-missing If %c/%n or -%v is specified but atom is missing one
+	                      of these components, do not exit with error.
 
-	  -h, --help         Display usage information and exit
-	      --version      Display version information and exit
+	  -v, --versplit      Split a version string into elements instead
+	                      (no characters are dropped for versions)
+
+	      --confdir=PATH  Configuration dir to use instead of defaults
+	                      (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig    Display config and exit (> ${0##*/}.conf)
+
+	  -h, --help          Display usage information and exit
+	      --version       Display version information and exit
 
 	*Format*
 	 0.  %! Blocker indicator (!, !!, or none)
 	 1.  %o Version range operator (>=, >, etc... or none)
-	 2.  %c Category
+	 2.  %c Category (ending with / if set)
 	 3.  %n Name
-	 4.  %v Version
+	 4.  %v Version (starting with - if set)
 	 5.  %r Revision (as -rN, or none)
 	 6.  %s Slot (as :0, or none)
 	 7.  %u Subslot (as /0, or none)
 	 8.  %b Binding operator (= or none)
 	 -.  %% Literal %
-	e.g. "%c/%n-%v%r" = category/name-1.0-r1
+	e.g. "%c%n%v%r" = category/name-1.0-r1
 
-	 -.  %p Equivalent to %c/%n
-	 -.  %e Equivalent to %v%r
-	 -.  %f Equivalent to %c/%n-%v%r
+	 -.  %p Equivalent to %c%n (category/pn)
+	 -.  %e Equivalent to %v%r (pvr)
+	 -.  %f Equivalent to %c%n%v%r (category/pf)
 
 	%R,%S,%U alternatively display %r,%s,%u without prefixes, and as 0 if unset.
+	%C,%V similarly strip the / and -, and still empty if unset.
 
-	If one of %c, %n, or %v are requested but missing from atom, will report
-	error for this atom and exit with return status 2.
+	If one of %c, %n, or %v (or equivalent) is requested, but is missing from the
+	atom, will report error for that atom and later exit with return status 2
+	unless --allow-missing.
 
 	*Notes*
 	If need to use this in a bash script extensively, it is recommended to source
@@ -59,11 +65,14 @@ EOU
 optauto args "${@}" <<-EOO
 	x|expand=bool:false
 	s|unset=str:?
+	M|allow-missing=bool:false
 	v|versplit=bool:false
 EOO
 set -- "${args[@]}"; unset args
 
 (( ${#} )) || die "no format/atom specified, see \`${0##*/} --help\`"
+
+${O[allow-missing]} && miss=(-M) || miss=()
 
 exiterrno=
 if ${O[versplit]}; then
@@ -81,7 +90,7 @@ elif (( ${#} > 1 )) && ! ${O[expand]}; then
 	shift
 
 	while (( ${#} )); do
-		atomf "${format}" "${1}" || {
+		atomf "${miss[@]}" "${format}" "${1}" || {
 			errno=${?}
 			: "${exiterrno:=${errno}}"
 			if (( errno == 2 )); then
@@ -94,7 +103,7 @@ elif (( ${#} > 1 )) && ! ${O[expand]}; then
 	done
 else
 	while (( ${#} )); do
-		if atomsp atom "${1}"; then
+		if atomsp "${miss[@]}" atom "${1}"; then
 			merge=
 			for ((i=0; i<${#atom[@]}; i++)); do
 				: "${atom[i]:=${O[unset]}}"

@@ -157,7 +157,7 @@ term of base functionality.
 	#!/usr/bin/env bash
 	. "$(pkg-config iwdevtools --variable=atomf)"
 
-	atomf 'ver:%v rev:%R\n' 'cat/pn-1.0-r1' # ver:1.0 rev:1
+	atomf 'ver:%V rev:%R\n' 'cat/pn-1.0-r1' # ver:1.0 rev:1
 
 	atomsp myarray '>=cat/pn-1.0-r1:3/0'
 	echo "ver:${myarray[4]} slot:${myarray[6]}" # ver:1.0 slot:3
@@ -168,7 +168,7 @@ term of base functionality.
 Can also use the command line frontend::
 
 	$ atomf 'cat:%c name:%n pvr:%v%r\n' */*/*.ebuild
-	cat:acct-group name:abrt pvr:0-r1
+	cat:acct-group/ name:abrt pvr:-0-r1
 	[...]
 
 Run ``atomf --help`` or see **atomf(1)** man page for details.

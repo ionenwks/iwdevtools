@@ -1,26 +1,34 @@
 #!/usr/bin/env bash
 [[ ! -v ATOMF_BASHLIB ]] || return 0; ATOMF_BASHLIB=
 
-# atomf <format> <atom>
+# atomf [-M] <format> <atom>
 #	Echoes back <atom> using <format>
-#	%!(block)    %o(operator)
-#	%c(category) %n(name)     %v(version) %r(-revision)
-#	%s(:slot)    %u(/subslot) %b(bind)    %%(literal%)
-#	Compounds:   %p(%c/%n)    %e(%v%r)    %f(%c/%n-%v%r)
+#	%!(block)     %o(operator)
+#	%c(category/) %n(name)     %v(-version) %r(-rrevision)
+#	%s(:slot)     %u(/subslot) %b(bind)     %%(literal%)
+#	Compounds:    %p(%c%n)     %e(%v%r)     %f(%c%n%v%r)
 #	Using %R, %S, %U will not add -r,:,/ and set to 0 if unset.
-#	Return 2 without output if %c/%n/%v were requested but are unknown.
+#	Using %C, %V, will not add /,- and be empty if unset.
+#	Return 2 without output if %c/%n/%v were requested but are
+#	unknown, unless -M is specified.
 #	<atom> can use dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use]
 #	<atom> can use tree-format if .ebuild, e.g. cat/name/name-1.2.3-r1.ebuild
 #	See atomsp() and pversp() if need array with all values.
 atomf() {
 	local -a atom
-	atomsp atom "${2}" || return ${?}
-	vatomf "${1}" "${atom[@]}" || return ${?}
+	atomsp atom "${3:-${2}}" || return ${?}
+	vatomf "${@:1:$((${#}-1))}" "${atom[@]}" || return ${?}
 }
 
-# vatomf <format> "${atom[@]}"
+# vatomf [-M] <format> "${atom[@]}"
 #	Same as atomf() but uses the array set by atomsp()
 vatomf() {
+	local miss=false
+	if [[ ${1} == -M ]]; then
+		miss=true
+		shift
+	fi
+
 	local s=${1} format=
 	local -a args=()
 	while [[ ${s} =~ (%[0-9.-]*)(.)(.*) ]]; do
@@ -29,9 +37,16 @@ vatomf() {
 		case ${BASH_REMATCH[2]} in
 			!) args+=("${2}");;
 			o) args+=("${3}");;
-			c) [[ ${4} ]] || return 2; args+=("${4}");;
-			n) [[ ${5} ]] || return 2; args+=("${5}");;
-			v) [[ ${6} ]] || return 2; args+=("${6}");;
+			c) [[ ${4} ]] || ${miss} || return 2
+				args+=("${4:+${4}/}");;
+			C) [[ ${4} ]] || ${miss} || return 2
+				args+=("${4}");;
+			n) [[ ${5} ]] || ${miss} || return 2
+				args+=("${5}");;
+			v) [[ ${6} ]] || ${miss} || return 2
+				args+=("${6:+-${6}}");;
+			V) [[ ${6} ]] || ${miss} || return 2
+				args+=("${6}");;
 			r) args+=("${7:+-r${7}}");;
 			R) args+=("${7:-0}"); format+=d; continue;;
 			s) args+=("${8:+:${8}}");;
@@ -39,9 +54,12 @@ vatomf() {
 			u) args+=("${9:+/${9}}");;
 			U) args+=("${9:-0}"); format+=d; continue;;
 			b) args+=("${10}");;
-			p) [[ ${4} && ${5} ]] || return 2; args+=("${4}/${5}");;
-			e) [[ ${6} ]] || return 2; args+=("${6}${7:+-r${7}}");;
-			f) [[ ${4} && ${5} && ${6} ]] || return 2; args+=("${4}/${5}-${6}${7:+-r${7}}");;
+			p) [[ ${4} && ${5} ]] || ${miss} || return 2
+				args+=("${4:+${4}/}${5}");;
+			e) [[ ${6} ]] || ${miss} || return 2
+				args+=("${6}${7:+-r${7}}");;
+			f) [[ ${4} && ${5} && ${6} ]] || ${miss} || return 2
+				args+=("${4:+${4}/}${5}${6:+-${6}}${7:+-r${7}}");;
 			%) format+=%;&
 			*) continue;;
 		esac
