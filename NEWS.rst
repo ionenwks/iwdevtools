@@ -4,7 +4,9 @@ Release Notes
 iwdevtools-next
 ---------------
 
-- all tools with options now support configuration files, try --dumpconfig
+- all tools with options now support configuration files
+
+- color codes can now be swapped, see --dumpconfig on tools supporting them
 
 - atomf(+lib): now accepts category/pn/pf.ebuild tree-style format
 
@@ -13,6 +15,8 @@ iwdevtools-next
 - atomf(+lib): received some usage changes that may break old scripts using it
 
 - fix q tools showing debug if DEBUG is exported, e.g. by openrc-0.43.5.ebuild
+
+- received various internal cleanups and improved error checking
 
 iwdevtools-0.6.0 (2021-09-07)
 -----------------------------
