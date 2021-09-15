@@ -11,7 +11,7 @@ written, but should (I hope) still be mostly functional.
 
 qa-vdb
 ------
-Dependencies: portage (portageq), portage-utils (qatom qfile qlist)
+Dependencies: portage (portageq), portage-utils (qfile,qlist)
 
 Tries to find issues based on information provided by VDB (/var/db/pkg).
 Currently this compares RDEPEND and DT_NEEDED (i.e. from ``scanelf -n``)
@@ -63,7 +63,7 @@ Run ``qa-sed --help`` or see **qa-sed(1)** man page for details.
 qa-cmp
 ------
 Dependencies: pax-utils (scanelf), portage (portageq), portage-utils
-(qatom qlist), libabigail (abidiff, optional)
+(qlist), libabigail (abidiff - optional)
 
 Compares an image (i.e. ``/var/tmp/portage/<category>/<package>/image``) with
 either another image or installed files, then consolidates differences.
@@ -111,7 +111,7 @@ Run ``qa-cmp --help`` or see **qa-cmp(1)** man page for details.
 
 eoldnew
 -------
-Dependencies: portage (portageq), portage-utils (qatom)
+Dependencies: portage (portageq)
 
 Helper for using ``qa-cmp`` which emerges a package for a given atom but
 by first emerging its previous (visible) version if not already installed.
@@ -141,6 +141,7 @@ Run ``scrub-patch --help`` or see **scrub-patch(1)** man page for details.
 
 find-unresolved
 ---------------
+Dependencies: pax-utils (scanelf)
 
 Scan a ROOT path's ELF files for missing soname dependencies.
 Primarily intended for verification of a stripped embedded system::
