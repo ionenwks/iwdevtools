@@ -153,17 +153,15 @@ vdb-get_expected_slot() {
 	local slot=${2} subslot=${3}
 
 	if ! ${O[slot]} || vdb-is_excluded exclude-slot "${1}" "${4}"; then
-		 slot=0
+		 slot=
 	fi
 	if ! ${O[bind]} || vdb-is_excluded exclude-bind "${1}" "${4}" || [[ ${5:-} == prebuilt ]]; then
 		subslot=0
 	fi
 
-	if [[ ${subslot} != 0 ]]; then
-		echo :${slot#0}=
-	elif [[ ${slot} != 0 ]]; then
-		echo :${slot}
-	fi
+	[[ ${slot} == 0 ]] && slot=
+	[[ ${subslot} != 0 ]] && slot+='='
+	[[ ${slot} ]] && echo :${slot}
 }
 
 # vdb-get_libdiff_unified <CATEGORY/PN>
