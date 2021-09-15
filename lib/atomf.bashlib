@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ ! -v ATOMF_BASHLIB ]] || return 0; ATOMF_BASHLIB=
+[[ ! -v _ATOMF_BASHLIB ]] || return 0; _ATOMF_BASHLIB=
 
 # atomf [-M] <format> <atom>
 #	Echoes back <atom> using <format>
