@@ -371,7 +371,7 @@ vdb-get_deps() {
 		if [[ ! ${entry} ]]; then
 			(( group )) && continue
 			${O[ignore-uninstalled]} && continue
-			die "no installed provider in vdb for '${rdep}' (may be due to binpkgs ordering)"
+			die "no installed provider in vdb for '${rdep}' (may be due to binpkgs ordering / --nodeps / package.provided)"
 		fi
 
 		atomsp atom "${rdep}" || die
