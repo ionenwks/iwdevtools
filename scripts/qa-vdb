@@ -214,8 +214,8 @@ vdb-get_libdiff() {
 			mark='<'; changes=true
 		fi
 		(( ${#f1[i]} > len )) && len=${#f1[i]}
-		o[$((i*2))]=${f1[i]}
-		o[$((i*2+1))]="${mark} ${f2[i]}"
+		o[i*2]=${f1[i]}
+		o[i*2+1]="${mark} ${f2[i]}"
 	done
 
 	${changes} || return 1
