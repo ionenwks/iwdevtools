@@ -144,7 +144,7 @@ cmp-get_filelist() {
 				|| die "failed to read '$(cmp-get_vdb)/${2#=}/SIZE'"
 			echo "${size}"
 
-			Q_VDB=${vdb#${ROOT}} \
+			Q_VDB=${vdb#"${ROOT}"} \
 				qlist -Cqe "${2}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
 			[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${2}'"
 		else
@@ -233,8 +233,8 @@ cmp-get_images() {
 		done
 		set -f
 	} | sort -nr | head -n 3 | cut -d' ' -f3- | map "${1}"
-    # indirect ${?} to allow {}'s exit code ERR trap first
-    (( ${?} )) && die "failed to get images for '${2}'"
+	# indirect ${?} not to mask ERR trap !SC2181
+	(( ${?} )) && die "failed to get images for '${2}'"
 }
 
 # cmp-get_installed <atom>
