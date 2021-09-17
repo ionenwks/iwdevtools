@@ -249,8 +249,8 @@ shellcheck() {
 		shellcheck --norc -s bash -x
 
 		# optional checks
-		-i SC2250 #(Prefer putting braces around variable references)
-		-i SC2292 #(Prefer [[ ]] over [ ] for tests in Bash/Ksh)
+		-o require-double-brackets
+		-o require-variable-braces
 
 		# expect these to be always intended/known
 		-e SC1007 #(Remove space after = if trying to assign a value)
