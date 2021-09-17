@@ -67,7 +67,7 @@ else
 fi
 
 # Index all shared libraries for a dirty search if LDPATH/rpath failed.
-declare -A files
+declare -A files #!SC2034
 find "${paths[@]}" -name '*.so*' -type f,l -printf "%f\n" \
 	| map filemap || die "failed to find shared libraries"
 hasharray files filemap; unset filemap
