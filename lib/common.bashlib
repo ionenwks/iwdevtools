@@ -70,7 +70,7 @@ getoptw() {
 	if (( ${#} )); then
 		local invalid=false
 		if [[ ${1} == -n ]]; then
-			invalid=true
+			invalid=true #!SC2034
 			shift
 		fi
 		eval "
@@ -117,7 +117,7 @@ hasharray() {
 #	Include files from current bashlib dir, exit on failure
 include() {
 	while (( ${#} )); do
-		. "${BASH_SOURCE[0]%/*}/${1}.bashlib" || exit 1
+		. "${BASH_SOURCE[0]%/*}/${1}.bashlib" || exit 1 #!SC1090
 		shift
 	done
 }
@@ -164,10 +164,10 @@ optstart() {
 		key=${key#!}
 
 		if [[ ${opt} =~ '!' ]]; then
-			_COMMON_OPT_NO[${key}]=
+			_COMMON_OPT_NO[${key}]= #!SC2034
 		fi
 
-		if [[ ${opt} =~ '|' ]]; then
+		if [[ ${opt} =~ '|' ]]; then #!SC2076
 			key=${key#*|}
 			_COMMON_OPT_SHORT[${key}]=${l:0:1}
 			_COMMON_OPT_SHORT_R[${l:0:1}]=${key}
@@ -272,7 +272,7 @@ optend() {
 			fi
 
 			if [[ ${key} == colormap ]]; then
-				if [[ -v _COMMON_OPT[color] ]]; then
+				if [[ -v _COMMON_OPT[color] ]]; then #!SC2102(shellcheck bug)
 					echo "# grey,red,green,yellow,blue,magenta,cyan,light*7,white,neutral"
 					echo "${l}${key} = ${_COMMON_OPT[colormap]//[a-z:]/}"
 				fi
@@ -299,7 +299,7 @@ optend() {
 		if [[ ${O[color]:-} == true ]]; then
 			printf -v "C[${val%%[0-9]*}]" "\e[${val##*[a-z]}m"
 		else
-			C[${val%%[0-9]*}]=
+			C[${val%%[0-9]*}]= #!SC2034
 		fi
 	done
 
@@ -384,7 +384,7 @@ split() {
 split-() {
 	if [[ ${1:0:1} == + ]]; then
 		local -a _c_split
-		IFS=${2:-' '} read -ra _c_split
+		IFS=${2:-' '} read -ra _c_split #!SC2034
 		eval "${1#+}"'+=("${_c_split[@]}")'
 	else
 		IFS=${2:-' '} read -ra "${1}"
