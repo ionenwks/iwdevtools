@@ -14,6 +14,7 @@ PACKAGE='@package@'
 VERSION='@version@'
 DATAROOT='@dataroot@'
 WORKROOT='@workroot@'
+LIBROOT='@libroot@'
 
 LIBD100='@libdummy100@' # initial
 LIBD101='@libdummy101@' # no abi changes
@@ -24,13 +25,15 @@ LIBA400='@libalt400@' # soname change
 EXED='@exedummy@' # libdummy symbols
 EXEA='@exealt@' # libdummy+libalt symbols
 
+SHELLCHECK='@shellcheck@'
+
 DATADIR=${DATAROOT}/${SCRIPT##*/}/data
 WORKDIR=${WORKROOT}/${SCRIPT##*/}/${TEST##*/}
 
 # check_abidiff
 #	Calls skip() if abidiff is not usable
 check_abidiff() {
-	type abidiff >/dev/null || skip "abidiff not found in PATH"
+	type -P abidiff >/dev/null || skip "abidiff not found in PATH"
 
 	local file
 	file=$(file "${LIBD100}") # check on its own for -e exit status
@@ -194,7 +197,7 @@ set_conf() {
 ROOT=
 set_portroot() {
 	# skip if these commands are missing rather than fail (not on Gentoo?)
-	type ebuild portageq qatom qlist >/dev/null \
+	type -P ebuild portageq qatom qlist >/dev/null \
 		|| skip "portage or portage-utils missing"
 
 	export ROOT="${PWD}/root"
@@ -236,6 +239,51 @@ set_portroot() {
 	ln -s ../../overlay/profiles root/etc/portage/make.profile
 
 	touch root/etc/ld.so.conf # need to exist for qa-vdb
+}
+
+shellcheck() {
+	type -P shellcheck >/dev/null || skip "shellcheck not found in PATH"
+	[[ ${SHELLCHECK} == 1 ]] || skip "shellcheck test is disabled"
+
+	local sccmd=(
+		shellcheck --norc -s bash -x
+
+		# optional checks
+		-i SC2250 #(Prefer putting braces around variable references)
+		-i SC2292 #(Prefer [[ ]] over [ ] for tests in Bash/Ksh)
+
+		# expect these to be always intended/known
+		-e SC1007 #(Remove space after = if trying to assign a value)
+		-e SC2015 #(Note that A && B || C is not if-then-else)
+		-e SC2030 #(Modification of var is local)
+		-e SC2031 #(var was modified in a subshell)
+		-e SC2059 #(Don't use variables in the printf format string)
+
+		# widespread use of "func array" that sets array where SC can't know
+		# (use of `set -u` should pick these up in general)
+		-e SC2154 #(var is referenced but not assigned)
+
+		"${@}" "${SCRIPT##*/}"
+	)
+
+	local l
+	while IFS= read -r l; do
+		# replace include by direct so SC knows where to look
+		if [[ $l =~ ^include\ ([^ ]+) ]]; then
+			echo ". \"${LIBROOT}/${BASH_REMATCH[1]}.bashlib\""
+			continue
+		fi
+
+		# insert directive SC will recognize for !SC[0-9] short comments
+		if [[ $l =~ \#.*!(SC[0-9]+) ]]; then
+			echo "# shellcheck disable=${BASH_REMATCH[1]}"
+		fi
+
+		echo "${l}"
+	done < "${SCRIPT}" > "${SCRIPT##*/}"
+
+	echo "running: ${sccmd[*]}"
+	command "${sccmd[@]}"
 }
 
 # xfail [-s] <expected-errno> <command> <args...>

@@ -2,6 +2,8 @@ testconf = configuration_data()
 testconf.merge_from(conf)
 testconf.set('dataroot', meson.current_source_dir())
 testconf.set('workroot', meson.current_build_dir())
+testconf.set('libroot', lib_build)
+testconf.set('shellcheck', get_option('shellcheck').to_int())
 
 subdir('testelf')
 

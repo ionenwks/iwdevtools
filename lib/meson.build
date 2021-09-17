@@ -3,8 +3,9 @@ libs = [
 	'atomf.bashlib'
 ]
 
+lib_build = meson.current_build_dir()
 common_system = prefix / datadir / libs[0]
-common_build = meson.current_build_dir() / libs[0]
+common_build = lib_build / libs[0]
 
 inc_lib = {}
 foreach lib : libs

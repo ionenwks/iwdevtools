@@ -4,3 +4,5 @@ option('eprefix', type : 'string', value : '',
 	description : 'EPREFIX value to use by default if unset for Gentoo Prefix')
 option('test', type : 'boolean', value : true,
 	description : 'Build tests (requires a C compiler unlike the rest of the project)')
+option('shellcheck', type : 'boolean', value : true,
+	description : 'If tests are enabled, also run shellcheck tests')
