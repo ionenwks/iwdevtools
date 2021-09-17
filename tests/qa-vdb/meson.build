@@ -1,12 +1,11 @@
 tests = [
-	'test-help',
-	'test-version',
 	'test-bashrc',
 	'test-color',
 	'test-complex-depend',
 	'test-config',
 	'test-depend-over-rdepend',
 	'test-extra',
+	'test-help',
 	'test-missing-bind',
 	'test-missing-depend',
 	'test-missing-slot',
@@ -14,6 +13,8 @@ tests = [
 	'test-no-needed',
 	'test-output',
 	'test-overbind',
+	'test-shellcheck',
 	'test-uninstalled',
+	'test-version',
 	'test-virtual'
 ]

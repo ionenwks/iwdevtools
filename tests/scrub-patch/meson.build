@@ -5,5 +5,6 @@ tests = [
 	'test-sanity',
 	'test-scrub-git',
 	'test-scrub-mess',
-	'test-scrub-normal'
+	'test-scrub-normal',
+	'test-shellcheck'
 ]

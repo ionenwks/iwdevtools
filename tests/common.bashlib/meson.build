@@ -7,6 +7,7 @@ tests = [
 	'test-opt',
 	'test-optauto',
 	'test-printarray',
+	'test-shellcheck',
 	'test-showline',
 	'test-split',
 	'test-subshell-exit',

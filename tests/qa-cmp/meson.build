@@ -12,6 +12,7 @@ tests = [
 	'test-help',
 	'test-missing',
 	'test-pick',
+	'test-shellcheck',
 	'test-single',
 	'test-system'
 ]

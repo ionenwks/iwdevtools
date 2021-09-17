@@ -9,5 +9,6 @@ tests = [
 	'test-multiple-files',
 	'test-phase-only',
 	'test-sed-args',
+	'test-shellcheck',
 	'test-stdin-to-stdout'
 ]

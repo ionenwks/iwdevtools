@@ -1,5 +1,6 @@
 tests = [
 	'test-atomf',
 	'test-atomsp',
-	'test-pversp'
+	'test-pversp',
+	'test-shellcheck'
 ]
