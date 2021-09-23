@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-cmp: now using literal * instead of <snip> in filelist diff
+
 iwdevtools-0.7.0 (2021-09-11)
 -----------------------------
 

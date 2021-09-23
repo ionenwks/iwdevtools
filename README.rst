@@ -72,8 +72,8 @@ libraries without a new DT_SONAME (requires ``abidiff`` and debug symbols
 for proper checks), and size difference if above a certain threshold.
 
 For filelist differences, by default package version is stripped from
-filenames (<snip>) to reduce odds of showing uninteresting changes that
-aren't *new* files. SONAME list will still show these either way.
+filenames (shows ``*``) to reduce odds of showing uninteresting changes
+that aren't *new* files. SONAME list will still show these either way.
 
 Example output from portage (bashrc) while 0.15.1b-r4 is installed::
 
@@ -86,7 +86,7 @@ Example output from portage (bashrc) while 0.15.1b-r4 is installed::
     *  FILES:+usr/lib64/cmake/id3tag/id3tagTargets.cmake
     *  FILES:-usr/lib64/libid3tag.so.0
     *  FILES:-usr/lib64/libid3tag.so.0.3.0
-    *  FILES:+usr/lib64/libid3tag.so.<snip>
+    *  FILES:+usr/lib64/libid3tag.so.*
     * SONAME:-libid3tag.so.0(64)
     * SONAME:+libid3tag.so.0.16.1(64)
     * ------> FILES(+5,-2) SONAME(+1,-1)

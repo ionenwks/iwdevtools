@@ -31,7 +31,7 @@ usage <<-EOU
 	  -I, --image-only      When guessing what to compare, ignore system's copy.
 	                        (simplifies comparing two images)
 
-	  -K, --ver-keep        Do not replace filelist's versions in names by <snip>
+	  -K, --ver-keep        Do not replace filelist's versions in names by *
 	  -O, --ver-dironly     Limit filelist version replacements to directories
 	(default is to try to prevent showing uninteresting version-only changes)
 
@@ -634,7 +634,7 @@ cmp-output_filelist() {
 
 # cmp-output_filelist_diff
 #	Add to OUTPUT differences between LIST_OLD and LIST_NEW while optionally
-#	omitting changes to version in filenames (replaced by <snip>)
+#	omitting changes to version in filenames (replaced by *)
 cmp-output_filelist_diff() {
 	local -a old=() new=()
 
@@ -649,17 +649,17 @@ cmp-output_filelist_diff() {
 		local file path
 		for file in "${LIST_OLD[@]:3}"; do
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
-			path=${path//${LIST_OLD[0]}/<snip>}
-			path=${path//${LIST_OLD[0]%-r[0-9]*}/<snip>}
-			path=${path//${LIST_OLD[0]%%_*}/<snip>}
+			path=${path//${LIST_OLD[0]}/*}
+			path=${path//${LIST_OLD[0]%-r[0-9]*}/*}
+			path=${path//${LIST_OLD[0]%%_*}/*}
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
 			old+=("${path}")
 		done
 		for file in "${LIST_NEW[@]:3}"; do
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
-			path=${path//${LIST_NEW[0]}/<snip>}
-			path=${path//${LIST_NEW[0]%-r[0-9]*}/<snip>}
-			path=${path//${LIST_NEW[0]%%_*}/<snip>}
+			path=${path//${LIST_NEW[0]}/*}
+			path=${path//${LIST_NEW[0]%-r[0-9]*}/*}
+			path=${path//${LIST_NEW[0]%%_*}/*}
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
 			new+=("${path}")
 		done
