@@ -610,6 +610,13 @@ vdb-set_libneed() {
 
 		# check rdepend for virtuals and the the virtual's rdepend for this dep
 		vdb-get_deps "${1}" "virtual/*" | while split- vrdep; do
+			# special exception for packages using virtual/jack and pipewire at once
+			# i.e. virtual/jack "can" provide pipewire making it look superfluous
+			# likely more cases of this but difficult to cover
+			[[ ${dep} == media-video/pipewire && ${vrdep[1]} == virtual/jack &&
+				" ${providers[*]} " =~ (' media-sound/jack-audio-connection-kit-'|' media-sound/jack2-')  ]] \
+				&& break
+
 			# special exception for mesa "providing" libglvnd (not really)
 			output=$(vdb-get_deps "${vrdep[0]}" "${dep}" RDEPEND)
 			if [[ ${output} ]] ||
