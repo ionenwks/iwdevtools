@@ -360,10 +360,10 @@ cmp-get_tmp() {
 	CMP_TMP=$(readlink -e -- "${CMP_TMP}" || die "readlink -e failed for '${CMP_TMP}'")
 
 	# portage often uses 700 for tmp/cat/pkg which can lead to confusing errors,
-	# e.g. -d tmp/cat/pkg/image not being a directory
+	# e.g. -d tmp/cat/pkg/image is 'not a directory' despite being one
 	set +f
 	local dirs=("${CMP_TMP}"/*/*)
-	if [[ ${#dirs[@]} != 0 && ! -r ${dirs[0]} ]]; then
+	if [[ ${#dirs[@]} != 0 && -d ${dirs[0]} && ! -x ${dirs[0]} ]]; then
 		die "permission denied for image dirs under '${CMP_TMP}'"
 	fi
 	set -f
