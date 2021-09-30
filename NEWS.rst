@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.8.0 (2021-09-30)
+-----------------------------
 
 - scripts: header of messages now use CMP:, VDB: or SED: rather than QA:
 
