@@ -4,6 +4,8 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- scripts: header of messages now use CMP:, VDB: or SED: rather than QA:
+
 - qa-cmp: now using literal * instead of <snip> in filelist diff
 
 iwdevtools-0.7.0 (2021-09-11)

@@ -483,7 +483,7 @@ vdb-print_libdiff() {
 	${O[depend]} && deptype=DEPEND || deptype=RDEPEND
 
 	if [[ ${diff} ]]; then
-		msg "QA: detected possibly incorrect ${deptype} (${1})"
+		msg "VDB: detected possibly incorrect ${deptype} (${1})"
 		msg "${diff}"
 
 		if ! [[ ${O[exclude]} || ${O[exclude-slot]} || ${O[exclude-bind]} || ${O[exclude-extra]} || ${O[exclude-lib]} ]] &&
@@ -491,7 +491,7 @@ vdb-print_libdiff() {
 			msg "Note: no exclusions set (e.g. glibc/gcc), please verify configuration files"
 		fi
 	elif ${O[confirm]}; then
-		msg "QA: ${deptype} is as expected, no issues here (${1})"
+		msg "VDB: ${deptype} is as expected, no issues here (${1})"
 	fi
 }
 
@@ -696,7 +696,7 @@ vdb-skip_ignore() {
 	catpn=$(atomf %p "${1}") || die
 
 	if vdb-is_excluded ignore "${catpn}"; then
-		${O[confirm]} && msg "QA: skipped due to package being in qa-vdb.ignore (${1})"
+		${O[confirm]} && msg "VDB: skipped due to package being in qa-vdb.ignore (${1})"
 		exit 0
 	fi
 }
@@ -718,7 +718,7 @@ vdb-skip_unneeded() {
 				msg "Warning: ${1} has no DT_NEEDED libraries, most ${0##*/} checks are disabled"
 		else
 			${O[confirm]} && \
-				msg "QA: skipped due to all possible ${0##*/} checks being disabled (${1})"
+				msg "VDB: skipped due to all possible ${0##*/} checks being disabled (${1})"
 			exit 0
 		fi
 	fi

@@ -2,10 +2,10 @@ set_portroot
 ebuild "$(get_ebuild libalt 1.5 lib.so:"${LIBA300}")" merge
 ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}" RDEPEND:'dev-test/libalt dev-test/libdummy')" merge
 xfail 1 expect -2 "*Error:*no installed provider*" -crW dev-test/alt
-expect "QA:*expected*" -crW --ignore-uninstalled dev-test/alt
+expect "VDB:*expected*" -crW --ignore-uninstalled dev-test/alt
 ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
-expect "QA:*expected*" -crW dev-test/alt
+expect "VDB:*expected*" -crW dev-test/alt
 ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}" RDEPEND:'>=dev-test/libalt-2.5 dev-test/libdummy')" merge
 xfail 1 expect -2 "*Error:*no installed provider*" -crW dev-test/alt
 ebuild "$(get_ebuild libalt 2.5 lib.so:"${LIBA300}")" merge
-expect "QA:*expected*" -crW dev-test/alt
+expect "VDB:*expected*" -crW dev-test/alt

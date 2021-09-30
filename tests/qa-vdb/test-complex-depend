@@ -10,7 +10,7 @@ ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}" RDEPEND:'
 			<dev-test/libdummy-0:2=[test(-)]
 		)
 	)')" merge
-expect "QA:*expected*" -cUrW dev-test/alt
+expect "VDB:*expected*" -cUrW dev-test/alt
 ebuild "$(get_ebuild libdummy 1.5 : SLOT:2/1 IUSE:test)" merge
 ebuild "$(get_ebuild libdummy 2.5 lib.so:"${LIBD100}" SLOT:3/1 IUSE:test)" merge
 expect "*+dev-test/libdummy:3=*" -cUrW dev-test/alt

@@ -113,7 +113,7 @@ sed-qa() {
 	QA_ERRNO=${1}
 	shift
 
-	msg "QA: ${*}"
+	msg "SED: ${*}"
 
 	if [[ ${O[source]} && ${O[lineno]} ]]; then
 		# display sed line from source file
@@ -167,7 +167,7 @@ if ${inplace}; then
 	if [[ ${stdin} ]]; then
 		# `sed -i < file` doesn't make sense, warn about it
 		# unfortunately, also checking for `sed -i > file` is unreliable
-		sed-qa 130 "following sed uses -i with stdin"
+		sed-qa 130 "the following uses -i with stdin"
 		end
 	fi
 
@@ -180,7 +180,7 @@ if ${inplace}; then
 		[[ ${in[c]} != "${copy[c]}" ]] && exit ${errno} # changes found
 	done
 
-	sed-qa 129 "following sed did not cause any changes"
+	sed-qa 129 "the following did not cause any changes"
 	exit "$(sed-get_errno ${errno})"
 else
 	# ignore situations can't handle easily
@@ -200,7 +200,7 @@ else
 	fi
 
 	if [[ ${copy[0]} == "${copy[1]}" ]]; then
-		sed-qa 129 "following sed did not cause any changes"
+		sed-qa 129 "the following did not cause any changes"
 	fi
 
 	end

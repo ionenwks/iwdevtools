@@ -24,7 +24,7 @@ or per packages if something is known to be right or irrelevant.
 Example output::
 
     $ qa-vdb xmms2
-    QA: detected possibly incorrect RDEPEND (media-sound/xmms2-0.8_p20161122-r8)
+    VDB: detected possibly incorrect RDEPEND (media-sound/xmms2-0.8_p20161122-r8)
     dev-db/sqlite <
     dev-libs/glib | dev-libs/glib:2
                   > media-libs/libogg
@@ -38,7 +38,7 @@ without RDEPEND. glib -> glib:2 is to suggest explicit SLOT use when available
 Alternate output::
 
     $ qa-vdb --unified gnome-terminal
-    QA: detected possibly incorrect RDEPEND (x11-terms/gnome-terminal-3.40.3)
+    VDB: detected possibly incorrect RDEPEND (x11-terms/gnome-terminal-3.40.3)
     +dev-libs/atk
     -dev-libs/libpcre2
     +x11-libs/libX11
@@ -55,7 +55,7 @@ Example output from portage::
 
     * Messages for package app-arch/gzip-1.10
 
-    * QA: following sed did not cause any changes
+    * SED: following sed did not cause any changes
     *     sed -e "s:${EPREFIX}/usr:${EPREFIX}:" -i "${ED}"/bin/gunzip || die
 
 Run ``qa-sed --help`` or see **qa-sed(1)** man page for details.
@@ -79,7 +79,7 @@ Example output from portage (bashrc) while 0.15.1b-r4 is installed::
 
     # emerge -1 =libid3tag-0.16.1-r1
     [...]
-    * QA: comparing =media-libs/libid3tag-0.15.1b-r4 with media-libs/libid3tag-0.16.1-r1/image
+    * CMP: =media-libs/libid3tag-0.15.1b-r4 with media-libs/libid3tag-0.16.1-r1/image
     *  FILES:+usr/lib64/cmake/id3tag/id3tagConfig.cmake
     *  FILES:+usr/lib64/cmake/id3tag/id3tagConfigVersion.cmake
     *  FILES:+usr/lib64/cmake/id3tag/id3tagTargets-gentoo.cmake
@@ -98,7 +98,7 @@ example that's also using ``abidiff`` for `bug #616054`_::
     # ebuild libcdio-paranoia-0.93_p1-r1.ebuild clean install
     # ebuild libcdio-paranoia-0.94_p1.ebuild clean install
     # qa-cmp -I libcdio-paranoia
-    QA: comparing dev-libs/libcdio-paranoia-0.93_p1-r1/image with dev-libs/libcdio-paranoia-0.94_p1/image
+    CMP: dev-libs/libcdio-paranoia-0.93_p1-r1/image with dev-libs/libcdio-paranoia-0.94_p1/image
      FILES:-usr/share/doc/libcdio-paranoia-${PV}/README.zst
      FILES:+usr/share/doc/libcdio-paranoia-${PV}/README.md.zst
        ABI: libcdio_cdda.so.2(64) func(+12,-25) vars(+3) [BREAKING]

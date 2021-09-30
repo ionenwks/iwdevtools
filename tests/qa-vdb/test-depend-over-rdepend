@@ -3,4 +3,4 @@ ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
 ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" RDEPEND:dev-test/libdummy)" merge
 expect "*+dev-test/libdummy" -cUrW --depend dev-test/dummy
 ebuild "$(get_ebuild dummy 2.5 bin:"${EXED}" RDEPEND:dev-test/libdummy DEPEND:\$RDEPEND)" merge
-expect "QA:*expected*" -cUrW --depend dev-test/dummy
+expect "VDB:*expected*" -cUrW --depend dev-test/dummy

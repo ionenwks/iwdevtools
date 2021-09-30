@@ -6,14 +6,14 @@ ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}" \
 	RDEPEND:'
 		dev-test/libalt
 		dev-test/libdummy')" merge
-expect -s "QA:*'
+expect -s "VDB:*'
 -dev-test/libalt
 -dev-test/libdummy
 +dev-test/libdummy:2=
 Note: no exclusion'*" -cUW --confdir=. dev-test/dummy
 
 ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}")" merge
-expect -s "QA:*'
+expect -s "VDB:*'
 +dev-test/libalt
 +dev-test/libdummy:2=
 Note: no exclusion'*" -cUW --confdir=. dev-test/alt
@@ -21,14 +21,14 @@ Note: no exclusion'*" -cUW --confdir=. dev-test/alt
 set_conf c1 exclude '
 dev-test/libalt
 dev-test/libdummy'
-expect "QA:*expected*" -cUW --confdir=c1 dev-test/dummy
+expect "VDB:*expected*" -cUW --confdir=c1 dev-test/dummy
 
 set_conf c2 exclude '@de|v-tes^t/"*"@ # stripped characters, should still work'
-expect "QA:*expected*" -cUW --confdir=c2 dev-test/dummy
+expect "VDB:*expected*" -cUW --confdir=c2 dev-test/dummy
 
 set_conf c3 exclude 'dev-test/alt = */*'
-expect "QA:*expected*" -cUW --confdir=c3 dev-test/alt
-expect -! "QA:*expected*" -cUW --confdir=c3 dev-test/dummy
+expect "VDB:*expected*" -cUW --confdir=c3 dev-test/alt
+expect -! "VDB:*expected*" -cUW --confdir=c3 dev-test/dummy
 
 set_conf c4 exclude-slot dev-test/libdummy
 expect "*+dev-test/libdummy:=" -cUW --confdir=c4 dev-test/dummy
@@ -47,4 +47,4 @@ set_conf c8 exclude-lib libdummy.so
 expect -! "*dev-test/libdummy*" -cUW --confdir=c8 dev-test/alt
 
 set_conf c9 ignore dev-test/dummy
-expect "QA:*skipped*dev-test/dummy-1.5*" -cUW --confdir=c9 dev-test/dummy
+expect "VDB:*skipped*dev-test/dummy-1.5*" -cUW --confdir=c9 dev-test/dummy

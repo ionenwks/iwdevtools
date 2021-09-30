@@ -852,13 +852,13 @@ cmp-print_header() {
 	local old new
 	old=$(cmp-get_compare2readable "${1}")
 	new=$(cmp-get_compare2readable "${2}")
-	msg "QA: comparing ${old} with ${new}"
+	msg "CMP: ${old} with ${new}"
 }
 
 # cmp-print_header_single <compare>
 #	Print single image being checked using values from cmp-get_tocompare
 cmp-print_header_single() {
-	msg "QA: listing $(cmp-get_compare2readable "${1}") info"
+	msg "CMP: listing $(cmp-get_compare2readable "${1}") info"
 }
 
 unset DEBUG # ensure q* tools don't pick this up if exported
