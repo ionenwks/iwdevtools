@@ -74,7 +74,8 @@ usage <<-EOU
 	  QA_VDB=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
 	  QA_VDB_CMD=${0##*/}     This script, needs to be changed if not in PATH
 	  QA_VDB_ARGS=          Extra arguments to pass, see options above
-	  QA_VDB_LOG=ewarn      Portage log level command to use for output
+	  QA_VDB_LOG=eqawarn    Portage output command, can also use IWDT_LOG=ewarn
+	Note: eqawarn post-emerge log needs "qa" in make.conf's PORTAGE_ELOG_CLASSES
 EOU
 optauto args "${@}" <<-EOO
 	s|!slot=bool:true

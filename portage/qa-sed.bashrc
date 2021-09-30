@@ -4,7 +4,7 @@
 : ${QA_SED:=${IWDT_ALL:-y}}
 : ${QA_SED_CMD:=qa-sed}
 : ${QA_SED_ARGS:=""}
-: ${QA_SED_LOG:=ewarn}
+: ${QA_SED_LOG:=${IWDT_LOG:-eqawarn}}
 
 sed() {
 	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} ]]; then

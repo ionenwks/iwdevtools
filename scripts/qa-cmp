@@ -74,7 +74,8 @@ usage <<-EOU
 	  QA_CMP=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
 	  QA_CMP_CMD=${0##*/}     This script, needs to be changed if not in PATH
 	  QA_CMP_ARGS=          Extra arguments to pass, see options above
-	  QA_CMP_LOG=ewarn      Portage log level command to use for output
+	  QA_CMP_LOG=eqawarn    Portage output command, can also use IWDT_LOG=ewarn
+	Note: eqawarn post-emerge log needs "qa" in make.conf's PORTAGE_ELOG_CLASSES
 EOU
 optauto args "${@}" <<-EOO
 	f|!filelist=bool:true

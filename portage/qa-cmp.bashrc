@@ -4,7 +4,7 @@
 : ${QA_CMP:=${IWDT_ALL:-y}}
 : ${QA_CMP_CMD:=qa-cmp}
 : ${QA_CMP_ARGS:=""}
-: ${QA_CMP_LOG:=ewarn}
+: ${QA_CMP_LOG:=${IWDT_LOG:-eqawarn}}
 
 qa-cmp_post_pkg_preinst() {
 	[[ ${QA_CMP} == y ]] || return 0

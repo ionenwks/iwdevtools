@@ -54,7 +54,8 @@ usage <<-EOU
 	  QA_SED=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
 	  QA_SED_CMD=${0##*/}     This script, needs to be changed if not in PATH
 	  QA_SED_ARGS=          Extra arguments to pass, see options above
-	  QA_SED_LOG=ewarn      Portage log level command to use for output
+	  QA_SED_LOG=eqawarn    Portage output command, can also use IWDT_LOG=ewarn
+	Note: eqawarn post-emerge log needs "qa" in make.conf's PORTAGE_ELOG_CLASSES
 EOU
 
 setmsg 2 # this must not output anything to stdout if running sed

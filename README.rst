@@ -208,10 +208,7 @@ Or for a manual install:
 
 To (optionally) integrate with portage, an example bashrc will be installed
 at ``<prefix>/share/iwdevtools/bashrc`` which can be either symlinked to or
-sourced from ``/etc/portage/bashrc``.
-
-See the various individual .bashrc for options (such as to pass arguments, or
-the enable/disable all switch: ``IWDT_ALL=y`` [default] / ``=n``), or to
-integrate manually with a custom bashrc.
+sourced from ``/etc/portage/bashrc``. See ``--help`` or man pages of commands
+for further information and environment options.
 
 Note: pkgcore is unsupported, both for integration and merged packages in VDB

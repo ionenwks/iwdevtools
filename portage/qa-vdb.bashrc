@@ -1,10 +1,10 @@
 # Integrates qa-cmp with portage, intended for use in /etc/portage/bashrc
 # See `qa-vdb --help` or see qa-vdb(1) man page for details.
 
-: ${QA_VDB:=${IWDT_ALL:=y}}
+: ${QA_VDB:=${IWDT_ALL:-y}}
 : ${QA_VDB_CMD:=qa-vdb}
 : ${QA_VDB_ARGS:=""}
-: ${QA_VDB_LOG:=ewarn}
+: ${QA_VDB_LOG:=${IWDT_LOG:-eqawarn}}
 
 qa-vdb_post_pkg_postinst() {
 	[[ ${QA_VDB} == y ]] || return

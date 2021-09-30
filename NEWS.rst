@@ -6,6 +6,10 @@ iwdevtools-next
 
 - scripts: header of messages now use CMP:, VDB: or SED: rather than QA:
 
+- portage: default to eqawarn (reminder to add qa to PORTAGE_ELOG_CLASSES)
+
+- portage: add IWDT_LOG to globally change portage output command
+
 - qa-cmp: now using literal * instead of <snip> in filelist diff
 
 iwdevtools-0.7.0 (2021-09-11)
