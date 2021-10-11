@@ -4,6 +4,7 @@
 # packages that provide libraries but usually not linked with
 dev-lang/perl
 dev-lang/python
+sys-apps/kmod # for linux-mod.eclass
 virtual/perl-* # resolves as dev-lang/perl
 virtual/tmpfiles # systemd provider has libraries
 
