@@ -1,0 +1,12 @@
+
+(
+	NORMPATH=/usr/sbin:/usr/bin:/sbin:/bin
+	PATH=/usr/lib/portage/python3.10/ebuild-helpers/xattr:/tmp/portage/._portage_reinstall_.n9roeqy2/bin/ebuild-helpers:/usr/lib/portage/python3.10/ebuild-helpers:$NORMPATH:/tmp/portage/._portage_reinstall_.n9roeqy2/bin/ebuild-helpers/xattr
+	echo "PATH: ${PATH}"
+
+	esanitize
+
+	echo "NEWPATH: ${PATH}"
+	echo "EXPECTED: ${NORMPATH}"
+	[[ ${PATH} == ${NORMPATH} ]]
+)

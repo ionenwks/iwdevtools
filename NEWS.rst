@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- scripts: workaround portageq errors during portage python migration
+
 iwdevtools-0.8.0 (2021-09-30)
 -----------------------------
 

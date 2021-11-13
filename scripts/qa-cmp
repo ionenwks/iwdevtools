@@ -2,6 +2,7 @@
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
 depend cut diff file getopt grep head portageq qlist readlink scanelf sort tail uniq
+esanitize
 include atomf
 usage <<-EOU
 	Usage: ${0##*/} <atom|image> [atom2|image2]
@@ -861,8 +862,6 @@ cmp-print_header() {
 cmp-print_header_single() {
 	msg "CMP: listing $(cmp-get_compare2readable "${1}") info"
 }
-
-unset DEBUG # ensure q* tools don't pick this up if exported
 
 # normalize arguments to something we can use
 cmp-get_tocompare args "${args[@]}"

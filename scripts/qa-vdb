@@ -2,6 +2,7 @@
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
 depend diff getopt grep portageq qfile qlist sed sort tr uniq
+esanitize
 include atomf
 usage <<-EOU
 	Usage: ${0##*/} [options] <atom>
@@ -731,8 +732,6 @@ vdb-skip_unneeded() {
 		fi
 	fi
 }
-
-unset DEBUG # ensure q* tools don't pick this up if exported
 
 vdb-init
 

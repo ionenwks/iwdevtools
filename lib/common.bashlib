@@ -59,6 +59,18 @@ err() {
 	echo "Error: ${*} (${0##*/})" >&2
 }
 
+# esanitize
+#	Try to sanitize environment when run through ebuilds with bashrc
+esanitize() {
+	# some ebuilds set this and cause q* tools to emit debug messages
+	unset DEBUG
+
+	# remove */ebuild-helpers* from PATH to ensure functioning portageq
+	while [[ ${PATH} =~ (:|^)([^:]+/ebuild-helpers[^:]*)(:|$) ]]; do
+		PATH=${PATH/${BASH_REMATCH[0]}/${BASH_REMATCH[1]:+${BASH_REMATCH[3]:+:}}}
+	done
+}
+
 # getoptw [[-n] <variable> <array> <short> <long> <args...>] (depend:getopt)
 #	Wrapper to external getopt(1), only initial call takes arguments.
 #	<short> and <long> are getopt(1)'s -o and -l options.
