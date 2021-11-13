@@ -2,6 +2,7 @@
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
 depend portageq # emerge
+esanitize
 include atomf
 usage <<-EOU
 	Usage: ${0##*/} [2-9][-] <atom> [emerge options]
