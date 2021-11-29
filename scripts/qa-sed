@@ -91,6 +91,7 @@ hook_end() {
 }
 
 optauto args "${@}" <<-EOO
+	qa-sed-args=ignore
 	A|all=bool:false
 	func=str:
 	lineno=int:
