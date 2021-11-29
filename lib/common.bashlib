@@ -236,6 +236,7 @@ optset() {
 			printf -v val '%d' "${2}" 2>/dev/null || unset val
 		;;
 		str) val=${2};;
+		ignore) return 0;;
 		*) die;;
 	esac
 
@@ -277,6 +278,8 @@ optend() {
 	if [[ ${1:-} == -d ]]; then
 		echo "# ${0##*/}.conf"
 		for key in "${_COMMON_OPT_SORT[@]}"; do
+			[[ ! ${_COMMON_OPT[${key}]} =~ ^[%@]*ignore:? ]] || continue
+
 			[[ ${_COMMON_OPT[${key}]} =~ ^[%@] ]] && l= || l='#'
 
 			if [[ ${_COMMON_OPT[${key}]} =~ ^[%@]*float: ]]; then
@@ -332,7 +335,7 @@ optauto() {
 	for _c_key in "${_COMMON_OPT_SORT[@]}"; do
 		# note: undocumented but no reason to skip --colormap if enabled
 		[[ ${_c_key} != colormap || ${_COMMON_OPT[color]:-} ]] || continue
-		[[ ${_COMMON_OPT[${_c_key}]} =~ ^bool: ]] && _c_hasarg= || _c_hasarg=:
+		[[ ${_COMMON_OPT[${_c_key}]} =~ ^bool:|^ignore$ ]] && _c_hasarg= || _c_hasarg=:
 		[[ -v _COMMON_OPT_NO[${_c_key}] ]] && _c_long+=,no-${_c_key} || _c_long+=,${_c_key}${_c_hasarg}
 		_c_short+=${_COMMON_OPT_SHORT[${_c_key}]:+${_COMMON_OPT_SHORT[${_c_key}]}${_c_hasarg}}
 	done
@@ -355,6 +358,8 @@ optauto() {
 					else
 						optset "${_c_arg}" true
 					fi
+				elif [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]*ignore(:?) ]]; then
+					[[ ! ${BASH_REMATCH[1]} ]] || getoptw
 				else
 					_c_prev=${_c_arg}; getoptw
 					optset "${_c_prev}" "${_c_arg}"

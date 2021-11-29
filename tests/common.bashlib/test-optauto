@@ -4,11 +4,13 @@ expect -c -s "'# ${conf}
 mybool1 = false
 mybool2 = true
 mybool3 = true
-mystr = new'" optauto args --mystr=new --no-mybool1 --mybool2 -b --dumpconfig <<-EOO
+mystr = new'" optauto args --mystr=new --no-mybool1 --mybool2 -bIi ignore --dumpconfig <<-EOO
 	B|!mybool1=bool:true
 	mybool2=bool:false
 	b|mybool3=bool:false
 	mystr=str:default
+	I|ignored-without-argument=ignore
+	i|ignored-with-argument=ignore:
 EOO
 
 opttest() {
