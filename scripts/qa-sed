@@ -78,7 +78,7 @@ sed-run() {
 
 QA_ERRNO=
 sed-get_errno() {
-	if ${O[error-on-qa]} && [[ ${QA_ERRNO} ]]; then
+	if [[ -v O[error-on-qa] ]] && ${O[error-on-qa]} && [[ ${QA_ERRNO} ]]; then
 		echo "${QA_ERRNO}"
 	else
 		echo "${1}"
