@@ -6,6 +6,8 @@ iwdevtools-next
 
 - scripts: workaround portageq errors during portage python migration
 
+- qa-sed: silence spurious "null byte" messages
+
 iwdevtools-0.8.0 (2021-09-30)
 -----------------------------
 

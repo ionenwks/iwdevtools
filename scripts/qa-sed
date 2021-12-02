@@ -100,6 +100,11 @@ optauto args "${@}" <<-EOO
 EOO
 unset args
 
+sed-copy() {
+	# silence trimmed \0 warnings
+	eval "${1}"'=$(<"${2}")' 2>/dev/null || die "failed reading '${2}'"
+}
+
 sed-is_defined_phase() {
 	[[ ${O[func]} ]] || return 0 # assume yes if nothing to compare
 
@@ -158,7 +163,7 @@ done
 # keep a copy of current files in memory (avoids temporary files)
 declare -i c
 for ((c=0; c < ${#in[@]}; c++)); do
-	copy[c]=$(<"${in[c]}") || die "failed reading '${in[c]}'"
+	sed-copy 'copy[c]' "${in[c]}"
 done
 
 # check if stdin is pointing to a real file
@@ -178,7 +183,7 @@ if ${inplace}; then
 
 	# compare all files
 	for ((c=0; c < ${#in[@]}; c++)); do
-		in[c]=$(<"${in[c]}") || die "failed reading '${in[c]}'"
+		sed-copy 'in[c]' "${in[c]}"
 		[[ ${in[c]} != "${copy[c]}" ]] && exit ${errno} # changes found
 	done
 
@@ -195,10 +200,11 @@ else
 
 	# do a dummy run to compare with stdout
 	if [[ ${stdin} ]]; then
-		copy[0]=$(<"${stdin}") || die "failed reading '${stdin}'"
-		copy[1]=$(sed-run < "${stdin}") || die "'sed-run < ${stdin}' failed"
+		sed-copy 'copy[0]' "${stdin}"
+		{ copy[1]=$(sed-run < "${stdin}"); } 2>/dev/null \
+			|| die "'sed-run < ${stdin}' failed"
 	else
-		copy[1]=$(sed-run) || die "sed-run failed"
+		{ copy[1]=$(sed-run); } 2>/dev/null || die "sed-run failed"
 	fi
 
 	if [[ ${copy[0]} == "${copy[1]}" ]]; then
