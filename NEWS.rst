@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- eoldnew: add support to replace {} by the package atom in _ARGS env vars
+
 iwdevtools-0.8.1 (2021-12-03)
 -----------------------------
 

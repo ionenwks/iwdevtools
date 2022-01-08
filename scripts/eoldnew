@@ -29,7 +29,9 @@ usage <<-EOU
 	  EOLDNEW_EMERGE_ARGS=       Similar to EMERGE_DEFAULT_OPTS
 	  EOLDNEW_EMERGE_ARGS_OLD=   Only used when emerging old
 	  EOLDNEW_EMERGE_ARGS_NEW=   Only used when emerging new
-	(note: it is possible to set these in portage's make.conf as well)
+	Note it is possible to set these in portage's make.conf as well, and _ARGS
+	environment will replace instances of {} by the specified <atom>, e.g.
+	  EOLDNEW_EMERGE_ARGS_NEW="--usepkg-exclude {}"
 EOU
 
 # do crude option parsing not to have to figure out emerge's options
@@ -90,6 +92,11 @@ portageq envvar EOLDNEW_EMERGE_CMD EOLDNEW_EMERGE_ARGS EOLDNEW_EMERGE_ARGS_OLD E
 : "${EOLDNEW_EMERGE_ARGS:=${env[1]:-}}"
 : "${EOLDNEW_EMERGE_ARGS_OLD:=${env[2]:-}}"
 : "${EOLDNEW_EMERGE_ARGS_NEW:=${env[3]:-}}"
+
+# give a way to insert <atom> in environment options by replacing {}
+EOLDNEW_EMERGE_ARGS=${EOLDNEW_EMERGE_ARGS//'{}'/${1}}
+EOLDNEW_EMERGE_ARGS_OLD=${EOLDNEW_EMERGE_ARGS_OLD//'{}'/${1}}
+EOLDNEW_EMERGE_ARGS_NEW=${EOLDNEW_EMERGE_ARGS_NEW//'{}'/${1}}
 
 if [[ ! ${skip_old} ]]; then
 	cmd=("${EOLDNEW_EMERGE_CMD}" "=${usevers[old]}" "${@:2}")
