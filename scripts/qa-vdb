@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend diff getopt grep portageq qfile qlist sed sort tr uniq
+depend diff grep portageq qfile qlist sed sort tr uniq
 esanitize
 include atomf
 usage <<-EOU

@@ -6,6 +6,8 @@ iwdevtools-next
 
 - eoldnew: add support to replace {} by the package atom in _ARGS env vars
 
+- new "getopt" meson option to specify getopt binary to use
+
 iwdevtools-0.8.1 (2021-12-03)
 -----------------------------
 

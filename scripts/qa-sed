@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend getopt readlink sed
+depend readlink sed
 usage <<-EOU
 	Usage: ${0##*/} [sed options] [--qa-sed-args] [options]
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend getopt
 include atomf
 usage <<-EOU
 	Usage: ${0##*/} [format] <atom(s)...>

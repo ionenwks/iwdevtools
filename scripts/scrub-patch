@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend cat file getopt mktemp readlink rm stat
+depend cat file mktemp readlink rm stat
 usage <<-EOU
 	Usage: ${0##*/} [options] [patches]
 

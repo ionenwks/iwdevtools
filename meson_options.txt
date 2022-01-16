@@ -2,6 +2,8 @@ option('docdir', type : 'string', value : '',
 	description : 'Path or doc/ subdirectory name for installing documentation')
 option('eprefix', type : 'string', value : '',
 	description : 'EPREFIX value to use by default if unset for Gentoo Prefix')
+option('getopt', type : 'string', value : 'getopt',
+	description : 'getopt executable to use, must support long options')
 option('test', type : 'boolean', value : true,
 	description : 'Build tests (requires a C compiler unlike the rest of the project)')
 option('shellcheck', type : 'boolean', value : true,

@@ -80,13 +80,18 @@ esanitize() {
 #	Dies if invalid options passed unless -n.
 getoptw() {
 	if (( ${#} )); then
+		local getopt
+		: "@getopt@"
+		: "${getopt:=getopt}"
+		depend "${getopt}"
+
 		local invalid=false
 		if [[ ${1} == -n ]]; then
 			invalid=true #!SC2034
 			shift
 		fi
 		eval "
-			_COMMON_SETOPT=($(getopt -o "${3}" -l "${4}" -- "${@:5}"))
+			_COMMON_SETOPT=($("${getopt}" -o "${3}" -l "${4}" -- "${@:5}"))
 			(( ! ${?} )) || \${invalid} || die 'invalid arguments'
 			${2}=()"
 		_COMMON_SETOPT_V=${1}
