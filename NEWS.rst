@@ -1,12 +1,12 @@
 Release Notes
 =============
 
-iwdevtools-next
+iwdevtools-0.9.0 (2022-01-19)
 ---------------
 
 - eoldnew: add support to replace {} by the package atom in _ARGS env vars
 
-- new "getopt" meson option to specify getopt binary to use
+- support using an alternate "getopt" binary to help Gentoo Prefix
 
 iwdevtools-0.8.1 (2021-12-03)
 -----------------------------
