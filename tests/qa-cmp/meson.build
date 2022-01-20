@@ -5,6 +5,8 @@ tests = [
 	'test-bashrc',
 	'test-color',
 	'test-diff-filelist',
+	'test-diff-filelist-perms',
+	'test-diff-filelist-suid',
 	'test-diff-filelist-ver',
 	'test-diff-size',
 	'test-diff-soname',
@@ -14,5 +16,6 @@ tests = [
 	'test-pick',
 	'test-shellcheck',
 	'test-single',
+	'test-single-perms',
 	'test-system'
 ]

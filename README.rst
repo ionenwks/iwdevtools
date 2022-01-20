@@ -107,6 +107,18 @@ example that's also using ``abidiff`` for `bug #616054`_::
 
 .. _bug #616054: https://bugs.gentoo.org/616054
 
+Since version 0.10.0 it also checks for permission changes, but may be
+a bit quirky depending on how the system handles permissions as they
+can't be read from VDB. If running into too many false positives, may
+want to use ``--ignore-perms``. After USE=-suid on util-linux::
+
+    * CMP: =sys-apps/util-linux-2.37.2-r3 with sys-apps/util-linux-2.37.2-r3/image
+    *  FILES:-bin/mount (-rws--x--x root:root)
+    *  FILES:+bin/mount (-rwxr-xr-x root:root)
+    *  FILES:-bin/umount (-rws--x--x root:root)
+    *  FILES:+bin/umount (-rwxr-xr-x root:root)
+    * ------> FILES(+2,-2)
+
 Run ``qa-cmp --help`` or see **qa-cmp(1)** man page for details.
 
 eoldnew

@@ -4,6 +4,10 @@ Release Notes
 iwdevtools-next
 ---------------
 
+- qa-cmp: will now display file permissions on changes, old behavior with
+  -p/--ignore-perms or can show even if unchanged with -P/--show-perms
+  (qa-cmp -PFx would show a single package's full filelist with permissions)
+
 - atomf.bashlib: workaround strange bash behavior on non-Linux (macOS prefix)
 
 iwdevtools-0.9.0 (2022-01-19)

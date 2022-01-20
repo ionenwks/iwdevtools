@@ -1,0 +1,22 @@
+skip "suid test skipped for safety"
+# may also be quirky depending on what's allowed
+
+set_portroot
+
+# sfperms is a default and should test with it, it cause portage
+# to chmod go-r on /merge/ (not the image) creating a disparity.
+export FEATURES="${FEATURES:-} sfperms"
+
+touch file{1,2}
+ebuild "$(get_ebuild test 1.5 cmd:"dobin '${PWD}'/file{1,2}; fperms 4750 /usr/bin/file{1,2}")" merge \
+	&& ebuild "$(get_ebuild test 2.5 cmd:"dobin '${PWD}'/file{1,2}; fperms 4750 /usr/bin/file2")" install \
+	|| skip "ebuild(1) failed to install a file with suid"
+
+perms=$(stat -c'%A %U:%G' "${ROOT}"/usr/bin/file2)
+[[ ${perms} =~ ^-rws ]] || skip "can't use suid for testing"
+
+# if file2 shows, it means the sfperms workaround is not working
+expect -s "*'
+ FILES:-usr/bin/file1 (-rws--x--- '*:*')
+ FILES:+usr/bin/file1 (-rwxr-xr-x '*:*')
+'*'FILES(+1,-1)'*" -c test

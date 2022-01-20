@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend cut diff file grep head portageq qlist readlink scanelf sort tail uniq
+depend cut diff file find grep head portageq qlist readlink scanelf sort tail uniq
 esanitize
 include atomf
 usage <<-EOU
@@ -32,6 +32,9 @@ usage <<-EOU
 	  -I, --image-only      When guessing what to compare, ignore system's copy.
 	                        (simplifies comparing two images)
 
+	  -p, --ignore-perms    Do not show file permissions differences in filelist
+	                        (needed if system has special permission handling)
+	  -P, --show-perms      Always show file permissions even if no differences
 	  -K, --ver-keep        Do not replace filelist's versions in names by *
 	  -O, --ver-dironly     Limit filelist version replacements to directories
 	(default is to try to prevent showing uninteresting version-only changes)
@@ -89,6 +92,8 @@ optauto args "${@}" <<-EOO
 	B|full-abidiff=bool:false
 	d|quiet-nodebug=bool:false
 	I|image-only=bool:false
+	p|ignore-perms=bool:false
+	P|show-perms=bool:false
 	K|ver-keep=bool:false
 	O|ver-dironly=bool:false
 	M|allow-missing=bool:false
@@ -132,6 +137,8 @@ cmp-get_compare2readable() {
 #	First three lines are specially set to:
 #		1. ${PVR} 2. prefix/ 3. size in bytes
 #	usr/lib/debug/ excluded for simplification.
+#	" (-rw-r--r-- user:group)" will be set after paths, or
+#	" (?)" if unknown or O[ignore-perms] is set.
 cmp-get_filelist() {
 	{
 		local -i size
@@ -147,8 +154,21 @@ cmp-get_filelist() {
 			echo "${size}"
 
 			Q_VDB=${vdb#"${ROOT}"} \
-				qlist -Cqe "${2}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort
-			[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0' ]] || die "qlist failed for '${2}'"
+				qlist -Cqe "${2}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort | {
+					# Unlike find(1) below, qlist can't give file permissions.
+					local file
+					while read -r file; do
+						echo -n "${file} "
+
+						# System files may not always be accessible, and VDB
+						# does not store this. Ignore errors with placeholder.
+						# Also use the placeholder with ignore-perms.
+						! ${O[ignore-perms]} \
+							&& stat -c'(%A %U:%G)' "${ROOT}/${file}" 2>/dev/null \
+							|| echo '(?)'
+					done
+				}
+			[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0 0' ]] || die "qlist failed for '${2}'"
 		else
 			cmp-get_image2atomf '%e\n' "${2}"
 
@@ -158,7 +178,7 @@ cmp-get_filelist() {
 					|| die "failed to read '${2%/image}/build-info/SIZE', failed build image?"
 			echo "${size}"
 
-			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P\n' | sort \
+			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P (%M %u:%g)\n' | sort \
 				|| die "find failed for '${2}'"
 		fi
 	} | map "${1}"
@@ -628,8 +648,28 @@ cmp-output_abi_diff_issue() {
 cmp-output_filelist() {
 	${O[single-filelist]} || return 0
 
-	local line
+	local line file perm
+	local -a pedit
 	for line in "${LIST_NEW[@]:3}"; do
+		# simplified perms handling from cmp-output_filelist_diff
+		file=${line% (*}
+		if ${O[ignore-perms]} || ! ${O[show-perms]}; then
+			line=${file}
+		else
+			perm=${line#"${file}"}
+
+			# use different color for suid bits and non-root user:group
+			if [[ ${perm} =~ \ \((.{10})\ (.*):(.*)\)$ ]]; then
+				pedit=("${BASH_REMATCH[@]:1}")
+				pedit[0]=${pedit[0]//s/${C[y]}s${C[a]}}
+				[[ ${pedit[1]} == root ]] || pedit[1]=${C[m]}${pedit[1]}${C[a]}
+				[[ ${pedit[2]} == root ]] || pedit[2]=${C[m]}${pedit[2]}${C[a]}
+				perm=" (${pedit[0]} ${pedit[1]}:${pedit[2]})"
+			fi
+
+			line=${file}${C[a]}${perm}
+		fi
+
 		OUTPUT+=" ${C[a]}FILES: ${C[g]}${line}${C[n]}"$'\n'
 	done
 }
@@ -640,6 +680,7 @@ cmp-output_filelist() {
 cmp-output_filelist_diff() {
 	local -a old=() new=()
 
+	local file line path
 	if ${O[ver-keep]}; then
 		old=("${LIST_OLD[@]:3}")
 		new=("${LIST_NEW[@]:3}")
@@ -648,22 +689,23 @@ cmp-output_filelist_diff() {
 		# name changed version and all files under it show in the diff", strip
 		# version and replace by placeholder. Unknown which version these use
 		# so try ${PVR}->${PV}->${PV%%_*} for the most common.
-		local file path
-		for file in "${LIST_OLD[@]:3}"; do
+		for line in "${LIST_OLD[@]:3}"; do
+			file=${line% (*}
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
 			path=${path//${LIST_OLD[0]}/*}
 			path=${path//${LIST_OLD[0]%-r[0-9]*}/*}
 			path=${path//${LIST_OLD[0]%%_*}/*}
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
-			old+=("${path}")
+			old+=("${path} (${line##* (}")
 		done
-		for file in "${LIST_NEW[@]:3}"; do
+		for line in "${LIST_NEW[@]:3}"; do
+			file=${line% (*}
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
 			path=${path//${LIST_NEW[0]}/*}
 			path=${path//${LIST_NEW[0]%-r[0-9]*}/*}
 			path=${path//${LIST_NEW[0]%%_*}/*}
 			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
-			new+=("${path}")
+			new+=("${path} (${line##* (}")
 		done
 	fi
 
@@ -676,6 +718,54 @@ cmp-output_filelist_diff() {
 		return
 	fi
 
+	if ${O[ignore-perms]}; then
+		old=("${old[@]% (*}")
+		new=("${new[@]% (*}")
+	else
+		# hack1: use search index to know why a line is different after
+		# diff and to avoid checking permission differences if unknown.
+		# TODO?: could use refactoring and self-diffing for conditions
+		# rather than call diff(1) with bad hacks, would also allow for
+		# "same | line" to display a change rather than addition/removal
+		local -A oldindex newindex
+		for line in "${old[@]}"; do
+			oldindex[${line% (*}]="(${line##* (}"
+		done
+		for line in "${new[@]}"; do
+			newindex[${line% (*}]="(${line##* (}"
+		done
+
+		local -a iter
+		iter=("${old[@]}")
+		old=()
+		for line in "${iter[@]}"; do
+			file=${line% (*}
+			if [[ -v newindex[${file}] ]]; then
+				if [[ ${oldindex[${file}]} != '(?)' && ${newindex[${file}]} == '(?)' ]]; then
+					line="${file} (?)"
+				elif [[ ${oldindex[${file}]:1:10} =~ s && ${newindex[${file}]:1:10} =~ s ]]; then
+					# hack2: FEATURES=sfperms (default) cause portage to do
+					# chmod go-r /during/ merge which mismatches with the image
+					# and we have no way to tell if this is ebuild-intended.
+					# Not right but if 's' exists on both, pretend same g/o+r.
+					oldindex[${file}]=${oldindex[${file}]::5}${newindex[${file}]:5:1}${oldindex[${file}]:6:2}${newindex[${file}]:8:1}${oldindex[${file}]:9}
+					line="${file} ${oldindex[${file}]}"
+				fi
+			fi
+			old+=("${line}")
+		done
+
+		iter=("${new[@]}")
+		new=()
+		for line in "${iter[@]}"; do
+			file=${line% (*}
+			if [[ ${newindex[${file}]} != '(?)' && ${oldindex[${file}]:-} == '(?)' ]]; then
+				new+=("${file} (?)")
+			else
+				new+=("${line}")
+			fi
+		done
+	fi
 
 	local -a output
 	diff -U0 \
@@ -684,15 +774,45 @@ cmp-output_filelist_diff() {
 		| grep -v '^@@\|^---\|^+++' | map output
 		[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
 
-	local color line
+	local color perm
+	local -a pedit
 	local -i add=0 del=0
 	for line in "${output[@]}"; do
-		case ${line:0:1} in
+		case ${line::1} in
 			+) color=${C[g]}; add+=1;;
 			-) color=${C[r]}; del+=1;;
 			*) color=${C[a]};; # unused unless increase -U*
 		esac
-		${O[filelist]} && OUTPUT+=" ${C[a]}FILES:${color}${line}${C[n]}"$'\n'
+
+		if ${O[filelist]}; then
+			if ${O[ignore-perms]}; then
+				line=${color}${line}${C[n]}
+			else
+				file=${line:1}
+				file=${file% (*}
+				perm=${line#?"${file}"}
+
+				# use different color for suid bits and non-root user:group
+				if [[ ${perm} =~ \ \((.{10})\ (.*):(.*)\)$ ]]; then
+					pedit=("${BASH_REMATCH[@]:1}")
+					pedit[0]=${pedit[0]//s/${C[y]}s${color}}
+					[[ ${pedit[1]} == root ]] || pedit[1]=${C[m]}${pedit[1]}${color}
+					[[ ${pedit[2]} == root ]] || pedit[2]=${C[m]}${pedit[2]}${color}
+					perm=" (${pedit[0]} ${pedit[1]}:${pedit[2]})"
+				fi
+
+				# display permissions in different colors if file is in both
+				if [[ -v oldindex[${file}] && -v newindex[${file}] ]]; then
+					line=${color}${line::1}${C[a]}${file}${color}${perm}${C[n]}
+				elif ${O[show-perms]}; then
+					line=${color}${line::1}${file}${C[a]}${perm}${C[n]}
+				else
+					line=${color}${line::1}${file}${C[n]}
+				fi
+			fi
+
+			OUTPUT+=" ${C[a]}FILES:${line}"$'\n'
+		fi
 	done
 
 	report=$(cmp-get_makereport "+%d" ${add} g '')
@@ -756,6 +876,9 @@ cmp-output_soname() {
 	${O[single-soname]} || return
 
 	local -a new=("${LIST_NEW[@]:3}") tmp
+
+	new=("${new[@]% (*}") # discard extra info and keep paths
+
 	cmp-get_shared new "${new[@]/#/${LIST_NEW[1]}}"
 	if (( ${#new[@]} )); then
 		cmp-get_scanelf tmp -M32 -F'%S(32)#F' -- "${new[@]}"
@@ -775,6 +898,10 @@ cmp-output_soname() {
 #	for SONAME changes
 cmp-output_soname_diff() {
 	local -a new=("${LIST_NEW[@]:3}") old=("${LIST_OLD[@]:3}") tmp
+
+	new=("${new[@]% (*}") # discard extra info and keep paths
+	old=("${old[@]% (*}")
+
 	cmp-get_shared new "${new[@]/#/${LIST_NEW[1]}}"
 	cmp-get_shared old "${old[@]/#/${LIST_OLD[1]}}"
 
