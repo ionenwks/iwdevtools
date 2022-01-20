@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend cut diff file find grep head portageq qlist readlink scanelf sort tail uniq
+depend cut diff file find grep head portageq qlist readlink scanelf sort stat tail uniq
 esanitize
 include atomf
 usage <<-EOU
