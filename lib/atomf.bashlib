@@ -98,8 +98,8 @@ atomsp() {
 	fi
 
 	# blocker and range operators
-	[[ ${_a_s} =~ ^('!!'|'!'|'')(.*) ]] && _atomsptok || return 1
-	[[ ${_a_s} =~ ^('<='|'<'|'='|'~'|'>='|'>'|'')(.*) ]] && _atomsptok || return 1
+	[[ ${_a_s} =~ ^('!!'|'!'|.{0})(.*) ]] && _atomsptok || return 1
+	[[ ${_a_s} =~ ^('<='|'<'|'='|'~'|'>='|'>'|.{0})(.*) ]] && _atomsptok || return 1
 
 	# CATEGORY
 	if [[ ${_a_s} =~ ^[^:]+/ ]]; then
@@ -141,7 +141,7 @@ atomsp() {
 		fi
 
 		if [[ ${_a_valid} ]]; then
-			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)-("${_a_valid%-r[0-9]*}")(-r[0-9]+|'')(.*) ]] && _atomsptok || return 1
+			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)-("${_a_valid%-r[0-9]*}")(-r[0-9]+|.{0})(.*) ]] && _atomsptok || return 1
 			_a_t[5]=${_a_t[5]#-r}
 		else
 			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)(.*) ]] && _atomsptok
@@ -171,7 +171,7 @@ atomsp() {
 	fi
 
 	# binding operator
-	[[ ${_a_s} =~ ^(=|'')(.*) ]] &&  _atomsptok || return 1
+	[[ ${_a_s} =~ ^(=|.{0})(.*) ]] &&  _atomsptok || return 1
 
 	# if ${_a_s} is not empty and has something other than ^[ or 2nd ^:, invalid
 	[[ ! ${_a_s} || ${_a_s} =~ ^[:\[] ]] || return 1
@@ -206,7 +206,7 @@ pversp() {
 	done
 
 	# allow one wildcard at end of <PV> (used in depstrings)
-	[[ ! ${_a_s} =~ ^(\*)('') ]] || _pversptok
+	[[ ! ${_a_s} =~ ^(\*)(.{0}) ]] || _pversptok
 
 	[[ ! ${_a_s} =~ ^(-r[0-9]+)(.*) ]] || _pversptok
 

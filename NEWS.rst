@@ -1,8 +1,13 @@
 Release Notes
 =============
 
-iwdevtools-0.9.0 (2022-01-19)
+iwdevtools-next
 ---------------
+
+- atomf.bashlib: workaround strange bash behavior on non-Linux (macOS prefix)
+
+iwdevtools-0.9.0 (2022-01-19)
+-----------------------------
 
 - eoldnew: add support to replace {} by the package atom in _ARGS env vars
 
