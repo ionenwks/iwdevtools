@@ -681,7 +681,7 @@ cmp-output_filelist_diff() {
 	diff -U0 \
 		<(printarray old) \
 		<(printarray new) \
-		| grep -v '@@\|---\|+++' | map output
+		| grep -v '^@@\|^---\|^+++' | map output
 		[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
 
 	local color line
@@ -828,7 +828,7 @@ cmp-output_soname_diff() {
 	diff -U0 \
 		<(printarray old) \
 		<(printarray new) \
-		| grep -v '@@\|---\|+++' | map output
+		| grep -v '^@@\|^---\|^+++' | map output
 	[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
 
 	local color line

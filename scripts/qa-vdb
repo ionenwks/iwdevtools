@@ -279,7 +279,7 @@ vdb-get_libdiff_unified() {
 	diff -U${context} \
 		<(printarray VDB_LIBDEPS) \
 		<(printarray VDB_LIBNEED) \
-		| grep -v '@@\|---\|+++' | map output
+		| grep -v '^@@\|^---\|^+++' | map output
 	[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die "diff failed for ${1}"
 
 	[[ ${output} ]] || return 0
