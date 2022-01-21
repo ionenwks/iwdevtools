@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-iwdevtools-next
----------------
+iwdevtools-0.10.0 (2022-01-21)
+------------------------------
 
 - qa-cmp: will now display file permissions on changes, old behavior with
   -p/--ignore-perms or can show even if unchanged with -P/--show-perms
