@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+iwdevtools-next
+---------------
+
+- qa-vdb: workaround issue when using qfile on usr-merge systems (#5)
+
 iwdevtools-0.10.0 (2022-01-21)
 ------------------------------
 

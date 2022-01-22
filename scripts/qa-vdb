@@ -598,7 +598,8 @@ vdb-set_libneed() {
 	vdb-get_ldpath req "${req[@]}"
 
 	# workaround for usr-merge when /var/db/pkg is incorrect, this would trip if
-	# / and /usr have same-name libraries but this is not an expected scenario.
+	# / and /usr have same-name libraries but this is not an expected scenario
+	# TODO: remove when all ::gentoo ebuild are usr-merge aware from src_install
 	for entry in "${req[@]}"; do
 		[[ ${entry} =~ ^/usr ]] && req+=("${entry#/usr}")
 	done
