@@ -597,11 +597,17 @@ vdb-set_libneed() {
 	# try to use LDPATH to find full paths, lets qfile ignore private libraries
 	vdb-get_ldpath req "${req[@]}"
 
+	# workaround for usr-merge when /var/db/pkg is incorrect, this would trip if
+	# / and /usr have same-name libraries but this is not an expected scenario.
+	for entry in "${req[@]}"; do
+		[[ ${entry} =~ ^/usr ]] && req+=("${entry#/usr}")
+	done
+
 	# use qfile to find providers
 	local -a providers
 	if ! qfile -CqvP -- "${req[@]}" | sort | uniq | map providers; then
 		${O[ignore-uninstalled]} && return 0 # pretend no libs
-		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering), tried to find: '${req[*]}'"
+		die "qfile couldn't find any dependencies of '${1}' (may be due to binpkgs ordering), tried to find: '${req[*]}'"
 	fi
 
 	local dep entry slot subslot output
