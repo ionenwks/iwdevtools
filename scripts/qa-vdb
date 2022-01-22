@@ -601,7 +601,7 @@ vdb-set_libneed() {
 	local -a providers
 	if ! qfile -CqvP -- "${req[@]}" | sort | uniq | map providers; then
 		${O[ignore-uninstalled]} && return 0 # pretend no libs
-		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering)"
+		die "qfile couldn't find dependencies of '${1}' (may be due to binpkgs ordering), tried to find: '${req[*]}'"
 	fi
 
 	local dep entry slot subslot output
