@@ -1,0 +1,9 @@
+set_portroot
+set_bashrc
+export QA_SED=y
+export QA_SED_ARGS=
+export QA_SED_CMD="${SCRIPT}"
+ebuild --debug "$(get_ebuild test 1.5 : cmd:'
+	sed s/text/new/ <<<text > new || die
+	dobin new')" merge
+[[ $(<"${ROOT}"/usr/bin/new) == new ]] || fail mismatch

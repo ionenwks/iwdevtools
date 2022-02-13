@@ -1,5 +1,6 @@
 tests = [
 	'test-bashrc',
+	'test-bashrc-debug',
 	'test-error-on-qa',
 	'test-file-to-stdout',
 	'test-help',
