@@ -8,6 +8,8 @@ Fixes
 -----
 - qa-vdb: workaround issue when using qfile on usr-merge systems (#5)
 
+- qa-sed.bashrc: fix redirections to allow use with ``ebuild --debug`` (#6)
+
 iwdevtools-0.10.0 (2022-01-21)
 ==============================
 

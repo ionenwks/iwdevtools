@@ -15,7 +15,7 @@ sed() {
 	local output errno
 	{ output=$("${QA_SED_CMD}" "${@}" --qa-sed-args --func=${FUNCNAME[1]} \
 		--lineno=${BASH_LINENO[0]} --source="${BASH_SOURCE[1]}" \
-		${QA_SED_ARGS} 3>&2 2>&1 1>&3-); errno=${?}; } 2>&1
+		${QA_SED_ARGS} 2>&1 1>&3-); errno=${?}; } 3>&1
 
 	(( ${errno} )) && eerror "qa-sed: running '${QA_SED_CMD}' failed (disable with QA_SED=n)"
 	[[ ${output} ]] && ${QA_SED_LOG} "${output}"
