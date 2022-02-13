@@ -10,5 +10,5 @@ expect -c "*:test-output:*sed -i s/kept//*" \
 		sed -i s/kept// text || die
 		sed s/text/new/ < text > new || die
 		dobin text new')" merge
-[[ $(<"${ROOT}"/usr/bin/text) == text ]] || die mismatch1
-[[ $(<"${ROOT}"/usr/bin/new) == new ]] || die mismatch2
+[[ $(<"${ROOT}"/usr/bin/text) == text ]] || fail mismatch1
+[[ $(<"${ROOT}"/usr/bin/new) == new ]] || fail mismatch2
