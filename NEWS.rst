@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- qa-openrc: new script (WIP)
+
 iwdevtools-0.10.1 (2022-02-13)
 ==============================
 

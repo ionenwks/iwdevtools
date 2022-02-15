@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend find grep head portageq qlist stat
+esanitize
+include atomf
+usage <<-EOU
+	Usage: ${0##*/} <image|atom>
+
+	Reports common mistakes in OpenRC services found in an installation image
+	(i.e. \${PORTAGE_TMPDIR}/[...]/image/) or the currently installed system
+	copy.
+
+	Options:
+	      -p, --no-perms    Disable file permissions QA check
+	      -s, --no-ssd-args Disable start_stop_daemon_args linter
+
+	      --confdir=PATH    Configuration dir to use instead of defaults
+	                        (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig      Display config and exit (> ${0##*/}.conf)
+
+	  -h, --help            Display usage information and exit
+	      --version         Display version information and exit
+
+	*Portage Integration*
+	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
+	example ${ROOT}@datadir@/bashrc or by manually adding:
+	 >  source @datadir@/${0##*/}.bashrc
+	 >  post_pkg_preinst() {
+	 >      qa-openrc_post_pkg_preinst
+	 >  }
+
+	bashrc environment options (export/make.conf/package.env):
+	  QA_OPENRC=y | =n        Enable or disable, can also use IWDT_ALL=y | =n
+	  QA_OPENRC_CMD=${0##*/} This script, needs to be changed if not in PATH
+	  QA_OPENRC_ARGS=         Extra arguments to pass, see options above
+	  QA_OPENRC_LOG=eqawarn   Portage output command, can also use IWDT_LOG=ewarn
+	Note: eqawarn post-emerge log needs "qa" in make.conf's PORTAGE_ELOG_CLASSES
+EOU
+optauto args "${@}" <<-EOO
+	p|!perms=bool:true
+	s|!ssd-args=bool:true
+EOO
+(( ${#args[@]} < 1 )) && die "no atom/image specified, see \`${0##*/} --help\`"
+(( ${#args[@]} > 1 )) && die "too many atoms/images given, see \`${0##*/} --help\`"
+set -- "${args[@]}"; unset args
+
+# openrc-get_services <array> <image|atom>
+#	Set <array> to list of OpenRC service files.
+openrc-get_services() {
+	{
+		if [[ -d ${2} ]]; then
+			find "${2%/}/etc/init.d/" -type f -exec bash -c 'openrc-echo_if_service "$@"' _ {} \; | sort \
+				|| die "find failed for '${2}'"
+		else
+			local vdb
+			vdb=$(openrc-get_vdb)
+
+			Q_VDB=${vdb#"${ROOT}"} qlist -Cqe "${2}" | grep '/etc/init\.d/' | sort | {
+				local file
+				while read -r file; do
+					openrc-echo_if_service "${ROOT%/}/${file}"
+				done
+			}
+			[[ ${PIPESTATUS[0]} == "0" ]] || die "qlist failed for '${2}'"
+		fi
+	} | map "${1}"
+}
+
+# openrc-get_vdb
+#	Echoes portage's vdb path.
+OPENRC_VDB=
+openrc-get_vdb() {
+	if [[ ! ${OPENRC_VDB} ]]; then
+		OPENRC_VDB=$(portageq vdb_path) || die "portageq vdb_path failed"
+		[[ -d ${OPENRC_VDB} ]] || die "portageq returned '${OPENRC_VDB}' as VDB path which does not appear usable"
+	fi
+	echo "${OPENRC_VDB}"
+}
+
+# openrc-get_ssd_args <file>
+#	Sources <file> and echoes value of the start_stop_daemon_args variable.
+openrc-get_ssd_args() {
+	grep -qs start_stop_daemon_args "${1}" || return
+	(
+		# set some common variables
+		RC_SVCNAME=$(basename "${1}")
+		export RC_SVCNAME
+
+		# shellcheck source=/dev/null
+		source "${1}" >/dev/null 2>&1 || die "failed sourcing ${1}"
+		if [[ ${start_stop_daemon_args} ]]; then
+			echo "${start_stop_daemon_args}"
+		fi
+	)
+}
+
+# openrc-is_service <file>
+#	Echoes <file> if it's an OpenRC service (has '#!/sbin/openrc-run' shebang).
+openrc-echo_if_service() {
+	if [[ $(head -1 "${1}") == "#!/sbin/openrc-run" ]]; then
+		echo "${1}"
+	fi
+}
+export -f openrc-echo_if_service
+
+# openrc-check_permissions <file>
+#	Although this check is useless for ebuilds that use doinitd/newinitd, it may
+#	be useful if init scripts are installed by upstream build system.
+openrc-check_permissions() {
+	local permissions
+	local expected_value="-rwxr-xr-x root:root"
+	permissions=$(stat -c'%A %U:%G' "${1}" || die "stat failed")
+	if [[ ${permissions} != "${expected_value}" ]]; then
+		msg "OPENRC: incorrect permissions for service '$(basename "${1}")'"
+		msg "    have: ${permissions}"
+		msg "expected: ${expected_value}"
+	fi
+}
+
+# openrc-check_ssd_args <file>
+#	Finds flags in start_stop_daemon_args that can be replaced with declatative
+#	config variables.
+openrc-check_ssd_args() {
+	local svc command_user
+	local -a ssd_args
+	svc=$(basename "${1}")
+	# shellcheck disable=SC2207
+	ssd_args=( $(openrc-get_ssd_args "${1}") )
+
+	for i in "${!ssd_args[@]}"; do
+		local flag="${ssd_args[${i}]}"
+		local val=
+
+		# scan ssd_args until the next flag is found
+		local start=$(( i + 1 ))
+		local end=0
+		local next="${start}"
+		# shellcheck disable=SC2199
+		while [[ ${ssd_args[@]:${next}:1} != -* ]] && (( end < ${#ssd_args[@]})); do
+			(( ++end )); (( ++next ))
+			# shellcheck disable=SC2124
+			val="${ssd_args[@]:${start}:${end}}"
+		done
+		if [[ ${val} ]]; then
+			val="${val//\"/}"
+			val="${val//\'/}"
+			val="${val//\\/}"
+		fi
+
+		# order as in start-stop-daemon(8)
+		case "${flag}" in
+			-x|--exec)
+				openrc-ssd_msg "${svc}" "${flag}" "should be deleted" \
+					'as it is included by default when command="" is declared';;
+			-p|--pidfile)
+				openrc-ssd_msg "${svc}" "${flag}" "pidfile=\"${val}\"";;
+			-n|--name)
+				openrc-ssd_msg "${svc}" "${flag}" "procname=\"${val}\"";;
+			-u|--user|-c|--chuid)
+				command_user="${val}"
+				openrc-ssd_msg "${svc}" "${flag}" "command_user=\"${val}\"";;
+			-P|--progress)
+				openrc-ssd_msg "${svc}" "${flag}" "command_progress=yes";;
+			-d|--chdir)
+				openrc-ssd_msg "${svc}" "${flag}" "directory=\"${val}\"";;
+			-r|--chroot)
+				openrc-ssd_msg "${svc}" "${flag}" "chroot=\"${val}\"";;
+			-g|--group)
+				openrc-ssd_msg "${svc}" "${flag}" \
+					"command_user=\"${command_user:-<user>}:${val}\"";;
+			-k|--umask)
+				openrc-ssd_msg "${svc}" "${flag}" "umask=\"${val}\"";;
+			-b|-m|--background|--make-pidfile)
+				openrc-ssd_msg "${svc}" "${flag}" "command_background=yes";;
+			-1|--stdout)
+				openrc-ssd_msg "${svc}" "${flag}" "output_log=\"${val}\"";;
+			-2|--stderr)
+				openrc-ssd_msg "${svc}" "${flag}" "error_log=\"${val}\"";;
+			-3|--sdtout-logger)
+				openrc-ssd_msg "${svc}" "${flag}" "output_logger=\"${val}\"";;
+			-4|--sdterr-logger)
+				openrc-ssd_msg "${svc}" "${flag}" "error_logger=\"${val}\"";;
+		esac
+	done
+}
+
+# openrc-ssd_msg <service> <flag> <replacement>
+#	Print a message, adding header if necessary.
+openrc-ssd_msg() {
+	local svc="${1}"
+	local flag="${2}"
+	local modal text
+	if (( $# == 3 )); then
+		modal="should be replaced with"
+		text="${3}"
+	elif (( $# == 4 )); then
+		modal="${3}"
+		text="${4}"
+	fi
+
+	if [[ ! ${SSD_HEADER_PRINTED} ]]; then
+		msg "OPENRC: unnecessary usage of start_stop_daemon_args found:"
+		SSD_HEADER_PRINTED=1
+	fi
+
+	msg "${svc}: ${flag} ${modal} ${text}"
+}
+
+# init globals
+SSD_HEADER_PRINTED=
+declare -a INSTALLED_SERVICES
+
+openrc-get_services INSTALLED_SERVICES "${1}"
+
+if ${O[perms]}; then
+	for service in "${INSTALLED_SERVICES[@]}"; do
+		openrc-check_permissions "${service}"
+	done
+fi
+
+if ${O[ssd-args]}; then
+	for service in "${INSTALLED_SERVICES[@]}"; do
+		openrc-check_ssd_args "${service}"
+	done
+fi
+
+:
+
+# vim: ts=4 sw=4

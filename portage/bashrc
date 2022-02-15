@@ -3,10 +3,12 @@
 
 if [[ ! ${PKGCORE_PKG_REPO} ]] &&
 	. "@datadir@/qa-cmp.bashrc" &&
+	. "@datadir@/qa-openrc.bashrc" &&
 	. "@datadir@/qa-sed.bashrc" &&
 	. "@datadir@/qa-vdb.bashrc"; then
 	post_pkg_preinst() {
 		qa-cmp_post_pkg_preinst
+		qa-openrc_post_pkg_preinst
 	}
 
 	post_pkg_postinst() {

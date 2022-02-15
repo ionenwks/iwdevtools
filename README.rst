@@ -121,6 +121,21 @@ want to use ``--ignore-perms``. After USE=-suid on util-linux::
 
 Run ``qa-cmp --help`` or see **qa-cmp(1)** man page for details.
 
+qa-openrc
+---------
+Dependencies: portage (portageq), portage-utils (qlist)
+
+Tries to find common mistakes in OpenRC service scripts.
+
+Example output::
+
+    $ qa-openrc =net-print/cups-2.3.3_p2-r3
+    OPENRC: unnecessary usage of start_stop_daemon_args found:
+    cupsd: -m should be replaced with command_background=yes
+    cupsd: --pidfile should be replaced with pidfile="/run/cupsd.pid"
+
+Run ``qa-openrc --help`` or see **qa-openrc(1)** man page for details.
+
 eoldnew
 -------
 Dependencies: portage (portageq)
