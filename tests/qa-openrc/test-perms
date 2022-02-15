@@ -1,0 +1,17 @@
+set_portroot
+cat <<EOF > example
+#!/sbin/openrc-run
+command="example"
+EOF
+
+ebuild "$(get_ebuild test 1.5 cmd:"insinto /etc/init.d" ins:example)" merge
+expect -s "'OPENRC: incorrect permissions for service '\"'\"'example'\"'\"'
+    have: -rw-r--r-- '*:*'
+expected: -rwxr-xr-x root:root'" test
+
+ebuild "$(get_ebuild test 1.5 cmd:"exeinto /etc/init.d" exe:example)" merge
+expect -s "'OPENRC: incorrect permissions for service '\"'\"'example'\"'\"'
+    have: -rwxr-xr-x '*:*'
+expected: -rwxr-xr-x root:root'" test
+
+# vim: ft=bash

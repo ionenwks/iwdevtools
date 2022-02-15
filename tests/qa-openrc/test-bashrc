@@ -1,0 +1,15 @@
+set_portroot
+set_bashrc
+export QA_OPENRC=y
+export QA_OPENRC_ARGS=
+export QA_OPENRC_CMD="${SCRIPT}"
+export QA_OPENRC_LOG='echo :test-output:'
+
+cat <<EOF > example
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="--pidfile /run/\${RC_SVCNAME}.pid"
+EOF
+
+expect -c "*:test-output:*OPENRC: unnecessary usage of start_stop_daemon_args found:*" \
+	ebuild "$(get_ebuild test 1.5 initd:example)" merge

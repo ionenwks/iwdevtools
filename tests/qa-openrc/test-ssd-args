@@ -1,0 +1,78 @@
+set_portroot
+
+# test correct script
+cat <<EOF > example1
+#!/sbin/openrc-run
+command="example"
+EOF
+
+# test good use of ssd_args
+cat <<EOF > example2
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="--wait 1000"
+EOF
+
+# test with different shebang
+cat <<EOF > example3
+#!/bin/sh
+command="example"
+start_stop_daemon_args="--pidfile /run/\${RC_SVCNAME}.pid"
+EOF
+
+# test with common snippet for backgrounding a service
+cat <<EOF > example4
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="-b -m --pidfile /run/\${RC_SVCNAME}.pid"
+EOF
+
+# test with common snippet for setting user/group
+cat <<EOF > example5
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="-u nobody -g nobody"
+EOF
+
+# ... same but in reverse order
+cat <<EOF > example6
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="--group nobody --user nobody"
+EOF
+
+# test with useless --exec
+cat <<EOF > example7
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="--exec example"
+EOF
+
+# test with undefined variable
+cat <<EOF > example8
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="\${EXAMPLE_SSDARGS}"
+EOF
+
+# test with default value
+cat <<EOF > example9
+#!/sbin/openrc-run
+command="example"
+start_stop_daemon_args="-1 \${EXAMPLE_LOGFILE:-/var/log/\${RC_SVCNAME}.log}"
+EOF
+
+ebuild "$(get_ebuild test 1.5 initd:example{1..9})" merge
+
+expect -s "'OPENRC: unnecessary usage of start_stop_daemon_args found:
+example4: -b should be replaced with command_background=yes
+example4: -m should be replaced with command_background=yes
+example4: --pidfile should be replaced with pidfile=\"/run/example4.pid\"
+example5: -u should be replaced with command_user=\"nobody\"
+example5: -g should be replaced with command_user=\"nobody:nobody\"
+example6: --group should be replaced with command_user=\"<user>:nobody\"
+example6: --user should be replaced with command_user=\"nobody\"
+example7: --exec should be deleted as it is included by default when command=\"\" is declared
+example9: -1 should be replaced with output_log=\"/var/log/example9.log\"'" -p test
+
+# vim: ft=bash
