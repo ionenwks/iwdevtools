@@ -50,7 +50,8 @@ set -- "${args[@]}"; unset args
 openrc-get_services() {
 	{
 		if [[ -d ${2} ]]; then
-			find "${2%/}/etc/init.d/" -type f -exec bash -c 'openrc-echo_if_service "$@"' _ {} \; | sort \
+			[[ ! -d ${2%/}/etc/init.d ]] \
+				|| find "${2%/}/etc/init.d" -type f -exec bash -c 'openrc-echo_if_service "$@"' _ {} \; | sort \
 				|| die "find failed for '${2}'"
 		else
 			local vdb
