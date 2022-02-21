@@ -107,6 +107,11 @@ example that's also using ``abidiff`` for `bug #616054`_::
 
 .. _bug #616054: https://bugs.gentoo.org/616054
 
+Note that ``[BREAKING]`` doesn't necessarily mean there's a problem
+(e.g. may have removed private functions that nothing was using), but
+all revdeps *built against the old library* should really be tested
+after the upgrade.
+
 Since version 0.10.0 it also checks for permission changes, but may be
 a bit quirky depending on how the system handles permissions as they
 can't be read from VDB. If running into too many false positives, may
