@@ -674,7 +674,7 @@ _vdb-set_ldpath() {
 				path=${1%/*}/${path}
 			fi
 			for path in ${path}; do
-				[[ -d ${path} && -x ${path} ]] || continue # ignore bad includes
+				[[ -r ${path} ]] || continue # ignore bad includes
 				_vdb-set_ldpath "${path}"
 			done
 		fi

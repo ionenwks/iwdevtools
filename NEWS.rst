@@ -9,6 +9,11 @@ Changes
 -------
 - qa-openrc: new script (WIP)
 
+Fixes
+-----
+- qa-vdb: fix >=0.8.0 regression that could give spurious reports if crossdev
+  packages are installed (e.g. believing cross-*/gcc provides libatomic.so.1).
+
 iwdevtools-0.10.1 (2022-02-13)
 ==============================
 
