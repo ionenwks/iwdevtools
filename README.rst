@@ -15,8 +15,8 @@ Dependencies: portage (portageq), portage-utils (qfile,qlist)
 
 Tries to find issues based on information provided by VDB (/var/db/pkg).
 Currently this compares RDEPEND and DT_NEEDED (i.e. from ``scanelf -n``)
-for missing missing dependencies, looks for missing binding operators or
-unspecified slots, then suggest changes with a diff style output.
+for missing dependencies, binding operators, and unspecified slots, then
+suggest changes with a diff style output.
 
 Exclusions can be set using config files or command line, either global
 or per packages if something is known to be right or irrelevant.
@@ -43,6 +43,10 @@ Alternate output::
     -dev-libs/libpcre2
     +x11-libs/libX11
     +x11-libs/pango
+
+Note that "unused" dependencies should be taken with a grain of salt, package
+may or may not still need it in some other way than DT_NEEDED. dlopen(), build
+time checks/headers, executables, and other potential non-library files.
 
 Run ``qa-vdb --help`` or see **qa-vdb(1)** man page for details.
 
