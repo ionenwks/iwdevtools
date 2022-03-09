@@ -30,6 +30,8 @@ Example output::
                   > media-libs/libogg
                   > sys-libs/readline:=
 
+Left is current, and right is the suggested replacement.
+
 Says sqlite seems unused despite being in RDEPEND (xmms2 did implement its own
 database backend), and it's linking with libogg and readline with current USE
 without RDEPEND. glib -> glib:2 is to suggest explicit SLOT use when available
