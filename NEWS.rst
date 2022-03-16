@@ -11,6 +11,8 @@ Changes
 
 Fixes
 -----
+- qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff
+
 - qa-vdb: fix >=0.8.0 regression that could give spurious reports if crossdev
   packages are installed (e.g. believing cross-*/gcc provides libatomic.so.1).
 

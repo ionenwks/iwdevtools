@@ -166,7 +166,7 @@ vdb-get_expected_slot() {
 	[[ ${slot} ]] && echo :${slot}
 }
 
-# vdb-get_libdiff_unified <CATEGORY/PN>
+# vdb-get_libdiff <CATEGORY/PN>
 #	Echoes difference between vdb-get_libdeps and VDB_LIBNEED,
 #	or nothing if no changes.
 vdb-get_libdiff() {
@@ -203,8 +203,8 @@ vdb-get_libdiff() {
 	# create combined output
 	local -i len=0
 	local o mark changes=false
-	for ((i=0; i < ${#f1[@]}; i++)); do
-		: "${f2[i]:=}"
+	for ((i=0; i < (${#f1[@]}>${#f2[@]}?${#f1[@]}:${#f2[@]}); i++)); do
+		: "${f1[i]:=}${f2[i]:=}"
 		if [[ ${f1[i]} == "${f2[i]}" ]]; then
 			${O[full]} || continue
 			mark=' '
