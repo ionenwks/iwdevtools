@@ -13,8 +13,8 @@ Fixes
 -----
 - qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff
 
-- qa-vdb: fix >=0.8.0 regression that could give spurious reports if crossdev
-  packages are installed (e.g. believing cross-*/gcc provides libatomic.so.1).
+- qa-vdb: fix >=0.8.0 regression that could give spurious reports with crossdev
+  packages (e.g. believing ``cross-*/gcc`` provides ``libatomic.so.1``).
 
 iwdevtools-0.10.1 (2022-02-13)
 ==============================
