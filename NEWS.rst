@@ -11,6 +11,8 @@ Changes
 
 Fixes
 -----
+- qa-cmp / find-unresolved: fix when filelists contain a '$' sign
+
 - qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff
 
 - qa-vdb: fix >=0.8.0 regression that could give spurious reports with crossdev

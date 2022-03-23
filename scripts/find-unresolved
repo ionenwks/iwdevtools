@@ -91,7 +91,7 @@ scanelf -q --root "${ROOT:-/}" "${ldpath[@]}" -RF'%p,%r,%n' "${paths[@]#${ROOT}}
 		if [[ ${lib} =~ / ]]; then
 			sane=true
 		else
-			[[ -v exclude[${lib}] ]] && continue
+			[[ ${exclude[${lib}]+x} ]] && continue
 
 			# not in LDPATH, check if it uses rpath
 			split rpath "${need[1]}" :
@@ -101,7 +101,7 @@ scanelf -q --root "${ROOT:-/}" "${ldpath[@]}" -RF'%p,%r,%n' "${paths[@]#${ROOT}}
 			done
 
 			# check if it exists anywhere in paths
-			if [[ -v files[${lib}] ]]; then
+			if [[ ${files[${lib}]+x} ]]; then
 				${O[ldpath]} && maybe_unresolved[${lib}]=
 				continue
 			fi

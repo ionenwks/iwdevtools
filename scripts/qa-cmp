@@ -740,7 +740,8 @@ cmp-output_filelist_diff() {
 		old=()
 		for line in "${iter[@]}"; do
 			file=${line% (*}
-			if [[ -v newindex[${file}] ]]; then
+			# not -v because ${file} may contain '$' and bash interprets it somehow (#7)
+			if [[ ${newindex[${file}]+x} ]]; then
 				if [[ ${oldindex[${file}]} != '(?)' && ${newindex[${file}]} == '(?)' ]]; then
 					line="${file} (?)"
 				elif [[ ${oldindex[${file}]:1:10} =~ s && ${newindex[${file}]:1:10} =~ s ]]; then
@@ -802,7 +803,7 @@ cmp-output_filelist_diff() {
 				fi
 
 				# display permissions in different colors if file is in both
-				if [[ -v oldindex[${file}] && -v newindex[${file}] ]]; then
+				if [[ ${oldindex[${file}]+x} && ${newindex[${file}]+x} ]]; then
 					line=${color}${line::1}${C[a]}${file}${color}${perm}${C[n]}
 				elif ${O[show-perms]}; then
 					line=${color}${line::1}${file}${C[a]}${perm}${C[n]}
