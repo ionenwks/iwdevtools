@@ -18,6 +18,8 @@ Fixes
 - qa-vdb: fix >=0.8.0 regression that could give spurious reports with crossdev
   packages (e.g. believing ``cross-*/gcc`` provides ``libatomic.so.1``).
 
+- qa-vdb: fix using --no-ldpath when /etc/ld.so.conf doesn't exist
+
 iwdevtools-0.10.1 (2022-02-13)
 ==============================
 

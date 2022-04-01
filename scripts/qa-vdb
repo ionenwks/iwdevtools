@@ -657,6 +657,8 @@ vdb-set_libneed() {
 #	Read paths from ld.so.conf and store them in VDB_LDPATH
 VDB_LDPATH=()
 vdb-set_ldpath() {
+	${O[ldpath]} || return 0
+
 	set +f
 	_vdb-set_ldpath "${O[ldconf]}"
 	set -f
