@@ -9,16 +9,17 @@
 #	Compounds:    %p(%c%n)     %e(%v%r)     %f(%c%n%v%r)
 #	Using %R, %S, %U will not add -r,:,/ and set to 0 if unset.
 #	Using %C, %V, will not add /,- and be empty if unset.
-#	Return 2 without output if %c/%n/%v were requested but are
-#	unknown, unless -M is specified.
+#	Return 1 if atom is invalid.
+#	Return 2 if %c/%n/%v were requested but are unknown, unless
+#	-M is specified in which case these are left out.
 #	Return 3 if invalid format given.
 #	<atom> can use dependency-format, e.g. !!>=cat/name-1.2.3-r1:*/0=[use]
 #	<atom> can use tree-format if .ebuild, e.g. cat/name/name-1.2.3-r1.ebuild
 #	See atomsp() and pversp() if need array with all values.
 atomf() {
 	local -a atom
-	atomsp atom "${3:-${2}}" || return ${?}
-	vatomf "${@:1:$((${#}-1))}" "${atom[@]}" || return ${?}
+	atomsp atom "${3-${2}}" || return ${?}
+	vatomf "${@:1:${#}-1}" "${atom[@]}"
 }
 
 # vatomf [-M] <format> "${atom[@]}"
@@ -176,10 +177,13 @@ atomsp() {
 	# if ${_a_s} is not empty and has something other than ^[ or 2nd ^:, invalid
 	[[ ! ${_a_s} || ${_a_s} =~ ^[:\[] ]] || return 1
 
-	(( ${#} != 2 )) || eval "${1}"'=("${_a_t[@]}")'
+	if (( ${#} == 2 )); then
+		local -n _a_outref=${1} #!SC2178
+		_a_outref=("${_a_t[@]}") #!SC2034
+	fi
 }
 _atomsptok() {
-	_a_t+=("${BASH_REMATCH[@]:1:$((${#BASH_REMATCH[@]} - 2))}")
+	_a_t+=("${BASH_REMATCH[@]:1:${#BASH_REMATCH[@]}-2}")
 	_a_s=${BASH_REMATCH[*]: -1}
 }
 
@@ -212,7 +216,11 @@ pversp() {
 
 	[[ ! ${_a_s} ]] || return 1
 
-	(( ${#} != 2 )) || eval "${1}"'=("${_a_t[@]}")'
+	if (( ${#} == 2 )); then
+		local -n _a_outref=${1} #!SC2178
+		_a_outref=("${_a_t[@]}") #!SC2034
+	fi
+
 }
 _pversptok() {
 	_a_t+=("${BASH_REMATCH[@]:1:${1:-1}}")

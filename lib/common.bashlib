@@ -22,13 +22,13 @@ init() {
 }
 
 # depend <executables...>
-#	Check for executables in PATH to die early if any missing.
+#	Check for executables availability to die early if any missing.
 depend() {
-	type -f "${@}" >/dev/null || die "missing dependencies"
+	type "${@}" >/dev/null || die "missing dependencies"
 }
 
 # die [message]
-#	Exit with [message] by calling `end 1` for error.
+#	Exit with [message] by calling `end 1`.
 #	If no message, display generic error with failed line and backtrace.
 die() {
 	echo "Error: ${*:-unexpected issue happened at the following} (${0##*/}:${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2
@@ -48,7 +48,7 @@ die() {
 #	Exit with [01] (default:0, usable in non-masked subshells with init())
 #	If hook_end is defined, will run before exiting.
 end() {
-	[[ $(type -t hook_end) != function ]] || hook_end
+	! declare -f hook_end &>/dev/null || hook_end
 	[[ -v _COMMON_INIT ]] || exit "${1:-0}"
 	(( BASH_SUBSHELL )) && exit "$((166+${1:-0}))" || exit "${1:-0}"
 }
@@ -87,47 +87,47 @@ getoptw() {
 
 		local invalid=false
 		if [[ ${1} == -n ]]; then
-			invalid=true #!SC2034
+			invalid=true
 			shift
 		fi
-		eval "
-			_COMMON_SETOPT=($("${getopt}" -o "${3}" -l "${4}" -- "${@:5}"))
-			(( ! ${?} )) || \${invalid} || die 'invalid arguments'
-			${2}=()"
-		_COMMON_SETOPT_V=${1}
-		_COMMON_SETOPT_A=${2}
+		eval "_COMMON_SETOPT=($("${getopt}" -o "${3}" -l "${4}" -- "${@:5}"))
+			(( ! ${?} ))" || ${invalid} || die "invalid arguments"
+		declare -gn _COMMON_SETOPT_V=${1}
+		declare -gn _COMMON_SETOPT_A=${2}
 		declare -gi _COMMON_SETOPT_P=0
+		_COMMON_SETOPT_A=()
 		return 0
 	fi
 
 	[[ -v _COMMON_SETOPT ]] || return 1
 
 	if (( _COMMON_SETOPT_P >= ${#_COMMON_SETOPT[@]} )); then
-		eval "unset _COMMON_SETOPT{,_V,_A} ${_COMMON_SETOPT_V}"
+		unset _COMMON_SETOPT{,_A,_V}
 		return 1
 	fi
 
 	if [[ ${_COMMON_SETOPT[_COMMON_SETOPT_P]} == -- ]]; then
 		(( ++_COMMON_SETOPT_P >= ${#_COMMON_SETOPT[@]} )) \
-			|| eval "${_COMMON_SETOPT_A}"'=("${_COMMON_SETOPT[@]:${_COMMON_SETOPT_P}}")'
-		eval "unset _COMMON_SETOPT{,_V,_A} ${_COMMON_SETOPT_V}"
+			|| _COMMON_SETOPT_A=("${_COMMON_SETOPT[@]:${_COMMON_SETOPT_P}}")
+		unset _COMMON_SETOPT{,_V}
+		unset -n _COMMON_SETOPT{_V,_A}
 		return 1
 	fi
 
-	eval "${_COMMON_SETOPT_V}"'=${_COMMON_SETOPT[((_COMMON_SETOPT_P++))]}'
+	_COMMON_SETOPT_V=${_COMMON_SETOPT[_COMMON_SETOPT_P++]}
 }
 
 # hasharray [+]<associative-array> <array>
-#	Set <array> as keys with empty values (for non-glob -v searching).
-#	If no +, also reset.
+#	Set <array> as keys with empty values into <associative-array>
+#	(for non-glob -v searching).
+#	If no +, also resets.
 hasharray() {
-	eval '
-		local _c_elem _c_set=true
-		[[ ${1:0:1} == + ]] || '"${1#+}"'=()
-		for _c_elem in "${'"${2}"'[@]}"; do
-			'"${1#+}"'[${_c_elem}]=
-		done
-	'
+	local -n _c_inref=${2} _c_outref=${1#+}
+	local _c_elem
+	[[ ${1::1} == + ]] || _c_outref=()
+	for _c_elem in "${_c_inref[@]}"; do
+		_c_outref[${_c_elem}]= #!SC2034
+	done
 }
 
 # include <files...>
@@ -140,11 +140,12 @@ include() {
 }
 
 # map [+]<array>
-#	Wrapper to mapfile using -t by default.
+#	Basic wrapper to mapfile using -t by default.
 #	If + is set, add to array rather than replace it.
 map() {
-	if [[ ${1:0:1} == + ]]; then
-		eval 'mapfile -t -O "${#'"${1#+}"'[@]}" "${1#+}"'
+	if [[ ${1::1} == + ]]; then
+		local -n _c_inref=${1#+}
+		mapfile -t -O ${#_c_inref[@]} "${1#+}"
 	else
 		mapfile -t "${1}"
 	fi
@@ -186,8 +187,8 @@ optstart() {
 
 		if [[ ${opt} =~ '|' ]]; then #!SC2076
 			key=${key#*|}
-			_COMMON_OPT_SHORT[${key}]=${l:0:1}
-			_COMMON_OPT_SHORT_R[${l:0:1}]=${key}
+			_COMMON_OPT_SHORT[${key}]=${l::1}
+			_COMMON_OPT_SHORT_R[${l::1}]=${key}
 		fi
 
 		_COMMON_OPT_SORT+=("${key}")
@@ -292,7 +293,7 @@ optend() {
 			fi
 
 			if [[ ${key} == colormap ]]; then
-				if [[ -v _COMMON_OPT[color] ]]; then #!SC2102(shellcheck bug)
+				if [[ -v _COMMON_OPT[color] ]]; then #!SC2102
 					echo "# grey,red,green,yellow,blue,magenta,cyan,light*7,white,neutral"
 					echo "${l}${key} = ${_COMMON_OPT[colormap]//[a-z:]/}"
 				fi
@@ -377,10 +378,10 @@ optauto() {
 }
 
 # printarray <array>
-#	Echoes named <array> with trailing \n.
-#	Unlike printf '%s\n' "${array[@]}", will not print a newline if empty.
+#	Echoes named <array> elements on separate lines, or nothing if empty.
 printarray() {
-	eval "printf %s \"\${${1}[@]/%/$'\n'}\""
+	local -n _c_inref=${1}
+	(( ! ${#_c_inref[@]} )) || printf "%s\n" "${_c_inref[@]}"
 }
 
 # setmsg [12] [format]
@@ -404,10 +405,11 @@ split() {
 #	Split stdin into <array> based on IFS (default IFS=' ')
 #	If + is set, add to array rather than replace it.
 split-() {
-	if [[ ${1:0:1} == + ]]; then
+	if [[ ${1::1} == + ]]; then
+		local -n _c_outref=${1#+} #!SC2178
 		local -a _c_split
-		IFS=${2:-' '} read -ra _c_split #!SC2034
-		eval "${1#+}"'+=("${_c_split[@]}")'
+		IFS=${2:-' '} read -ra _c_split
+		_c_outref+=("${_c_split[@]}")
 	else
 		IFS=${2:-' '} read -ra "${1}"
 	fi

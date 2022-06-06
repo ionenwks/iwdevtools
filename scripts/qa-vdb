@@ -181,24 +181,18 @@ vdb-get_libdiff() {
 	# same | same
 	# diff <
 	#      > diff
-	# FIXME: this is terrible
-	local -i i j #!SC2034
-	local g1=f1 g2=f2
-	if (( ${#f1[@]} < ${#f2[@]} )); then
-		g1=f2
-		g2=f1
-	fi
-	eval "
-		for ((i=0; i < \${#${g1}[@]}; i++)); do
-			for ((j=i; j < \${#${g2}[@]}; j++)); do
-				if [[ \${${g1}[i]%:*} == \${${g2}[j]%:*} ]]; then
-					(( i == j )) || ${g1}=(\"\${${g1}[@]:0:\${i}}\" '' \"\${${g1}[@]:\${i}}\")
-					continue 2
-				fi
-			done
-			${g2}=(\"\${${g2}[@]:0:\${i}}\" '' \"\${${g2}[@]:\${i}}\")
+	(( ${#f1[@]} < ${#f2[@]} )) &&
+		local -n f1ref=f2 f2ref=f1 || local -n f1ref=f1 f2ref=f2
+	local -i i j
+	for ((i=0; i < ${#f1ref[@]}; i++)); do
+		for ((j=i; j < ${#f2ref[@]}; j++)); do
+			if [[ ${f1ref[i]%:*} == "${f2ref[j]%:*}" ]]; then
+				(( i == j )) || f1ref=("${f1ref[@]::i}" '' "${f1ref[@]:i}")
+				continue 2
+			fi
 		done
-	"
+		f2ref=("${f2ref[@]::i}" '' "${f2ref[@]:i}")
+	done
 
 	# create combined output
 	local -i len=0
@@ -240,13 +234,13 @@ vdb-get_libdiff() {
 				fi
 
 				i=0
-				while [[ ${s1s:${i}} || ${s2s:${i}} ]]; do
-					if [[ ${s1s:${i}:1} == "${s2s:${i}:1}" ]]; then
-						s1sc+=${C[a]}${s1s:${i}:1}
-						s2sc+=${C[a]}${s2s:${i}:1}
+				while [[ ${s1s:i} || ${s2s:i} ]]; do
+					if [[ ${s1s:i:1} == "${s2s:i:1}" ]]; then
+						s1sc+=${C[a]}${s1s:i:1}
+						s2sc+=${C[a]}${s2s:i:1}
 					else
-						s1sc+=${C[r]}${s1s:${i}:1}
-						s2sc+=${C[g]}${s2s:${i}:1}
+						s1sc+=${C[r]}${s1s:i:1}
+						s2sc+=${C[g]}${s2s:i:1}
 					fi
 					((i++))
 				done
@@ -286,7 +280,7 @@ vdb-get_libdiff_unified() {
 
 	local color
 	for output in "${output[@]}"; do
-		case ${output:0:1} in
+		case ${output::1} in
 			+) color=${C[g]};;
 			-) color=${C[r]};;
 			*) color=${C[a]};;
@@ -302,12 +296,13 @@ vdb-get_libdiff_unified() {
 #	O[ldpath] is disabled.
 declare -A VDB_LDPATH_CACHE
 vdb-get_ldpath() {
-	local fullpath setarray=${1} errno=0
+	local fullpath errno=0
+	local -n outref=${1} #!SC2178
 	shift
-	eval "${setarray}=()"
+	outref=()
 	while (( ${#} )); do
 		if ! ${O[ldpath]}; then
-			eval "${setarray}"'+=("${1}")'
+			outref+=("${1}")
 			shift
 			continue
 		fi
@@ -324,7 +319,7 @@ vdb-get_ldpath() {
 
 		[[ ${VDB_LDPATH_CACHE[${1}]} != "${1}" ]] || errno=1
 
-		eval "${setarray}"'+=("${VDB_LDPATH_CACHE[${1}]}")'
+		outref+=("${VDB_LDPATH_CACHE[${1}]}")
 
 		shift
 	done
@@ -345,7 +340,7 @@ vdb-get_deps() {
 	[[ -e ${VDB}/${1}/${deptype} ]] || return 0
 
 	local atom entry rdep
-	local -A deps
+	local -A deps=()
 	local -i group=0
 	split- rdep < "${VDB}/${1}/${deptype}" || die "failed to read ${deptype} for '${1}'"
 	for rdep in "${rdep[@]}"; do
@@ -364,7 +359,7 @@ vdb-get_deps() {
 
 		# check for [glob] against atom
 		# note: would prefer to do this post-atomsp but this gets ~30x slower
-		[[ ${#} -ge 2 && ${2} != - ]] && eval "[[ \${rdep} != *${2}* ]] && continue"
+		[[ ${#} -ge 2 && ${2} != - ]] && [[ ${rdep} != *${2}* ]] && continue
 
 		# find vdb entry for dep
 		entry=$(vdb-get_dep2entry "${rdep}")
@@ -435,8 +430,7 @@ vdb-is_excluded() {
 	[[ ${O[${1}]} ]] || return 1
 
 	# strip = prefixes if matches package to activate them
-	# eval is needed to enable globs
-	eval "[[ \${2%:*} =~ ^(${O[${1}]//${3:-nil}=/})$ ]]"
+	[[ ${2%:*} =~ ^(${O[${1}]//${3:-nil}=/})$ ]]
 }
 
 # vdb-is_prebuilt <CATEGORY/PF>
@@ -666,11 +660,11 @@ vdb-set_ldpath() {
 _vdb-set_ldpath() {
 	local path
 	while read -r path; do
-		if [[ ${path:0:1} == / ]]; then
+		if [[ ${path::1} == / ]]; then
 			[[ -d ${ROOT}${path} ]] && VDB_LDPATH+=("${ROOT}${path}")
 		elif [[ ${path} =~ ^include\ ([^#]*) ]]; then
 			path=${BASH_REMATCH[1]}
-			if [[ ${path:0:1} == / ]]; then
+			if [[ ${path::1} == / ]]; then
 				path=${EROOT}${path}
 			else
 				path=${1%/*}/${path}

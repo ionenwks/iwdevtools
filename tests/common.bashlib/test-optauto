@@ -13,17 +13,17 @@ mystr = new'" optauto args --mystr=new --no-mybool1 --mybool2 -bIi ignore --dump
 	i|ignored-with-argument=ignore:
 EOO
 
-opttest() {
+testopt() {
 	optauto args 1 2 3 </dev/null &&
 	echo "${args[*]}"
 }
-expect -c "1 2 3" opttest
+expect -c "1 2 3" testopt
 
-opttest() {
+testopt() {
 	usage <<<"test" &&
 	optauto args -h </dev/null
 }
-expect -c "test" opttest
+expect -c "test" testopt
 
 expect -c "${0##*/} ${VERSION}" optauto args --version </dev/null
 

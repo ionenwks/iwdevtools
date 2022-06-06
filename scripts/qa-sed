@@ -101,8 +101,10 @@ EOO
 unset args
 
 sed-copy() {
-	# silence trimmed \0 warnings
-	eval "${1}"'=$(<"${2}")' 2>/dev/null || die "failed reading '${2}'"
+	# silence trimmed \0 warnings, at worst these mean won't detect no
+	# changes occurred if sed stripped only \0 for some reason
+	local -n outref=${1} #!SC2178
+	{ outref=$(<"${2}"); } 2>/dev/null || die "failed reading '${2}'" #!SC2034,SC2178
 }
 
 sed-is_defined_phase() {
