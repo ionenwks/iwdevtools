@@ -9,6 +9,8 @@ Changes
 -------
 - qa-openrc: new script (WIP)
 
+- atomf.bashlib: add atoma() to set an associative array, e.g. atom[version]
+
 Fixes
 -----
 - qa-cmp / find-unresolved: fix when filelists contain a '$' sign

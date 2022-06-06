@@ -1,0 +1,13 @@
+tcmp() {
+	[[ ${atom[${1}]} == "${2}" ]] || fail "${atom[${1}]} != ${2} for ${1}"
+}
+atoma atom '!!<cat/pkg-1.0.0-r1:slot/sub='
+tcmp block '!!'
+tcmp operator '<'
+tcmp category 'cat'
+tcmp name 'pkg'
+tcmp version '1.0.0'
+tcmp revision '1'
+tcmp slot 'slot'
+tcmp subslot 'sub'
+tcmp bind '='

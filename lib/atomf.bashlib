@@ -71,6 +71,29 @@ vatomf() {
 	printf "${format}${s}" "${args[@]}"
 }
 
+# atoma <associative-array> <atom>
+#	Wrapper to atomsp that instead sets to the given <associative-array>.
+#	See atomsp for return values and index, e.g. [subslot]
+atoma() {
+	local -a _a_atom
+	atomsp _a_atom "${2}" || return ${?}
+
+	local -n _a_outref=${1}
+	declare -p "${1}" &>/dev/null || declare -gA "${1}"
+
+	_a_outref=(
+		[block]="${_a_atom[0]}"
+		[operator]="${_a_atom[1]}"
+		[category]="${_a_atom[2]}"
+		[name]="${_a_atom[3]}"
+		[version]="${_a_atom[4]}"
+		[revision]="${_a_atom[5]}"
+		[slot]="${_a_atom[6]}"
+		[subslot]="${_a_atom[7]}"
+		[bind]="${_a_atom[8]}"
+	)
+}
+
 # atomsp [array] <atom>
 #	Split <atom> and set it to the array by name [array] (if defined)
 #	[0](block)    [1](operator)
@@ -79,6 +102,7 @@ vatomf() {
 #	Elements will be set to empty if not present in <atom>
 #	Return 1 and set nothing if atom format is invalid.
 #	[use,...] in atom is discarded if present, but seen as valid.
+#	Note: atomf() and atoma() provide easier usage.
 atomsp() {
 	# use bit of namespacing to avoid masking [array]
 	local _a_s=${2-${1}}
