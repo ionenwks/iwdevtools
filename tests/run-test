@@ -275,7 +275,7 @@ shellcheck() {
 		fi
 
 		# insert directive SC will recognize for !SC[0-9] short comments
-		if [[ $l =~ \#.*!(SC[0-9]+) ]]; then
+		if [[ $l =~ \#.*!((,*SC[0-9]+)+) ]]; then
 			echo "# shellcheck disable=${BASH_REMATCH[1]}"
 		fi
 
