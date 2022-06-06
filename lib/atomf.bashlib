@@ -144,7 +144,7 @@ atomsp() {
 			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)-("${_a_valid%-r[0-9]*}")(-r[0-9]+|.{0})(.*) ]] && _atomsptok || return 1
 			_a_t[5]=${_a_t[5]#-r}
 		else
-			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)(.*) ]] && _atomsptok
+			[[ ${_a_s} =~ ^([A-Za-z0-9+_-]*)(.*) ]] && _atomsptok || return 1
 			_a_t+=('' '') # no PVR
 		fi
 
