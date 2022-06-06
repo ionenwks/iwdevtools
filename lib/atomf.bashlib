@@ -94,6 +94,28 @@ atoma() {
 	)
 }
 
+# atomset [-M] <atom>
+#	Set PMS-based variables from <atom>, which includes:
+#		CATEGORY P PF PN PR PV PVR SLOT
+#	Return 1 if atom is invalid
+#	Return 2 if atom is missing elements to set all variables
+#	(needs cat/pkg-ver), unless -M which allows blank variables.
+atomset() {
+	local -a atom
+	atomsp atom "${2-${1}}" || return ${?}
+
+	[[ ${1} == -M || ( ${atom[2]} && ${atom[3]} && ${atom[4]} ) ]] || return 2
+
+	CATEGORY=${atom[2]} #!SC2034
+	PN=${atom[3]} #!SC2034
+	PV=${atom[4]} #!SC2034
+	PR=r${atom[5]:-0} #!SC2034
+	PVR=${PV:+${PV}${atom[5]:+-${PR}}} #!SC2034
+	P=${PN:+${PV:+${PN}-${PV}}} #!SC2034
+	PF=${P:+${P}${atom[5]:+-${PR}}} #!SC2034
+	SLOT=${atom[6]:-0}${atom[7]:+/${atom[7]}} #!SC2034
+}
+
 # atomsp [array] <atom>
 #	Split <atom> and set it to the array by name [array] (if defined)
 #	[0](block)    [1](operator)
@@ -102,7 +124,7 @@ atoma() {
 #	Elements will be set to empty if not present in <atom>
 #	Return 1 and set nothing if atom format is invalid.
 #	[use,...] in atom is discarded if present, but seen as valid.
-#	Note: atomf() and atoma() provide easier usage.
+#	Note: atomf(), atoma(), and atomset() provide easier usage.
 atomsp() {
 	# use bit of namespacing to avoid masking [array]
 	local _a_s=${2-${1}}

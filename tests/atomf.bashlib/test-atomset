@@ -1,0 +1,35 @@
+tcmp() {
+	local -n var=${1}
+	[[ ${var} == "${2}" ]] || fail "${var} != ${2} for ${1}"
+}
+atomset '!!<cat/pkg-1.0.0-r1:slot/sub='
+tcmp CATEGORY cat
+tcmp PN pkg
+tcmp PV 1.0.0
+tcmp PR r1
+tcmp PVR 1.0.0-r1
+tcmp P pkg-1.0.0
+tcmp PF pkg-1.0.0-r1
+tcmp SLOT slot/sub
+
+xfail 2 atomset 'pkg2'
+atomset -M 'pkg2'
+tcmp CATEGORY ''
+tcmp PN pkg2
+tcmp PV ''
+tcmp PR r0
+tcmp PVR ''
+tcmp P ''
+tcmp PF ''
+tcmp SLOT 0
+
+xfail 2 atomset 'pkg3-3.0.0:3'
+atomset -M 'pkg3-3.0.0:3'
+tcmp CATEGORY ''
+tcmp PN pkg3
+tcmp PV 3.0.0
+tcmp PR r0
+tcmp PVR 3.0.0
+tcmp P pkg3-3.0.0
+tcmp PF pkg3-3.0.0
+tcmp SLOT 3
