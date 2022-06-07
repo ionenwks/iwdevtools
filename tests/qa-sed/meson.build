@@ -1,15 +1,15 @@
 tests = [
-	'test-bashrc',
-	'test-bashrc-debug',
-	'test-error-on-qa',
-	'test-file-to-stdout',
-	'test-help',
-	'test-ignored-cases',
-	'test-inplace-misuse',
-	'test-lineno',
-	'test-multiple-files',
-	'test-phase-only',
-	'test-sed-args',
-	'test-shellcheck',
-	'test-stdin-to-stdout'
+	'bashrc',
+	'bashrc-debug',
+	'error-on-qa',
+	'file-to-stdout',
+	'help',
+	'ignored-cases',
+	'inplace-misuse',
+	'lineno',
+	'multiple-files',
+	'phase-only',
+	'sed-args',
+	'shellcheck',
+	'stdin-to-stdout'
 ]

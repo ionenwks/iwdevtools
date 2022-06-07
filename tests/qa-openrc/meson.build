@@ -1,8 +1,8 @@
 tests = [
-  'test-bashrc',
-  'test-help',
-  'test-perms',
-  'test-shellcheck',
-  'test-ssd-args',
-  'test-version'
+  'bashrc',
+  'help',
+  'perms',
+  'shellcheck',
+  'ssd-args',
+  'version'
 ]

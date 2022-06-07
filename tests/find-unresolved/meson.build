@@ -1,5 +1,5 @@
 tests = [
-	'test-help',
-	'test-scan',
-	'test-shellcheck'
+	'help',
+	'scan',
+	'shellcheck'
 ]
