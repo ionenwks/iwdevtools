@@ -60,6 +60,7 @@ usage <<-EOU
 	*Notes*
 	If need to use this in a bash script extensively, it is recommended to source
 	@datadir@/atomf.bashlib directly rather than call this.
+	Its atoma() also allows for, e.g. \${atom[version]}, and atomset() for \${PV}.
 EOU
 optauto args "${@}" <<-EOO
 	x|expand=bool:false
