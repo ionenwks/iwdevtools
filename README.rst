@@ -218,8 +218,11 @@ term of base functionality.
 
 	atomf 'ver:%V rev:%R\n' 'cat/pn-1.0-r1' # ver:1.0 rev:1
 
-	atomsp myarray '>=cat/pn-1.0-r1:3/0'
-	echo "ver:${myarray[4]} slot:${myarray[6]}" # ver:1.0 slot:3
+	atoma myassocarray '>=cat/pn-1.0-r1:3/stable'
+	echo "sub:${myassocarray[subslot]}" # sub:stable
+
+	atomset 'cat/pn-1.0-r1'
+	echo "${CATEGORY},${PN},${PV},${PVR}" # cat,pn,1.0,1.0-r1
 
 	pversp myarray '1.0b_alpha3_p8-r1'
 	echo "${myarray[*]}" # 1 .0 b _alpha 3 _p 8 -r1
