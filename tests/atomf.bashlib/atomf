@@ -8,7 +8,7 @@ expect -c "'cat/name-0.1.2-r3'" atomf '%f' 'cat/name-0.1.2-r3'
 expect -c "'c
 n
 0'" atomf '%C\n%n\n%V' 'c/n-0'
-expect -c "name   3 04 005  3" atomf '%-6n %01R %02S %03U %2R' 'cat/name-0.1.2-r3:4/5'
+expect -c "name    3  4   5" atomf '%-7n %1R %2S %3U' 'cat/name-0.1.2-r3:4/5'
 xfail 1 atomf '%c' 'cat/name-0.1.2-r3-r4'
 xfail 2 atomf '%c' 'n-0'
 xfail 2 atomf '%n' 'c/0.0'

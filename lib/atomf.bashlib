@@ -50,11 +50,11 @@ vatomf() {
 			V) [[ ${6} ]] || ${miss} || return 2
 				args+=("${6}");;
 			r) args+=("${7:+-r${7}}");;
-			R) args+=("${7:-0}"); format+=d; continue;;
+			R) args+=("${7:-0}");;
 			s) args+=("${8:+:${8}}");;
-			S) args+=("${8:-0}"); format+=d; continue;;
+			S) args+=("${8:-0}");;
 			u) args+=("${9:+/${9}}");;
-			U) args+=("${9:-0}"); format+=d; continue;;
+			U) args+=("${9:-0}");;
 			b) args+=("${10}");;
 			p) [[ ${4} && ${5} ]] || ${miss} || return 2
 				args+=("${4:+${4}/}${5}");;
