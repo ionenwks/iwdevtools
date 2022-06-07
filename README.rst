@@ -214,7 +214,7 @@ term of base functionality.
 .. code-block:: bash
 
 	#!/usr/bin/env bash
-	. "$(pkg-config iwdevtools --variable=atomf)"
+	. "$(pkg-config iwdevtools --variable=atomf)" || exit
 
 	atomf 'ver:%V rev:%R\n' 'cat/pn-1.0-r1' # ver:1.0 rev:1
 
