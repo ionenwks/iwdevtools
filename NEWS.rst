@@ -15,6 +15,8 @@ Changes
 
 Fixes
 -----
+- atomf.bashlib: recognize app-emacs/diff-mode--20180427 as a valid atom
+
 - qa-cmp / find-unresolved: fix when filelists contain a '$' sign
 
 - qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff
