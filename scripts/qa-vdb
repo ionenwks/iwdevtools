@@ -63,6 +63,10 @@ usage <<-EOU
 	executables, or data files) and needs a human to interpret it. Exclusions
 	can be used if something is known to be right.
 
+	*Known Issues*
+	Missing slots won't be displayed when a binding operator (:=) is used as
+	portage records the slot even if it was missing from the ebuild.
+
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
