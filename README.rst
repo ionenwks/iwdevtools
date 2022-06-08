@@ -207,9 +207,8 @@ May potentially be subject to breaking changes for the time being.
 atomf.bashlib
 -------------
 
-Basic bash functions to split portage atoms and version strings for when
-matching on ``-[0-9]*`` is just not cutting it. Similar to **qatom(1)** in
-term of base functionality.
+Bash-only functions to split portage atoms and version strings. Similar
+functionality to **qatom(1)** but is intended to ease usage in bash scripts.
 
 .. code-block:: bash
 
@@ -218,11 +217,11 @@ term of base functionality.
 
 	atomf 'ver:%V rev:%R\n' 'cat/pn-1.0-r1' # ver:1.0 rev:1
 
+	atomset 'cat/pn-1.0-r1:slot'
+	echo "${CATEGORY},${PN},${PV},${SLOT}" # cat,pn,1.0,slot
+
 	atoma myassocarray '>=cat/pn-1.0-r1:3/stable'
 	echo "sub:${myassocarray[subslot]}" # sub:stable
-
-	atomset 'cat/pn-1.0-r1'
-	echo "${CATEGORY},${PN},${PV},${PVR}" # cat,pn,1.0,1.0-r1
 
 	pversp myarray '1.0b_alpha3_p8-r1'
 	echo "${myarray[*]}" # 1 .0 b _alpha 3 _p 8 -r1
