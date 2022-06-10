@@ -753,10 +753,11 @@ cmp-output_filelist_diff() {
 		done
 	fi
 
+	# sort may be needed if version replacements were made
 	local -a output
 	diff -U0 \
-		<(printarray old) \
-		<(printarray new) \
+		<(printarray old | sort || die) \
+		<(printarray new | sort || die) \
 		| grep -v '^@@\|^---\|^+++' | map output
 		[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die
 
