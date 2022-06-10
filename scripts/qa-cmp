@@ -681,7 +681,6 @@ cmp-output_filelist() {
 cmp-output_filelist_diff() {
 	local -a old=() new=()
 
-	local file line path
 	if ${O[ver-keep]}; then
 		old=("${LIST_OLD[@]:3}")
 		new=("${LIST_NEW[@]:3}")
@@ -690,24 +689,8 @@ cmp-output_filelist_diff() {
 		# name changed version and all files under it show in the diff", strip
 		# version and replace by placeholder. Unknown which version these use
 		# so try ${PVR}->${PV}->${PV%%_*} for the most common.
-		for line in "${LIST_OLD[@]:3}"; do
-			file=${line% (*}
-			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
-			path=${path//${LIST_OLD[0]}/*}
-			path=${path//${LIST_OLD[0]%-r[0-9]*}/*}
-			path=${path//${LIST_OLD[0]%%_*}/*}
-			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
-			old+=("${path} (${line##* (}")
-		done
-		for line in "${LIST_NEW[@]:3}"; do
-			file=${line% (*}
-			${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
-			path=${path//${LIST_NEW[0]}/*}
-			path=${path//${LIST_NEW[0]%-r[0-9]*}/*}
-			path=${path//${LIST_NEW[0]%%_*}/*}
-			${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
-			new+=("${path} (${line##* (}")
-		done
+		_cmp-output_filelist_diff-replace_versions LIST_OLD old
+		_cmp-output_filelist_diff-replace_versions LIST_NEW new
 	fi
 
 	local report
@@ -719,6 +702,7 @@ cmp-output_filelist_diff() {
 		return
 	fi
 
+	local file line
 	if ${O[ignore-perms]}; then
 		old=("${old[@]% (*}")
 		new=("${new[@]% (*}")
@@ -821,6 +805,24 @@ cmp-output_filelist_diff() {
 	report=$(cmp-get_makereport "-%d" ${del} r "${report}")
 	report=$(cmp-get_makereport "FILES" -1 a "${report}")
 	[[ ${report} ]] && REPORT+=" ${report}"
+}
+_cmp-output_filelist_diff-replace_versions() {
+	local -n list=${1} out=${2}
+	local file line path ver
+	for line in "${list[@]:3}"; do
+		file=${line% (*}
+		${O[ver-dironly]} && [[ ${file} =~ / ]] && path=${file%/*} || path=${file}
+		for ver in "${list[0]}" "${list[0]%-r[0-9]*}" "${list[0]%%_*}"; do
+			# shouldn't happen, but infinite guard in case of bad data
+			[[ ! ${ver} || ${ver} == '*' ]] && continue
+
+			while [[ ${path} =~ (^|[^0-9.])("${ver}")([^0-9.]|$) ]]; do
+				path=${path//"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]}*${BASH_REMATCH[3]}}
+			done
+		done
+		${O[ver-dironly]} && [[ ${file} =~ / ]] && path+=/${file##*/}
+		out+=("${path} (${line##* (}")
+	done
 }
 
 # cmp-output_size <compare1>

@@ -10,3 +10,9 @@ ebuild "$(get_ebuild test 2.5_p1-r1 : cmd:'
 expect "*'FILES(+0,-0)'*" -cIW dev-test/test
 expect "*'FILES(+1,-1)'*" -cIW --ver-dironly dev-test/test
 expect "*'FILES(+4,-4)'*" -cIW --ver-keep dev-test/test
+
+# test simple versions not replacing file12->file1*, but still do file1->file*
+touch 1 2 file{1,2,-1-,-2-,12,-2.1} file-1.20
+ebuild "$(get_ebuild test-simple 1 bin:{1,file{1,-1-,12,-2.1}})" install
+ebuild "$(get_ebuild test-simple 2 bin:{2,file{2,-2-,12,-2.1}})" install
+expect "*'FILES(+0,-0)'*" -cIW dev-test/test-simple
