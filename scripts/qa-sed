@@ -137,9 +137,6 @@ sed-qa() {
 # TODO: find a better way and not ignore non-eclass functions
 ! ${O[all]} && ! sed-is_defined_phase && end
 
-# always ignore if called from esed (redundant check)
-[[ ${O[func]} == esed ]] && end
-
 # Need to construct a file list from arguments given to sed. For this,
 # check for known GNU sed options with arguments to recognize it as not
 # being a file. This is not explicitely necessary due to the read test
