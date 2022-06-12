@@ -161,12 +161,12 @@ while getoptw; do
 		--version) version;;
 		-e|--expression)
 			getoptw
-			exps+=("-e ${arg@Q}")
+			exps+=("-e ${arg}")
 			sed-pass_fork --expression="${arg}"
 		;;
 		-f|--file)
 			getoptw
-			exps+=("-f ${arg@Q}")
+			exps+=("-f ${arg}")
 			sed-pass_fork --file="${arg}"
 		;;
 		-i|--in-place)
@@ -183,7 +183,7 @@ if (( pass > 1)); then
 elif (( ${#in[@]} )); then
 	# if neither -e nor -f is specified, sed has a rule where first
 	# non-argument is taken as an expression rather than a file
-	exps=("-e ${in[0]@Q}")
+	exps=("-e ${in[0]}")
 	pass_1+=( --expression="${in[0]}" )
 	in=("${in[@]:1}")
 else
