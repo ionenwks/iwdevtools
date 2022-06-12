@@ -8,6 +8,7 @@ tests = [
 	'ignored-cases',
 	'inplace-misuse',
 	'lineno',
+	'multiple-expressions',
 	'multiple-files',
 	'phase-only',
 	'sed-args',

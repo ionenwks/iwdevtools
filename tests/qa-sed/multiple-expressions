@@ -1,0 +1,11 @@
+echo "replace1 keep1 replace2 keep2" > file
+expect -s -2 "SED:*\"no-op: -e 's/bad1//'\"*\"no-op: -e 's/bad2//'\"*" \
+	-i -e s/replace1/new1/ -e s/bad1// -e s/replace2/new2/ -e s/bad2// file
+
+echo keep > file1
+echo replace > file2
+echo s/bad/new/ > script1
+expect -s -2 "SED:*\"no-op: -f 'script1'\"*" -e s/replace/new/ -f script1 file1 file2
+
+echo s/new/newer/ > script2
+expect -2 "''" -e s/replace/new/ -f script2 file1 file2
