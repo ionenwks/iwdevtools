@@ -13,6 +13,9 @@ Changes
   avoid (some) cases like PV=1 doing ``python3.10 -> python3.*0`` when mostly
   want ``doc/name-1 -> doc/name-*`` (i.e. not show same docs as new files)
 
+- qa-sed: can now detect if only one of ``-e s/// -e s///`` did no changes, and
+  no longer loads/compares with bash (should be faster, still no tmp files)
+
 - atomf.bashlib: add atoma() to set an associative array, e.g. atom[version]
 
 - atomf.bashlib. add atomset() to set e.g. P=name-1.0.0, PN=name, PV=1.0, ...

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend readlink sed
+depend cksum readlink sed tee
 usage <<-EOU
 	Usage: ${0##*/} [sed options] [--qa-sed-args] [options]
 
-	sed wrapper that reports when files were unmodified to help with
+	sed wrapper that reports when all files were unmodified to help with
 	detection of outdated constructs similarly to a failing patch.
 
 	This is primarily meant to be integrated with portage rather than used
-	on its own, see portage integration below.
+	on its own (but still can), see portage integration below.
 
 	Options:
 	      --qa-sed-args  Allow other options to be used and not passed to sed
@@ -33,12 +33,14 @@ usage <<-EOU
 	      --version      Display version information and exit
 
 	*Caveats*
-	 *  can't do detection if stdin/stdout is used and isn't a file
-	    e.g. \`cat file | sed\` rather than \`sed < file\` (latter is fine)
-	 *  can't handle multiple files being combined into a single file
-	 *  can't detect if only one expression out of many is failing
 	 *  does not know if a sed only replaces under specific conditions
 	    e.g. 's|/usr|\${EPREFIX}/usr|', or 's|lib|\$(get_libdir)|'
+	    consider: use prefix, [[ \$(get_libdir) != lib ]], @libdir@, etc...
+	 *  can only verify different sed expressions if passed as separate
+	    -e arguments rather than a single 's/a/b/; s/c/d/'
+	 *  can't do detection if stdin is used and isn't a file
+	    e.g. \`cat file | sed\` rather than \`sed < file\` (latter works)
+	    this is due to a precaution to ensure input will not be mangled
 
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
@@ -46,9 +48,10 @@ usage <<-EOU
 
 	 >  source @datadir@/${0##*/}.bashrc
 
-	Creates a sed() function that everything will use instead. Should, in
+	Creates a sed() function that most things will use instead. Should, in
 	theory, not break anything as it will call sed with same arguments even
 	on error -- but use with caution nonetheless, not for production.
+	Note that \`find . -exec sed {} +\` bypasses the shell wrapper entirely.
 
 	bashrc environment options (export/make.conf/package.env):
 	  QA_SED=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
@@ -71,51 +74,15 @@ while (( ${#} )); do
 	shift
 done
 
-# setup end()/die() hook before looking at options
-sed-run() {
-	sed "${SED_ARGV[@]}"
-}
-
+# setup end()/die() hook early to ensure sed runs
 QA_ERRNO=
-sed-get_errno() {
-	if [[ -v O[error-on-qa] ]] && ${O[error-on-qa]} && [[ ${QA_ERRNO} ]]; then
-		echo "${QA_ERRNO}"
-	else
-		echo "${1}"
-	fi
-}
-
 hook_end() {
-	sed-run
-	exit "$(sed-get_errno ${?})"
-}
+	sed "${SED_ARGV[@]}"
+	local errno=${?}
 
-optauto args "${@}" <<-EOO
-	qa-sed-args=ignore
-	A|all=bool:false
-	func=str:
-	lineno=int:
-	source=str:
-	error-on-qa=bool:false
-EOO
-unset args
+	[[ -v O[error-on-qa] ]] && ${O[error-on-qa]} && errno=${QA_ERRNO:-${errno}}
 
-sed-copy() {
-	# silence trimmed \0 warnings, at worst these mean won't detect no
-	# changes occurred if sed stripped only \0 for some reason
-	local -n outref=${1} #!SC2178
-	{ outref=$(<"${2}"); } 2>/dev/null || die "failed reading '${2}'" #!SC2034,SC2178
-}
-
-sed-is_defined_phase() {
-	[[ ${O[func]} ]] || return 0 # assume yes if nothing to compare
-
-	local def func
-	def=" ${DEFINED_PHASES:-} " # exported by portage
-	func=${O[func]#src_}
-	func=${func#pkg_}
-
-	[[ ${def} == *\ ${func}\ * ]]
+	exit "${errno}"
 }
 
 sed-qa() {
@@ -133,87 +100,165 @@ sed-qa() {
 	fi
 }
 
+sed-is_defined_phase() {
+	[[ ${O[func]} ]] || return 0 # assume yes if nothing to compare
+
+	local def func
+	def=" ${DEFINED_PHASES:-} " # exported by portage
+	func=${O[func]#src_}
+	func=${func#pkg_}
+
+	[[ ${def} == *\ ${func}\ * ]]
+}
+
+optauto args "${@}" <<-EOO
+	qa-sed-args=ignore
+	A|all=bool:false
+	func=str:
+	lineno=int:
+	source=str:
+	error-on-qa=bool:false
+EOO
+unset args
+
 # ignore if (probably) called from an eclass
 # TODO: find a better way and not ignore non-eclass functions
 ! ${O[all]} && ! sed-is_defined_phase && end
 
-# Need to construct a file list from arguments given to sed. For this,
-# check for known GNU sed options with arguments to recognize it as not
-# being a file. This is not explicitely necessary due to the read test
-# (see below), but is an added safety (notably for --file).
+# Need to 1. get file list from arguments given to sed which could
+# be in any order, and 2. create separate argument list with only a
+# single expression and no -i to allow evaluating changes per-expression
+# To do this, parse relevant arguments as sed would.
+# e.g. `sed -i file -e s/a/b/ -Ee s/c/d/ -f script` results in
+# -> 1. sed --expression=s/a/b/ -E file
+#    2. sed -E --expression=s/c/d/ file # -E order matters, only for 2nd+
+#    3. sed -E --file=script file
+declare -i pass=1
+pass_1=(--sandbox)
+sed-pass_add() {
+	local -i i
+	for ((i=1; i<=pass; i++)); do
+		local -n ref=pass_${i}
+		ref+=("${1}")
+	done
+}
+sed-pass_fork() {
+	local -n prevref=pass_${pass}
+	local -n nextref=pass_$((++pass))
+	nextref=("${prevref[@]}") #!SC2034
+	prevref+=("${1}")
+}
+
+exps=()
 inplace=false
-getoptw -n arg args \
-	hie:f:l: \
-	help,version,in-place,expression:,file:,line-length: \
+getoptw -n arg in \
+	hnErszi::e:f:l: \
+	help,version,quiet,silent,posix,regexp-extended,separate,null-data,in-place::,expression:,file:,line-length: \
 	"${SED_ARGV[@]}" 2>/dev/null # ignore errors from other arguments
 while getoptw; do
 	case ${arg} in
 		-h|--help) usage;; # assume it was meant for us
 		--version) version;;
-		-i|--in-place) inplace=true;;
+		-e|--expression)
+			getoptw
+			exps+=("-e ${arg@Q}")
+			sed-pass_fork --expression="${arg}"
+		;;
+		-f|--file)
+			getoptw
+			exps+=("-f ${arg@Q}")
+			sed-pass_fork --file="${arg}"
+		;;
+		-i|--in-place)
+			getoptw
+			inplace=true
+		;;
+		-l|--line-length) getoptw;; # unused
+		*) sed-pass_add "${arg}";;
 	esac
 done
-set -- "${args[@]}"; unset args
 
-in=()
-while (( ${#} )); do
-	# if not readable, assume it's a sed expression without -e
-	[[ -r ${1} ]] && in+=("${1}")
-	shift
-done
+if (( pass > 1)); then
+	unset pass_$((pass--)) # cleanup unused fork
+elif (( ${#in[@]} )); then
+	# if neither -e nor -f is specified, sed has a rule where first
+	# non-argument is taken as an expression rather than a file
+	exps=("-e ${in[0]@Q}")
+	pass_1+=( --expression="${in[0]}" )
+	in=("${in[@]:1}")
+else
+	end # no expressions, sed will fail
+fi
 
-# keep a copy of current files in memory (avoids temporary files)
-declare -i c
-for ((c=0; c < ${#in[@]}; c++)); do
-	sed-copy 'copy[c]' "${in[c]}"
-done
-
-# check if stdin is pointing to a real file
-stdin=$(readlink -m /proc/self/fd/0) || die "readlink failed"
-[[ -f ${stdin} ]] || stdin=
-
-if ${inplace}; then
-	if [[ ${stdin} ]]; then
+# use stdin if pointing to a real file
+stdin=$(readlink -m /proc/self/fd/0) || die
+if [[ -f ${stdin} ]]; then
+	if ${inplace}; then
 		# `sed -i < file` doesn't make sense, warn about it
 		# unfortunately, also checking for `sed -i > file` is unreliable
-		sed-qa 130 "the following uses -i with stdin"
+		sed-qa 131 "the following uses -i with stdin"
 		end
 	fi
 
-	sed-run || exit ${?}
-	errno=${?}
+	(( ${#in[@]} )) && end # unhandled: sed file1 < file2
 
-	# compare all files
-	for ((c=0; c < ${#in[@]}; c++)); do
-		sed-copy 'in[c]' "${in[c]}"
-		[[ ${in[c]} != "${copy[c]}" ]] && exit ${errno} # changes found
-	done
-
-	sed-qa 129 "the following did not cause any changes"
-	exit "$(sed-get_errno ${errno})"
+	in=("${stdin}")
 else
-	# ignore situations can't handle easily
-	if [[ ${stdin} && ! -r ${stdin} ]]		|| # stdin not readable
-		[[ ! ${stdin} && ${#in[@]} == 0 ]]	|| # no input files, or `cat | sed`
-		[[ ${stdin} && ${#in[@]} != 0 ]]	|| # sed file1 < file2 > file3
-		(( ${#in[@]} > 1 )); then			   # sed file1 file2 > file3
-		end
-	fi
-
-	# do a dummy run to compare with stdout
-	if [[ ${stdin} ]]; then
-		sed-copy 'copy[0]' "${stdin}"
-		{ copy[1]=$(sed-run < "${stdin}"); } 2>/dev/null \
-			|| die "'sed-run < ${stdin}' failed"
-	else
-		{ copy[1]=$(sed-run); } 2>/dev/null || die "sed-run failed"
-	fi
-
-	if [[ ${copy[0]} == "${copy[1]}" ]]; then
-		sed-qa 129 "the following did not cause any changes"
-	fi
-
-	end
+	stdin=
 fi
+
+(( ${#in[@]} )) || end # no files, or unhandled: command | sed
+
+# check that all files are readable now for clearer errors
+for file in "${in[@]}"; do
+	[[ -f ${file} && -r ${file} ]] || die "not a readable file: ${file}"
+done
+
+# run `sed | sed | ...` passes for each file+expressions that generate a
+# cksum for each using tee and redirections to avoid temporary files, then
+# unset exps that caused changes (not attempting to modify the final files
+# here for safety, will run the intended single sed command for this)
+sed-pass() {
+	if (( ${1} <= pass )); then
+		local -n ref=pass_${1} #!SC2178
+		tee >(cksum >&3 || die) | sed "${ref[@]}" | sed-pass $((${1} + 1)) || die
+	else
+		cksum >&3 || die
+	fi
+}
+sed-unset_used_exps() {
+	local -a sums
+
+	sed-pass 1 3>&1 | map sums
+
+	(( ${#sums[@]} == ${#exps[@]} + 1 )) || die # shouldn't happen
+
+	local -i i
+	for ((i=1; i<${#sums[@]}; i++)); do
+		[[ ${sums[i]} && ${sums[i-1]} ]] || die # no cksum output?
+		[[ ${sums[i]} == "${sums[i-1]}" ]] || unset "exps[i-1]" # did changes
+	done
+}
+
+if ${inplace} || (( ${#in[@]} == 1 )); then
+	for file in "${in[@]}"; do
+		(( ${#exps[@]} )) || break
+		sed-unset_used_exps < "${file}" || die
+	done
+else
+	# use sed to concat for ensuring done as expected with EOF newlines
+	sed -n -e p "${in[@]}" | sed-unset_used_exps || die
+fi
+
+if (( ${#exps[@]} )); then
+	if (( ${#exps[@]} == pass )); then
+		sed-qa 129 "the following did not cause any changes"
+	else
+		sed-qa 130 "some expressions from the following did not cause any changes"
+		msg "${exps[@]/#/no-op: }"
+	fi
+fi
+
+end # run intended sed command normally
 
 # vim: ts=4
