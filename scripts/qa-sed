@@ -221,6 +221,7 @@ done
 sed-pass() {
 	if (( ${1} <= pass )); then
 		local -n ref=pass_${1} #!SC2178
+		# note: masked die is only for information, dies later if empty cksum
 		tee >(cksum >&3 || die) | sed "${ref[@]}" | sed-pass $((${1} + 1)) || die
 	else
 		cksum >&3 || die
