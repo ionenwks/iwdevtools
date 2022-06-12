@@ -1,0 +1,7 @@
+echo a > a
+echo -n b > b
+echo replace > c
+expect -2 "SED:*" s/kept// a b c
+expect -2 "''" s/replace/new/ a b c
+# unlike cat(1), sed always has \n between files so 'breplace' shouldn't exist
+expect -2 "SED:*" s/breplace/new/ a b c
