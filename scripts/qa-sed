@@ -35,7 +35,7 @@ usage <<-EOU
 	*Caveats*
 	 *  does not know if a sed only replaces under specific conditions
 	    e.g. 's|/usr|\${EPREFIX}/usr|', or 's|lib|\$(get_libdir)|'
-	    consider: use prefix, [[ \$(get_libdir) != lib ]], @libdir@, etc...
+	    consider: use prefix, [[ \$(get_libdir) != lib ]], placeholders, etc...
 	 *  can only verify different sed expressions if passed as separate
 	    -e arguments rather than a single 's/a/b/; s/c/d/'
 	 *  can't do detection if stdin is used and isn't a file
