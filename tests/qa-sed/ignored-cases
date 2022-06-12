@@ -1,5 +1,4 @@
 # cases qa-sed is known to be unable to handle and shouldn't report QA
 touch a b
-expect -2 "''" s/kept// a b
 expect -2 "''" s/kept// a < b
 cat a | expect -2 "''" s/kept//
