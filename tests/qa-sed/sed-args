@@ -3,4 +3,4 @@
 echo text > file
 echo rep > 50
 echo 's/rep/bad/;s/text/new/' > exp
-expect -2 "SED:*" -l 50 --line-length 50 -f exp file --file exp --expression s/new/text/ --in-place -e s/rep/bad/
+expect -2 "SED:*" -l 50 --line-length 50 -f exp file -isuffix --file exp --expression s/new/text/ --in-place='' --in-place -e s/rep/bad/
