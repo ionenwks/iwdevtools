@@ -59,10 +59,11 @@ Primarily intended to be integrated with portage than used directly.
 
 Example output from portage::
 
-    * Messages for package app-arch/gzip-1.10
+    * Messages for package app-arch/gzip-1.12:
 
-    * SED: following sed did not cause any changes
+    * SED: the following did not cause any changes
     *     sed -e "s:${EPREFIX}/usr:${EPREFIX}:" -i "${ED}"/bin/gunzip || die
+    * no-op: -e s:/usr::
 
 Run ``qa-sed --help`` or see **qa-sed(1)** man page for details.
 
