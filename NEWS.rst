@@ -31,12 +31,14 @@ Fixes
 - qa-cmp: fix occasional showing of version-replaced ``-file* +file*`` when it
   should be hidden
 
-- qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff
+- qa-vdb: fix using --no-ldpath when /etc/ld.so.conf doesn't exist
+
+- qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff,
+  (note: 1.10.1-r2 had this fix in Gentoo)
 
 - qa-vdb: fix >=0.8.0 regression that could give spurious reports with crossdev
-  packages (e.g. believing ``cross-*/gcc`` provides ``libatomic.so.1``).
-
-- qa-vdb: fix using --no-ldpath when /etc/ld.so.conf doesn't exist
+  packages, e.g. believing ``cross-*/gcc`` provides ``libatomic.so.1`` (note:
+  1.10.1-r1 had this fix in Gentoo)
 
 iwdevtools-0.10.1 (2022-02-13)
 ==============================
