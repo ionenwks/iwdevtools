@@ -16,6 +16,9 @@ Changes
 - qa-sed: can now detect if only one of ``-e s/// -e s///`` did no changes, and
   no longer loads/compares with bash (should be faster, still no tmp files)
 
+- qa-sed: now display any no-op expressions on their own lines with expanded
+  variables so can see, e.g. ``s|lib|$(get_libdir)| -> s|lib|lib|``
+
 - atomf.bashlib: add atoma() to set an associative array, e.g. atom[version]
 
 - atomf.bashlib. add atomset() to set e.g. P=name-1.0.0, PN=name, PV=1.0, ...
