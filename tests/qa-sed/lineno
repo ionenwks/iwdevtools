@@ -1,5 +1,5 @@
 # line should match against itself and end with 'end comment'
 touch file
-expect -2 "SED:*expect -2*end comment" -i s/kept// file \
+expect -2 "SED:*expect -2*end comment*" -i s/kept// file \
 	--qa-sed-args --source="${BASH_SOURCE[0]}" --lineno=4 # end comment
 # this comment shouldn't be included
