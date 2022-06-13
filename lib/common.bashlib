@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# basic/common functions for internal use (no API guarantees)
 [[ ! -v _COMMON_BASHLIB ]] || return 0; _COMMON_BASHLIB=
 
 # init
