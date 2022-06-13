@@ -2,8 +2,12 @@
 [[ ! -v _COMMON_BASHLIB ]] || return 0; _COMMON_BASHLIB=
 
 # init
-#	Initiate basic settings / traps (optional)
+#	Initiate basic settings / traps / check minimum bash version
+#	Some functions may not work as expected if skipped.
 init() {
+	(( BASH_VERSINFO[0] > 5 || ( BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 1 ) )) \
+		|| die "minimum bash version 5.1 required (current: ${BASH_VERSION})"
+
 	set +m -Efuo pipefail
 	shopt -s lastpipe nullglob
 
