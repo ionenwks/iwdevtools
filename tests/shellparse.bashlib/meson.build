@@ -1,0 +1,4 @@
+tests = [
+	'shellcheck',
+	'shellimport'
+]

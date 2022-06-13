@@ -1,0 +1,38 @@
+declare -A assoc
+shellimport assoc "${DATADIR}"/script.sh
+
+output=$(printf "%s\n" "${!assoc[@]}" | sort)
+[[ ${output} == "array1@a
+array2@a
+assoc1@A
+assoc2@A
+func1@f
+func2@f
+var1
+var2
+var4" ]] || fail "'${output}' mismatch"
+
+[[ ${assoc[var1]} == "\"'first " ]] || fail "'${output}' mismatch"
+
+[[ ${assoc[array1@a]} == "'\$(echo first)' ''\\''second'\\''' 'the third'" ]] \
+	|| fail "'${assoc[array1@a]}' mismatch"
+
+output=$(eval "printf '%s=%s\n' ${assoc[assoc1@A]}" | sort)
+[[ ${output} == 'a="first"
+b=`echo second`
+c=the third' ]] || fail "'${output}' mismatch"
+
+eval "array=( ${assoc[array2@a]} )"
+[[ ${array[*]} == 'a b c' ]] || fail "'${array[*]}' mismatch"
+
+eval "${assoc[func1@f]}"
+output=$(func1)
+[[ ${output} == 'hello world' ]] || fail "'${output}' mismatch"
+
+xfail 1 shellimport assoc missing
+
+echo "readonly _shellcheck_import" > readonly
+shellimport assoc readonly # not xfail given rbash prevents readonly variables
+
+echo "unset() { :; }; readonly -f unset" > readonly-unset
+xfail 1 shellimport assoc readonly-unset # but not functions!

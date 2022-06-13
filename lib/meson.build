@@ -1,6 +1,7 @@
 libs = [
-	'common.bashlib',
-	'atomf.bashlib'
+	'common.bashlib', # keep first
+	'atomf.bashlib',
+	'shellparse.bashlib'
 ]
 
 lib_build = meson.current_build_dir()

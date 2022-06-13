@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Helpers to read/analyze shell scripts (subject to changes)
+[[ ! -v _SHELLPARSE_BASHLIB ]] || return 0; _SHELLPARSE_BASHLIB=
+
+# shellimport <associative-array> <source>
+#	Source <source> in and import declarations into array as:
+#		assoc[variable_name]='contents'
+#		assoc[function_name@f]='function() { contents; }'
+#		assoc[array_name@a]='first second "has spaces"'
+#			-> safe to eval "local -a array=( ${assoc[name@a]} )"
+#		assoc[associative_array_name@A]='index1 "first" index2 "has spaces"'
+#
+#	Uses `set +r` (restricted shell) and empty PATH+env to reduce odds of
+#	performing unintended potentially harmful actions or picking up wrong
+#	variables (read files still need to be generally trusted, better in
+#	conjunction with the package manager's sandbox).
+#
+#	Returns 1 on error, but <source> internal execution issues are ignored.
+#
+#	Intended as a bit safer + all-at-once `var=$( . file; echo ${var} )`.
+#	Warning: no hang protection if source has infinite loops
+shellimport() {
+	local _s_output=${1}
+	local _s_source=${2}
+	shift 2
+
+	declare -p "${_s_output}" &>/dev/null || declare -gA "${_s_output}"
+
+	# can't source with / in path in rbash, but can cd before setting -r
+	[[ ${_s_source} == /* ]] || _s_source=${PWD}/${_s_source}
+	local _s_cd=${_s_source%/*}/
+	_s_source=${_s_source##*/}
+
+	# assume source may do strange things, even redefine builtins / readonly,
+	# and POSIXLY_CORRECT=1 ensures unset is not overridden
+	eval "$(
+		env -S -i PATH= "${BASH}" --norc <<-EOF
+			cd ${_s_cd@Q} &&
+				[[ -f ${_s_source@Q} && -r ${_s_source@Q} ]] || exit 1
+
+			declare -A _COMMON_IMPORTSKIP=()
+			for skip in \$(compgen -v) _shellparse_import{,array,ref} _COMMON_IMPORTSKIP POSIXLY_CORRECT; do
+				_COMMON_IMPORTSKIP[\${skip}]=
+			done
+			unset skip
+			readonly -A _COMMON_IMPORTSKIP
+
+			{ set -r; . ${_s_source@Q}; } &>/dev/null # ignore errors
+
+			POSIXLY_CORRECT=1 unset -f compgen declare unset &&
+				unset -n _shellparse_import{,array,ref,output} &&
+				unset -v _shellparse_import{,array,ref,output} && {
+					declare -A _shellparse_importarray=()
+
+					for _shellparse_import in \$(compgen -A function); do
+						_shellparse_importarray[\${_shellparse_import}@f]=\$(declare -f "\${_shellparse_import}")
+					done
+
+					for _shellparse_import in \$(compgen -A variable); do
+						[[ -v _COMMON_IMPORTSKIP[\${_shellparse_import}] ]] && continue
+						declare -n _shellparse_importref=\${_shellparse_import}
+						case \${_shellparse_importref@a} in
+							*A*) _shellparse_importarray[\${_shellparse_import}@A]=\${_shellparse_importref[*]@K};;
+							*a*) _shellparse_importarray[\${_shellparse_import}@a]=\${_shellparse_importref[*]@Q};;
+							*) _shellparse_importarray[\${_shellparse_import}]=\${_shellparse_importref};;
+						esac
+					done
+
+					_shellparse_importoutput=\${_shellparse_importarray[*]@A}
+					echo "${_s_output}=\${_shellparse_importoutput#*=}"
+			}
+		EOF
+	)
+	(( ! ${?} ))"
+}
+
+# vim: ts=4
