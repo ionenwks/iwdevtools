@@ -255,7 +255,7 @@ if (( ${#exps[@]} )); then
 	if (( ${#exps[@]} == pass )); then
 		sed-qa 129 "the following did not cause any changes"
 	else
-		sed-qa 130 "some expressionis in the following did not cause any changes"
+		sed-qa 130 "some expressions in the following did not cause any changes"
 	fi
 	msg "${exps[@]/#/no-op: }"
 fi
