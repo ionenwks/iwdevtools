@@ -1,7 +1,8 @@
 # Symlink, copy, or source using /etc/portage/bashrc to load all features.
 # Assumes not already using post_pkg_* functions.
 
-if [[ ! ${PKGCORE_PKG_REPO} ]] &&
+if [[ ${IWDT_ALL:-y} == y &&
+	! ${PKGCORE_PKG_REPO} ]] &&
 	. "@datadir@/qa-cmp.bashrc" &&
 	. "@datadir@/qa-openrc.bashrc" &&
 	. "@datadir@/qa-sed.bashrc" &&
