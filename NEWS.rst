@@ -19,6 +19,9 @@ Changes
 - qa-sed: now display any no-op expressions on their own lines with expanded
   variables so can see, e.g. ``s|lib|$(get_libdir)| -> s|lib|lib|``
 
+- scripts: ``*.conf`` files to set default options or configure colors are now
+  installed by default so it's more obvious than running ``--dumpconfig`` (#8)
+
 - atomf.bashlib: add atoma() to set an associative array, e.g. atom[version]
 
 - atomf.bashlib: add atomset() to set e.g. P=name-1.0.0, PN=name, PV=1.0, ...

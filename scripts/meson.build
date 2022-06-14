@@ -9,6 +9,10 @@ scripts = {
 	'scrub-patch' : 'strip patches of useless cruft and suggest improvements'
 }
 
+nodumpconfig = [
+	'eoldnew'
+]
+
 sed = find_program('sed')
 help2man = find_program('help2man', required : false)
 
@@ -41,6 +45,25 @@ foreach script, desc : scripts
 		install_dir : bindir,
 		install_mode : 'rwxr-xr-x'
 	)
+
+	if script not in nodumpconfig
+		dumpconfig = [
+			'--confdir=' + meson.project_source_root() / 'config',
+			'--dumpconfig'
+		]
+		if script == 'qa-sed'
+			dumpconfig = [ '--qa-sed-args', dumpconfig ]
+		endif
+
+		custom_target(
+			script + '.conf',
+			output : script + '.conf',
+			command : [ run_script.get(script), dumpconfig ],
+			capture : true,
+			install : true,
+			install_dir : confdir
+		)
+	endif
 
 	if help2man.found()
 		custom_target(
