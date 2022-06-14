@@ -21,7 +21,7 @@ Changes
 
 - atomf.bashlib: add atoma() to set an associative array, e.g. atom[version]
 
-- atomf.bashlib. add atomset() to set e.g. P=name-1.0.0, PN=name, PV=1.0, ...
+- atomf.bashlib: add atomset() to set e.g. P=name-1.0.0, PN=name, PV=1.0, ...
 
 Fixes
 -----
