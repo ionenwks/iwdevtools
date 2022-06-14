@@ -1,5 +1,5 @@
-# Symlink, copy, or source using /etc/portage/bashrc to load all features.
-# Assumes not already using post_pkg_* functions.
+# Either symlink, copy, or source using /etc/portage/bashrc to load everything.
+# Assumes not already using post_pkg_*(), adjust if needed (just an example).
 
 if \
 	. "@datadir@/qa-cmp.bashrc" &&
