@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 conf=${0##*/}.conf
 
-expect -c -s "'# ${conf}
+expect -c -s "'# ${conf} '*'
 mybool1 = false
 mybool2 = true
 mybool3 = true
@@ -31,5 +31,5 @@ expect -c "${0##*/} ${VERSION}" optauto args --version </dev/null
 cat > ${conf} <<-EOF
 	mystr = new
 EOF
-expect -c -s "'# ${conf}
+expect -c -s "'# ${conf} '*'
 mystr = new'" optauto args --confdir=. --dumpconfig <<<"mystr=str:text"

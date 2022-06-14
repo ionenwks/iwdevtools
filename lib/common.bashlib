@@ -290,7 +290,7 @@ optend() {
 	done
 
 	if [[ ${1:-} == -d ]]; then
-		echo "# ${0##*/}.conf"
+		echo "# ${0##*/}.conf (from \`${0##*/} --dumpconfig\`, see --help for info)"
 		for key in "${_COMMON_OPT_SORT[@]}"; do
 			[[ ! ${_COMMON_OPT[${key}]} =~ ^[%@]*ignore:? ]] || continue
 
