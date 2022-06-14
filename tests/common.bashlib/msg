@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 expect -c "'hello
 world'" msg hello world
 setmsg 2 '@%s@'

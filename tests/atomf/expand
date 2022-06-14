@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 expect -s "'!! >= cat name 1.2.3 1 * 0 ='" '!!>=cat/name-1.2.3-r1:*/0=[use]'
 expect -s "'? ? c n 1 ? ? ? ?
 ? ? c n 2 ? ? ? ?'" --expand c/n-1 c/n-2

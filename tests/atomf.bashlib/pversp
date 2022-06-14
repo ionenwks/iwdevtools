@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 tcmp() {
 	local ver
 	pversp ver "${3}"

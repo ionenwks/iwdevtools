@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # most tests are done between two images (-I), do generic tests with system's
 set_portroot
 touch file{1..4}

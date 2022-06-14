@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # nodebug checks need no abi changes, debug, and run instprep to strip
 check_abidiff
 set_portroot

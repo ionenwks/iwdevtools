@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # line should match against itself and end with 'end comment'
 touch file
 expect -2 "SED:*expect -2*end comment*" -i s/kept// file \

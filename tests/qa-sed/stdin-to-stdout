@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo text > file
 expect -2 "SED:*" s/kept// < file > output
 [[ $(<output) == text ]] || fail mismatch1

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # patch is not recognized as unified format and requires --no-sanity
 copydat mess.patch
 xfail 1 expect -2 "Error:*unified format*" -ci mess.patch

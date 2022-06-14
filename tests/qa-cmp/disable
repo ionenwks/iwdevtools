@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # test if --no-* options do disable reports
 set_portroot
 touch file{1..4}

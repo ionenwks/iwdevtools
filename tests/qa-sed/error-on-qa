@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo text > file
 xfail 129 expect -2 "SED:*" -i s/kept// file --qa-sed-args --error-on-qa
 expect -2 "''" -i s/text// file --qa-sed-args --error-on-qa

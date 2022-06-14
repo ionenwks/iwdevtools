@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 expect "1 .2 .3 a _p 3 -r1" --versplit '1.2.3a_p3-r1'
 expect -s "'1 -r1
 2 .0

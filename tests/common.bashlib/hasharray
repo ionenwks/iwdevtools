@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 tcheckindex() {
 	output=$(printf "%s\n" "${!index[@]}" | sort | tr -d '\n')
 	[[ ${output} == ${1} ]] || fail "expected '${1}', got '${output}'"

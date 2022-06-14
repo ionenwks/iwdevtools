@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 touch file0B
 head -c 10MiB /dev/zero > file10MiB

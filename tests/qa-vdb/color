@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 ebuild "$(get_ebuild libdummy 1.5 lib.so:"${LIBD100}")" merge
 ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}")" merge

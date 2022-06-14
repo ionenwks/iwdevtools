@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 touch file{1,2}
 head -c 1555kiB /dev/zero > file1555kiB

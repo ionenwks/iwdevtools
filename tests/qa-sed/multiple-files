@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 touch a b c
 echo text > d
 expect -2 "SED:*" -i s/kept// a b c d

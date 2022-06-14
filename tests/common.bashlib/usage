@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 usage <<-EOU
 	Usage:test
 EOU

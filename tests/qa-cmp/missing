@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 ebuild "$(get_ebuild test 1.5 :)" install
 xfail 1 expect -2 "*Error: found nothing to compare*" -cI dev-test/test

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 extra=()
 declare -i match=0
 getoptw arg args abc: dee,eee,eff: x1 -aa x2 -c 1 -bc2 x3 --dee --eee --eff=3 x4 x5

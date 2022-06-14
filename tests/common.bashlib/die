@@ -1,13 +1,14 @@
+#!/usr/bin/env bash
 testfunc() {
 	false \
 		false \
 			false || die
 }
 expect -c -s -2 "*'
-  002:     false \\
-  003:         false \\
-  004:             false || die
-  ^^^ testfunc:4'*" xfail -s 1 testfunc
+  003:     false \\
+  004:         false \\
+  005:             false || die
+  ^^^ testfunc:5'*" xfail -s 1 testfunc
 
 expect -c -2 "Error:*test message*" xfail -s 1 die test message
 

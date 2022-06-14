@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 expect -c "''" atomf '' 'c/n-0'
 expect -c "'!,>,c/,n,-0,-r0,:0,/0,=,%'" atomf '%!,%o,%c,%n,%v,%r,%s,%u,%b,%%' '!>c/n-0-r0:0/0=[u(+)]'
 expect -c "'%name,0,name,0%'" atomf '%%%n,%V,%n,%V%%' 'name-0'

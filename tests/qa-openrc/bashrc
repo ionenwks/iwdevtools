@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 set_bashrc
 export QA_OPENRC=y

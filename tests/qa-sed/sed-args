@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # should understand that "file" is the input despite other args having files,
 # and to do so expressions change nothing only in the right file (gives QA)
 echo text > file

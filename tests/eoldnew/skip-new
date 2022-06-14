@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # test - argument to skip emerging new
 set_portroot
 ebuild "$(get_ebuild test 1.0.0)" merge

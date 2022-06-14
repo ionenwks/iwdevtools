@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 check_abidiff
 set_portroot
 ebuild "$(get_ebuild test 1.5 lib.so:"${LIBD100}")" install

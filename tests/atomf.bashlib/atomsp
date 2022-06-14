@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 tcmp() {
 	local atom
 	echo -n "Checking '${2}'"

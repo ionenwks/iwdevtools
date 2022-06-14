@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 conf=${0##*/}.conf
 
 expect -c -s "'# ${conf}

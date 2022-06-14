@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 skip "suid test skipped for safety"
 # may also be quirky depending on what's allowed
 

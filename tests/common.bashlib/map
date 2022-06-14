@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 array=(1 2)
 map +array <<<'3'
 [[ ${array[*]} == '1 2 3' ]] || fail "expected '1 2 3', got '${array[*]}'"

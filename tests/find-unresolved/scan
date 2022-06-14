@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 ebuild "$(get_ebuild dummy 1.5 bin:"${EXED}")" merge
 ebuild "$(get_ebuild alt 1.5 bin:"${EXEA}")" merge

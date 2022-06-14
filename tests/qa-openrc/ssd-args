@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 
 # test correct script
@@ -74,5 +75,3 @@ example6: --group should be replaced with command_user=\"<user>:nobody\"
 example6: --user should be replaced with command_user=\"nobody\"
 example7: --exec should be deleted as it is included by default when command=\"\" is declared
 example9: -1 should be replaced with output_log=\"/var/log/example9.log\"'" -p test
-
-# vim: ft=bash

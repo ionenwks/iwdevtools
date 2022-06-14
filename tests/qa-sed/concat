@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo a > a
 echo -n b > b
 echo replace > c

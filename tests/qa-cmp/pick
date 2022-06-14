@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # test if picking right image/version/slot when multiple to pick from
 set_portroot
 ebuild "$(get_ebuild test 1.5 : SLOT:2)" merge

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # * 001: "From " suggestion
 # * 032: file rename attempt
 copydat git.patch

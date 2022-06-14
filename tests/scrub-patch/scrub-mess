@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # * 006,007,017,018,047,055: not using git-style a/ b/
 # * 043: over 20 lines removed in a row
 # * 048: removed file

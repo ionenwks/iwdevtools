@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 tcmp() {
 	local -n var=${1}
 	[[ ${var} == "${2}" ]] || fail "${var} != ${2} for ${1}"

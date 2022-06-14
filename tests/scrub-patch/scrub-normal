@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # test a mostly normal patch using stdout, should not generate any QA
 copydat normal.patch
 expect -2 "Success*37.63%*meaningful." -co normal.patch > output

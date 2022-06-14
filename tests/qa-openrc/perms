@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set_portroot
 cat <<EOF > example
 #!/sbin/openrc-run
@@ -13,5 +14,3 @@ ebuild "$(get_ebuild test 1.5 cmd:"exeinto /etc/init.d" exe:example)" merge
 expect -s "'OPENRC: incorrect permissions for service '\"'\"'example'\"'\"'
     have: -rwxr-xr-x '*:*'
 expected: -rwxr-xr-x root:root'" test
-
-# vim: ft=bash

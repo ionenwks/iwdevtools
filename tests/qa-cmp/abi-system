@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # do basic abidiff tests using system copy rather than two images
 check_abidiff
 set_portroot

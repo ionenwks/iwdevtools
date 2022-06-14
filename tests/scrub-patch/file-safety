@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # verify that the original patch is not getting modified when it shouldn't
 copydat normal.patch
 expect -2 "Would*" -c --in-place --dry-run normal.patch
