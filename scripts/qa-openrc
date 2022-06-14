@@ -110,8 +110,8 @@ export -f openrc-echo_if_service
 #	be useful if init scripts are installed by upstream build system.
 openrc-check_permissions() {
 	local permissions
-	local expected_value="-rwxr-xr-x root:root"
-	permissions=$(stat -c'%A %U:%G' "${1}" || die "stat failed")
+	local expected_value=-rwxr-xr-x
+	permissions=$(stat -c%A "${1}") || die "stat failed"
 	if [[ ${permissions} != "${expected_value}" ]]; then
 		msg "OPENRC: incorrect permissions for service '$(basename "${1}")'"
 		msg "    have: ${permissions}"
