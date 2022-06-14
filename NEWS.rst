@@ -7,17 +7,21 @@ iwdevtools-next
 
 Changes
 -------
-- qa-openrc: new script (WIP)
-
 - qa-cmp: replacing versions in lists by ``*`` is now more restrictive to
   avoid (some) cases like PV=1 doing ``python3.10 -> python3.*0`` when mostly
   want ``doc/name-1 -> doc/name-*`` (i.e. not show same docs as new files)
 
-- qa-sed: can now detect if only one of ``-e s/// -e s///`` did no changes, and
-  no longer loads/compares with bash (should be faster, still no tmp files)
+- qa-openrc: new contributed script to do basic /etc/init.d checks
+
+- qa-openrc.bashrc: new, needs adding qa-openrc_post_pkg_preinst to
+  post_pkg_preinst if not using the default bashrc
+
+- qa-sed: can now detect if only one of ``-e s/// -e s///`` did no changes
 
 - qa-sed: now display any no-op expressions on their own lines with expanded
   variables so can see, e.g. ``s|lib|$(get_libdir)| -> s|lib|lib|``
+
+- qa-sed: no longer compares with bash (should be faster, still no tmp files)
 
 - scripts: ``*.conf`` files to set default options or configure colors are now
   installed by default so it's more obvious than running ``--dumpconfig`` (#8)
