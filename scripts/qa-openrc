@@ -3,7 +3,6 @@
 init
 depend find grep head portageq qlist stat
 esanitize
-include atomf
 usage <<-EOU
 	Usage: ${0##*/} <image|atom>
 
@@ -41,8 +40,7 @@ optauto args "${@}" <<-EOO
 	p|!perms=bool:true
 	s|!ssd-args=bool:true
 EOO
-(( ${#args[@]} < 1 )) && die "no atom/image specified, see \`${0##*/} --help\`"
-(( ${#args[@]} > 1 )) && die "too many atoms/images given, see \`${0##*/} --help\`"
+(( ${#args[@]} == 1 )) || die "need exactly one atom/image specified, see \`${0##*/} --help\`"
 set -- "${args[@]}"; unset args
 
 # openrc-get_services <array> <image|atom>
@@ -63,7 +61,7 @@ openrc-get_services() {
 					openrc-echo_if_service "${ROOT%/}/${file}"
 				done
 			}
-			[[ ${PIPESTATUS[0]} == "0" ]] || die "qlist failed for '${2}'"
+			[[ ${PIPESTATUS[0]} == 0 ]] || die "qlist failed for '${2}'"
 		fi
 	} | map "${1}"
 }
@@ -85,11 +83,9 @@ openrc-get_ssd_args() {
 	grep -qs start_stop_daemon_args "${1}" || return
 	(
 		# set some common variables
-		RC_SVCNAME=$(basename "${1}")
-		export RC_SVCNAME
+		export RC_SVCNAME=${1##*/}
 
-		# shellcheck source=/dev/null
-		source "${1}" >/dev/null 2>&1 || die "failed sourcing ${1}"
+		. "${1}" &>/dev/null || die "failed sourcing ${1}" #!SC1090
 		if [[ ${start_stop_daemon_args} ]]; then
 			echo "${start_stop_daemon_args}"
 		fi
@@ -125,32 +121,27 @@ openrc-check_permissions() {
 openrc-check_ssd_args() {
 	local svc command_user
 	local -a ssd_args
-	svc=$(basename "${1}")
-	# shellcheck disable=SC2207
-	ssd_args=( $(openrc-get_ssd_args "${1}") )
+	svc=${1##*/}
+	ssd_args=( $(openrc-get_ssd_args "${1}") ) #!SC2207
 
+	local flag val
+	local -i i start next end
 	for i in "${!ssd_args[@]}"; do
-		local flag="${ssd_args[${i}]}"
-		local val=
+		flag=${ssd_args[i]}
+		val=
 
 		# scan ssd_args until the next flag is found
-		local start=$(( i + 1 ))
-		local end=0
-		local next="${start}"
-		# shellcheck disable=SC2199
-		while [[ ${ssd_args[@]:${next}:1} != -* ]] && (( end < ${#ssd_args[@]})); do
-			(( ++end )); (( ++next ))
-			# shellcheck disable=SC2124
-			val="${ssd_args[@]:${start}:${end}}"
+		(( start = i + 1 ))
+		end=0
+		next=${start}
+		while [[ ${ssd_args[next]:-} != -* ]] && (( end < ${#ssd_args[@]} )); do
+			end+=1; next+=1
+			val=${ssd_args[*]:start:end}
 		done
-		if [[ ${val} ]]; then
-			val="${val//\"/}"
-			val="${val//\'/}"
-			val="${val//\\/}"
-		fi
+		val=${val//[\"\'\\]/}
 
 		# order as in start-stop-daemon(8)
-		case "${flag}" in
+		case ${flag} in
 			-x|--exec)
 				openrc-ssd_msg "${svc}" "${flag}" "should be deleted" \
 					'as it is included by default when command="" is declared';;
@@ -159,7 +150,7 @@ openrc-check_ssd_args() {
 			-n|--name)
 				openrc-ssd_msg "${svc}" "${flag}" "procname=\"${val}\"";;
 			-u|--user|-c|--chuid)
-				command_user="${val}"
+				command_user=${val}
 				openrc-ssd_msg "${svc}" "${flag}" "command_user=\"${val}\"";;
 			-P|--progress)
 				openrc-ssd_msg "${svc}" "${flag}" "command_progress=yes";;
@@ -189,15 +180,15 @@ openrc-check_ssd_args() {
 # openrc-ssd_msg <service> <flag> <replacement>
 #	Print a message, adding header if necessary.
 openrc-ssd_msg() {
-	local svc="${1}"
-	local flag="${2}"
+	local svc=${1}
+	local flag=${2}
 	local modal text
-	if (( $# == 3 )); then
+	if (( ${#} == 3 )); then
 		modal="should be replaced with"
-		text="${3}"
-	elif (( $# == 4 )); then
-		modal="${3}"
-		text="${4}"
+		text=${3}
+	elif (( ${#} == 4 )); then
+		modal=${3}
+		text=${4}
 	fi
 
 	if [[ ! ${SSD_HEADER_PRINTED} ]]; then
@@ -228,4 +219,4 @@ fi
 
 :
 
-# vim: ts=4 sw=4
+# vim: ts=4
