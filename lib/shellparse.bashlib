@@ -41,11 +41,6 @@ shellimport() {
 			cd ${_s_cd@Q} &&
 				[[ -f ${_s_source@Q} && -r ${_s_source@Q} ]] || exit 1
 
-			while (( \${#} )); do
-				eval \"\${1}\" || exit \${?}
-				shift
-			done
-
 			declare -A _COMMON_IMPORTSKIP=()
 			for skip in \$(compgen -v) _shellparse_import{,array,ref} _COMMON_IMPORTSKIP POSIXLY_CORRECT; do
 				_COMMON_IMPORTSKIP[\${skip}]=
