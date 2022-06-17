@@ -3,6 +3,7 @@
 init
 depend find grep head portageq qlist stat
 esanitize
+include shellparse
 usage <<-EOU
 	Usage: ${0##*/} <image|atom>
 
@@ -77,21 +78,6 @@ openrc-get_vdb() {
 	echo "${OPENRC_VDB}"
 }
 
-# openrc-get_ssd_args <file>
-#	Sources <file> and echoes value of the start_stop_daemon_args variable.
-openrc-get_ssd_args() {
-	grep -qs start_stop_daemon_args "${1}" || return
-	(
-		# set some common variables
-		export RC_SVCNAME=${1##*/}
-
-		. "${1}" &>/dev/null || die "failed sourcing ${1}" #!SC1090
-		if [[ ${start_stop_daemon_args} ]]; then
-			echo "${start_stop_daemon_args}"
-		fi
-	)
-}
-
 # openrc-is_service <file>
 #	Echoes <file> if it's an OpenRC service (has '#!/sbin/openrc-run' shebang).
 openrc-echo_if_service() {
@@ -119,10 +105,11 @@ openrc-check_permissions() {
 #	Finds flags in start_stop_daemon_args that can be replaced with declatative
 #	config variables.
 openrc-check_ssd_args() {
-	local svc command_user
-	local -a ssd_args
-	svc=${1##*/}
-	ssd_args=( $(openrc-get_ssd_args "${1}") ) #!SC2207
+	local command_user svc=${1##*/}
+
+	local -A si
+	shellimport si "${1}" RC_SVCNAME="${svc}" || die "failed to import '${1}'"
+	local -a ssd_args=( ${si[start_stop_daemon_args]:-} ) #!SC2206
 
 	local flag val
 	local -i i start next end
