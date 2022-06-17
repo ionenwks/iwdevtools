@@ -66,6 +66,10 @@ usage <<-EOU
 	revdeps without rebuilds, but it warrants testing them while built
 	against old version. Order matters, downgrading often breaks ABI.
 
+	*Known Limitations*
+	May report incorrect changes if pkg_postinst or FEATURES performed live changes
+	on files or permissions that are missing from the image (e.g. fcaps.eclass).
+
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
