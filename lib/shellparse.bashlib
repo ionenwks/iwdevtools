@@ -2,7 +2,7 @@
 # Helpers to read/analyze shell scripts (subject to changes)
 [[ ! -v _SHELLPARSE_BASHLIB ]] || return 0; _SHELLPARSE_BASHLIB=
 
-# shellimport <associative-array> <source>
+# shellimport <associative-array> <source> [VAR=assign]...
 #	Source <source> in and import declarations into array as:
 #		assoc[variable_name]='contents'
 #		assoc[function_name@f]='function() { contents; }'
@@ -14,6 +14,9 @@
 #	performing unintended potentially harmful actions or picking up wrong
 #	variables (read files still need to be generally trusted, better in
 #	conjunction with the package manager's sandbox).
+#
+#	Each arguments after <source> will be passed to env(1) to set initial
+#	environment. Variables set this way won't be returned in the array.
 #
 #	Returns 1 on error, but <source> internal execution issues are ignored.
 #
@@ -34,9 +37,14 @@ shellimport() {
 	# assume source may do strange things, even redefine builtins / readonly,
 	# and POSIXLY_CORRECT=1 ensures unset is not overridden
 	eval "$(
-		env -S -i PATH= "${BASH}" --norc <<-EOF
+		env -i PATH= "${@}" "${BASH}" --norc -c "
 			cd ${_s_cd@Q} &&
 				[[ -f ${_s_source@Q} && -r ${_s_source@Q} ]] || exit 1
+
+			while (( \${#} )); do
+				eval \"\${1}\" || exit \${?}
+				shift
+			done
 
 			declare -A _COMMON_IMPORTSKIP=()
 			for skip in \$(compgen -v) _shellparse_import{,array,ref} _COMMON_IMPORTSKIP POSIXLY_CORRECT; do
@@ -53,7 +61,7 @@ shellimport() {
 					declare -A _shellparse_importarray=()
 
 					for _shellparse_import in \$(compgen -A function); do
-						_shellparse_importarray[\${_shellparse_import}@f]=\$(declare -f "\${_shellparse_import}")
+						_shellparse_importarray[\${_shellparse_import}@f]=\$(declare -f \"\${_shellparse_import}\")
 					done
 
 					for _shellparse_import in \$(compgen -A variable); do
@@ -67,11 +75,10 @@ shellimport() {
 					done
 
 					_shellparse_importoutput=\${_shellparse_importarray[*]@A}
-					echo "${_s_output}=\${_shellparse_importoutput#*=}"
+					echo \"${_s_output}=\${_shellparse_importoutput#*=}\"
 			}
-		EOF
-	)
-	(( ! ${?} ))"
+			" "${_s_source}" )
+		(( ! ${?} ))"
 }
 
 # vim: ts=4

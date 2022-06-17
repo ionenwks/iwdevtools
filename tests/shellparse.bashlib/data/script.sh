@@ -15,7 +15,12 @@ var1="\"'first "
 var2=second:$(cat <<<"shouldn't be there in PATH='' rbash")
 $(type -P /bin/true /usr/bin/true) && var3="shouldn't be set in rbash"
 
-printf "%s\n" "${var2}" "${var3}"
+var4="${env1} ${env2}"
+
+var5=
+declare -n _shellparse_importref=var5
+
+printf "%s\n" "${var2}" "${var3}" "${var4}"
 
 func1() {
 	echo "hello world"
@@ -27,8 +32,5 @@ func1
 unset() { :; }
 declare() { :; }
 compgen() { :; }
-
-var4=
-declare -n _shellparse_importref=var4
 
 { syntax error
