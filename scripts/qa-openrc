@@ -41,8 +41,9 @@ optauto args "${@}" <<-EOO
 	p|!perms=bool:true
 	s|!ssd-args=bool:true
 EOO
-(( ${#args[@]} == 1 )) || die "need exactly one atom/image specified, see \`${0##*/} --help\`"
 set -- "${args[@]}"; unset args
+
+(( ${#} == 1 )) || die "need exactly one atom/image specified, see \`${0##*/} --help\`"
 
 # openrc-get_services <array> <image|atom>
 #	Set <array> to list of OpenRC service files.
