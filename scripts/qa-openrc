@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend find grep head portageq qlist stat
+depend grep portageq qlist sort stat
 esanitize
 include shellparse
 usage <<-EOU
@@ -46,47 +46,52 @@ set -- "${args[@]}"; unset args
 (( ${#} == 1 )) || die "need exactly one atom/image specified, see \`${0##*/} --help\`"
 
 # openrc-get_services <array> <image|atom>
-#	Set <array> to list of OpenRC service files.
+#	Set <array> to list of OpenRC service files from <image|atom>.
 openrc-get_services() {
-	{
-		if [[ -d ${2} ]]; then
-			[[ ! -d ${2%/}/etc/init.d ]] \
-				|| find "${2%/}/etc/init.d" -type f -exec bash -c 'openrc-echo_if_service "$@"' _ {} \; | sort \
-				|| die "find failed for '${2}'"
-		else
-			local vdb
-			vdb=$(openrc-get_vdb)
+	local -n outref=${1}
 
-			Q_VDB=${vdb#"${ROOT}"} qlist -Cqe "${2}" | grep '/etc/init\.d/' | sort | {
-				local file
-				while read -r file; do
-					openrc-echo_if_service "${ROOT%/}/${file}"
-				done
-			}
-			[[ ${PIPESTATUS[0]} == 0 ]] || die "qlist failed for '${2}'"
+	local -a servicefiles
+	if [[ ${2::1} != = && -d ${2} ]]; then
+		local image=${2}
+		# hopefully image itself does not have this dir
+		[[ -d ${image}/image ]] && image+=/image
+
+		set +f
+		servicefiles=("${image}${EPREFIX}"/etc/init.d/*)
+		set -f
+	else
+		# TODO: vdb/qlist stuff should be offloaded to a vdb.bashlib
+		openrc-export_qvdb
+		qlist -Cqe "${2}" | grep "^${EPREFIX}/etc/init.d/[^/]*$" | sort | map servicefiles
+		[[ ${PIPESTATUS[*]} == '0 '[01]' 0 0' ]] || die "qlist failed for '${2}'"
+
+		servicefiles=("${servicefiles[@]/#/${ROOT}}")
+	fi
+
+	local servicefile shebang shebangelem
+	outref=()
+	for servicefile in "${servicefiles[@]}"; do
+		[[ -f ${servicefile} && ! -h ${servicefile} ]] || continue
+
+		IFS=' ' read -ra shebang < "${servicefile}" || die "failed reading '${servicefile}'"
+		[[ ${shebang[0]:-} == '#!'* ]] || continue
+
+		if [[ ${shebang[0]} == */openrc-run ]]; then
+			outref+=("${servicefile}")
+		elif [[ ${shebang[0]} == */env ]]; then
+			for shebangelem in "${shebang[@]:1}"; do
+				case ${shebangelem} in
+					# first non-option nor name=value should be the command
+					-*|*=*) continue;;
+					openrc-run|*/openrc-run)
+						outref+=("${servicefile}")
+					;;
+				esac
+				break
+			done
 		fi
-	} | map "${1}"
+	done
 }
-
-# openrc-get_vdb
-#	Echoes portage's vdb path.
-OPENRC_VDB=
-openrc-get_vdb() {
-	if [[ ! ${OPENRC_VDB} ]]; then
-		OPENRC_VDB=$(portageq vdb_path) || die "portageq vdb_path failed"
-		[[ -d ${OPENRC_VDB} ]] || die "portageq returned '${OPENRC_VDB}' as VDB path which does not appear usable"
-	fi
-	echo "${OPENRC_VDB}"
-}
-
-# openrc-is_service <file>
-#	Echoes <file> if it's an OpenRC service (has '#!/sbin/openrc-run' shebang).
-openrc-echo_if_service() {
-	if [[ $(head -1 "${1}") == "#!/sbin/openrc-run" ]]; then
-		echo "${1}"
-	fi
-}
-export -f openrc-echo_if_service
 
 # openrc-check_permissions <file>
 #	Although this check is useless for ebuilds that use doinitd/newinitd, it may
@@ -163,6 +168,15 @@ openrc-check_ssd_args() {
 				openrc-ssd_msg "${svc}" "${flag}" "error_logger=\"${val}\"";;
 		esac
 	done
+}
+
+# openrc-export_qvdb
+#	Exports Q_VDB variable according to portageq for q* tools.
+openrc-export_qvdb() {
+	Q_VDB=$(portageq vdb_path) || die "portageq vdb_path failed"
+	[[ -d ${Q_VDB} ]] \
+		|| die "portageq returned '${Q_VDB}' as VDB path which does not appear usable"
+	export Q_VDB=${Q_VDB#"${ROOT}"}
 }
 
 # openrc-ssd_msg <service> <flag> <replacement>
