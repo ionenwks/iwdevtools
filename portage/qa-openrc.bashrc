@@ -10,7 +10,7 @@ qa-openrc_post_pkg_preinst() {
 	[[ ${QA_OPENRC} == y ]] || return 0
 
 	local output
-	output=$("${QA_OPENRC_CMD}" "${ED}" "${@}" ${QA_OPENRC_ARGS} 2>&1) || \
+	output=$("${QA_OPENRC_CMD}" "${D}" "${@}" ${QA_OPENRC_ARGS} 2>&1) || \
 		eerror "qa-openrc: running '${QA_OPENRC_CMD}' failed (disable with QA_OPENRC=n)"
 
 	[[ ${output} ]] && ${QA_OPENRC_LOG} "${output}"
