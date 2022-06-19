@@ -88,8 +88,7 @@ esanitize() {
 getoptw() {
 	if (( ${#} )); then
 		local getopt
-		: "@getopt@"
-		: "${getopt:=getopt}"
+		: @getopt@ "${getopt:=getopt}"
 		depend "${getopt}"
 
 		local invalid=false
