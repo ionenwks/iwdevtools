@@ -9,18 +9,23 @@ usage <<-EOU
 
 	Reports common mistakes in OpenRC services found in an installation image
 	(i.e. \${PORTAGE_TMPDIR}/[...]/image/) or the currently installed system
-	copy.
+	copy for the given atom.
 
 	Options:
-	      -p, --no-perms    Disable file permissions QA check
-	      -s, --no-ssd-args Disable start_stop_daemon_args linter
+	  -p, --no-perms     Disable file permissions QA check
+	  -s, --no-ssd-args  Disable start_stop_daemon_args linter
 
-	      --confdir=PATH    Configuration dir to use instead of defaults
-	                        (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
-	      --dumpconfig      Display config and exit (> ${0##*/}.conf)
+	      --confdir=PATH Configuration dir to use instead of defaults
+	                     (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig   Display config and exit (> ${0##*/}.conf)
 
-	  -h, --help            Display usage information and exit
-	      --version         Display version information and exit
+	  -h, --help         Display usage information and exit
+	      --version      Display version information and exit
+
+	*Notes*
+	This is currently basic with few checks, will be extended as needed and
+	is a subject to breaking changes. Note that portage already checks for
+	bashisms if have dev-util/checkbashisms.
 
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
@@ -31,10 +36,10 @@ usage <<-EOU
 	 >  }
 
 	bashrc environment options (export/make.conf/package.env):
-	  QA_OPENRC=y | =n        Enable or disable, can also use IWDT_ALL=y | =n
-	  QA_OPENRC_CMD=${0##*/} This script, needs to be changed if not in PATH
-	  QA_OPENRC_ARGS=         Extra arguments to pass, see options above
-	  QA_OPENRC_LOG=eqawarn   Portage output command, can also use IWDT_LOG=ewarn
+	  QA_OPENRC=y | =n         Enable or disable, can also use IWDT_ALL=y | =n
+	  QA_OPENRC_CMD=${0##*/}  This script, needs to be changed if not in PATH
+	  QA_OPENRC_ARGS=          Extra arguments to pass, see options above
+	  QA_OPENRC_LOG=eqawarn    Portage output command, can also use IWDT_LOG=ewarn
 	Note: eqawarn post-emerge log needs "qa" in make.conf's PORTAGE_ELOG_CLASSES
 EOU
 optauto args "${@}" <<-EOO
