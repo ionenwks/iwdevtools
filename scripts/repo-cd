@@ -305,6 +305,10 @@ rcd-set_atom_and_si() {
 	local cat ebuild
 	local -i i=0
 
+	# TODO: need a proper way to distinguish top level so
+	# don't pickup skel.ebuild or other stuff
+	[[ -d metadata ]] && return 0
+
 	cat=${PWD%/*}
 	cat=${cat##*/}
 
