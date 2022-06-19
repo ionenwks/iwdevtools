@@ -96,7 +96,7 @@ openrc-get_services() {
 openrc-check_permissions() {
 	local permissions
 	local expected_value=-rwxr-xr-x
-	permissions=$(stat -c%A "${1}") || die "stat failed"
+	permissions=$(stat -Lc%A "${1}") || die "stat failed"
 	if [[ ${permissions} != "${expected_value}" ]]; then
 		msg "OPENRC: incorrect permissions for service '${1##*/}'"
 		msg "    have: ${permissions}"
