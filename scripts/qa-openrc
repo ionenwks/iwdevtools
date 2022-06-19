@@ -113,30 +113,26 @@ openrc-check_permissions() {
 }
 
 # openrc-check_ssd_args <file>
-#	Finds flags in start_stop_daemon_args that can be replaced with declatative
+#	Finds flags in start_stop_daemon_args that can be replaced with declarative
 #	config variables.
 openrc-check_ssd_args() {
 	local command_user svc=${1##*/}
 
 	local -A si
 	shellimport si "${1}" RC_SVCNAME="${svc}" || die "failed to import '${1}'"
-	local -a ssd_args=( ${si[start_stop_daemon_args]:-} ) #!SC2206
+	set -- ${si[start_stop_daemon_args]:-} #!SC2086
 
-	local flag val
-	local -i i start next end
-	for i in "${!ssd_args[@]}"; do
-		flag=${ssd_args[i]}
+	while (( ${#} )); do
+		flag=${1}
+		shift
+
+		# roughly consider anything until next option as the argument
 		val=
-
-		# scan ssd_args until the next flag is found
-		(( start = i + 1 ))
-		end=0
-		next=${start}
-		while [[ ${ssd_args[next]:-} != -* ]] && (( end < ${#ssd_args[@]} )); do
-			end+=1; next+=1
-			val=${ssd_args[*]:start:end}
+		while (( ${#} )); do
+			[[ ${1} != -* ]] || break
+			val+=${val:+ }${1//[\"\'\\]/}
+			shift
 		done
-		val=${val//[\"\'\\]/}
 
 		# order as in start-stop-daemon(8)
 		case ${flag} in
