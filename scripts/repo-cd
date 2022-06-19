@@ -1,0 +1,385 @@
+#!/usr/bin/env bash
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend find q sort xmllint
+include atomf shellparse
+usage <<-EOU
+	Usage: ${0##*/} [atom]
+
+	Print directory location (or change directory with *Shell Integration*
+	below) corresponding to atom (can be partial) either using
+	/etc/portage/repos.conf or a repo list given using the -P/--path option.
+
+	If no atom, will print top level location of a repository or ask if
+	there is multiple choices.
+
+	Additional tasks can be optionally performed on success, \`${0##*/} .\`
+	can be used to repeat, and \`${0##*/} ..\` returns to previous match.
+	(TODO)
+
+	Options:
+	  -P, --path=PATH:... Specify list of repos to search ordered by priority,
+	                      special keyword "default" adds all from repos.conf
+	                      (e.g. --path="~/gentoo:/tmp/overlay:default")
+
+	  -1, --first         Disable interactive prompts and always pick first choice
+
+	      --bash=alias    Print integration code, see *Shell Integration* below
+
+	  -c, --no-color      Disable use of colors
+
+	      --confdir=PATH  Configuration dir to use instead of defaults
+	                      (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig    Display config and exit (> ${0##*/}.conf)
+
+	  -h, --help          Display usage information and exit
+	      --version       Display version information and exit
+
+	*Known Limitations*
+	Will not print HOMEPAGE if set by an eclass unless its md5-cache exists,
+	and cpe-type remote-ids are currently ignored.
+
+	*Shell Integration*
+	To be able to change the directory of an interactive shell, a higher level
+	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
+
+	For bash, --bash[=alias] can be used to simplify, e.g. to be able to
+	use \`rcd <atom>\`, can add to ~/.bashrc (and/or run in current shell):
+
+	 > eval "\$(command ${0##*/} --bash=rcd --path=/custom/for/this/alias)"
+EOU
+
+setmsg 2 # stdout only used to show cd path or shell integration
+
+optauto args "${@}" <<-EOO
+	P|path=str:default
+	1|first=bool:false
+	bash=str:
+	c|!color=bool:true
+EOO
+
+# rcd-shell_integration <args>
+#	Print shell integration code using <args> after stripping
+#	integration options.
+# TODO: more shells, possibly some degree of completion support
+rcd-shell_integration() {
+	local -a args=()
+	while (( ${#} )); do
+		case ${1} in
+			--bash) shift 2; continue;;
+			--bash=*) shift; continue;;
+		esac
+		args+=("${1}")
+		shift
+	done
+
+	#!SC2016
+	printf \
+'%s() {
+	local d
+	d=$(command %q%s "${@}") &&
+		[[ -n ${d} ]] && cd "${d}"
+}\n' "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}"
+
+}
+if [[ ${O[bash]} ]]; then
+	rcd-shell_integration "${@}"
+	exit
+fi
+
+set -- "${args[@]}"; unset args
+(( ${#} <= 1 )) || die "too many atoms given, see \`${0##*/} --help\`"
+
+# rcd-ask <variable> <choice>...
+#	Ask to pick from <choices> and store result in <variable>.
+#	If only one choice, do nothing beside set <variable> to it.
+rcd-ask() {
+	local -n outref=${1}
+	shift
+
+	if ${O[first]} || (( ${#} == 1 )); then
+		outref=${1}
+		return 0
+	fi
+
+	local default=" ${C[a]}(default)${C[n]}"
+	local usedefault=${default}
+
+	local -i i
+	for ((i=1; i<=${#}; i++)); do
+		rcd-msg '?m' "${C[y]}${i}${C[a]}:${C[c]}${!i}${C[n]}${usedefault}"
+		usedefault=
+	done
+
+	rcd-msg -n '?y' "Choice? "
+
+	local REPLY
+	read -ren ${##}
+	printf -v i %u "${REPLY}" 2>/dev/null
+
+	if (( i <= 1 || i > ${#} )); then
+		i=1 # use default if non-integer / invalid reply
+		usedefault=${default}
+	fi
+
+	rcd-msg '>g' "${C[y]}${i}${C[a]}:${C[c]}${!i}${usedefault}"
+	outref=${!i} #!SC2034
+}
+
+# rcd-cd [atom]
+#	Print directory for atom (or repo if missing) and change directory.
+#	Exit with value 104 if failed to find a directory to use.
+rcd-cd() {
+	local cd
+	if (( ${#} )); then
+		# not much of an atom, but atomsp can sanitize most would throw at it
+		local atom
+		atomsp atom "${1}" && [[ ${atom[3]} ]] || die "invalid search '${1}'"
+
+		local cat=${atom[2]:-}
+		local name=${atom[3]} # can be a category-only search
+		local depth=1
+		local omit=( -name '.*' )
+
+		# TODO: exclusion options, virtual/ by default, probably haskell too
+
+		if [[ ! ${cat} ]]; then
+			# no category, need to go deeper
+			depth=2
+			omit+=(
+				# omit a few known non-category directories (ideally would
+				# load category files, but REPOPATH lacks the full picture)
+				-o -path '{}/metadata'
+				-o -path '{}/licenses'
+				-o -path '{}/scripts'
+				-o -path '{}/eclass'
+				-o -path '{}/profiles'
+			)
+		fi
+
+		# want search to work on independent non-repos.conf, and not take too
+		# long, so use raw find(1) and sort per repo to be predictable
+		local path
+		local -a choice=()
+		for path in "${REPOPATH[@]}"; do
+			path+=${cat:+/}${cat}
+			[[ -d ${path} ]] || continue
+
+			find "${path}" -maxdepth "${depth}" \
+				\( "${omit[@]/'{}'/${path}}" \) -prune \
+				-o -type d -iname "${name}" -print0 | sort -z
+		done | mapfile -d '' -t choice
+
+		if (( ! ${#choice[@]} )); then
+			rcd-msg '!r' "no match for '${C[m]}${1}${C[n]}' in any of:" \
+				"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
+			exit 104
+		fi
+
+		rcd-ask cd "${choice[@]}"
+	else
+		# if no atom, just cd to repo's top level
+		rcd-ask cd "${REPOPATH[@]}"
+	fi
+
+	cd "${cd}" || die "failed to cd '${cd}'"
+	echo "${cd}" # for the interactive shell to use
+}
+
+# rcd-msg [-n] <char><prefix-color-id>[message-color-id] <message>...
+#	Print message with <char> prefix, e.g. msg '!r' "prefixed by red !".
+#	Multiple arguments will result in multiple lines with same prefix.
+#	Skip trailing newline if -n.
+#	More complex coloring can be used in the message itself.
+# TODO: redo the whole color-id thing.. doesn't allow nn color codes
+rcd-msg() {
+	local trail=1
+	if [[ ${1} == -n ]]; then
+		trail=
+		shift
+	fi
+	local mcolor=${1:2:1}
+	printf " ${C[${1:1:1}]}${1::1} ${C[${mcolor:-n}]}%s${C[n]}${trail:+\n}" "${@:2}" >&2
+}
+
+# rcd-print_package_data
+#	Print basic info package in ${PWD}, and aggregates HOMEPAGEs and
+#	remote-ids to print all while trying to avoid duplicates.
+# TODO: add at least DESCRIPTION
+rcd-print_package_data() {
+	local -a indexsort=()
+	local -A index
+
+	# build index with simplified names (no protocol, trailing /, nor index.*)
+	# to detect most duplicates, latest name will be used unless it's remote-id
+	local cache ebuild homepage pvr
+	local -i i
+	for ((i=0; i<${#ATOM[@]}; i++)); do
+		local -n atom=${ATOM[i]}
+		local -n si=${SI[i]}
+		pvr=${atom[4]}${atom[5]:+-r${atom[5]}}
+
+		# check both md5-cache and ebuild to manage eclass
+		# HOMEPAGE and being up to date
+		cache=../../metadata/md5-cache/${atom[2]}/${atom[3]}-${pvr}
+		if [[ -d ../../metadata/md5-cache && -f ${cache} ]]; then
+			while IFS= read -r homepage; do
+				if [[ ${homepage} == HOMEPAGE=* ]]; then
+					for homepage in ${homepage#HOMEPAGE=}; do
+						_rcd_print_homepages_add
+					done
+				fi
+			done < "${cache}" || die "failed to read '${cache}'"
+		fi
+		cache=
+
+		for homepage in ${si[HOMEPAGE]:-}; do
+			_rcd_print_homepages_add
+		done
+		pvr=
+	done
+
+	if [[ -f metadata.xml ]]; then
+		local -a remote
+		if xmllint --nonet --xpath "//pkgmetadata/upstream/remote-id/@type | //pkgmetadata/upstream/remote-id/text()" \
+			metadata.xml 2>/dev/null | map remote; then
+			for ((i=1; i<${#remote[@]}; i+=2)); do
+				# based on https://gitweb.gentoo.org/sites/soko.git/tree/pkg/app/handler/packages/utils.go
+				case ${remote[i-1]} in
+					*cpe*) continue;; # unhandled
+					*bitbucket*) homepage="https://bitbucket.org/${remote[i]}/";;
+					*cpan-module*) homepage="https://metacpan.org/pod/${remote[i]}";;
+					*cpan*) homepage="https://metacpan.org/dist/${remote[i]}";;
+					*cran*) homepage="https://cran.r-project.org/web/packages/${remote[i]}/";;
+					*ctan*) homepage="https://ctan.org/pkg/${remote[i]}/";;
+					*gentoo*) homepage="https://gitweb.gentoo.org/${remote[i]}.git/";;
+					*github*) homepage="https://github.com/${remote[i]}/";;
+					*gitlab*) homepage="https://gitlab.com/${remote[i]}/";;
+					*gitorious*) homepage="https://gitorious.org/${remote[i]}/";;
+					*google-code*) homepage="https://code.google.com/archive/p/${remote[i]}/";;
+					*heptapod*) homepage="https://foss.heptapod.net/${remote[i]}/";;
+					*launchpad*) homepage="https://launchpad.net/${remote[i]}/";;
+					*osdn*) homepage="https://osdn.net/projects/${remote[i]}/";;
+					*pear*) homepage="https://pear.php.net/package/${remote[i]}/";;
+					*pecl*) homepage="https://pecl.php.net/package/${remote[i]}/";;
+					*pypi*) homepage="https://pypi.org/project/${remote[i]}/";;
+					*rubygems*) homepage="https://rubygems.org/gems/${remote[i]}/";;
+					*sourceforge*) homepage="https://sourceforge.net/projects/${remote[i]}/";;
+					*vim*) homepage="https://www.vim.org/scripts/script.php?script_id=${remote[i]}";;
+					*)
+						rcd-msg '!ra' "metadata.xml: unknown remote-id ${remote[i-1]}"
+						continue
+					;;
+				esac
+				_rcd_print_homepages_add
+			done
+		else
+			# 10 just means no upstream metadata, but is noisy wrt 2>/dev/null
+			(( ${?} == 10 )) \
+				|| rcd-msg '!ra' "metadata.xml: issues while reading, remote-ids skipped if any"
+		fi
+	fi
+
+	# debug
+	for homepage in "${indexsort[@]}"; do
+		rcd-msg Hg "${index[${homepage}]}"
+	done
+}
+_rcd_print_homepages_add() {
+	local trim=${homepage#*://}
+	trim=${trim%index.*}
+	trim=${trim%/}
+
+	# remember sort order given bash doesn't with hashes
+	[[ ${index[${trim}]:-} ]] || indexsort+=("${trim}")
+
+	# always keep an extra space in case of colors messing with terminal clicks
+	index[${trim}]="${C[lb]}${homepage} ${pvr:+${C[a]}(${pvr}${cache:+, cached})${C[n]}}"
+}
+
+# rcd-set_atom_and_si
+#	Fill ATOM and SI arrays for all valid ebuilds in current directory
+#	(if any). Each element has a atomsp() and shellimport() reference.
+declare -a ATOM=() SI=()
+rcd-set_atom_and_si() {
+	local cat ebuild
+	local -i i=0
+
+	cat=${PWD%/*}
+	cat=${cat##*/}
+
+	set +f
+	for ebuild in *.ebuild; do
+		local -n atom=RCD_ATOM_${i}
+		local -n si=RCD_SI_${i}
+		if atomsp "${!atom}" "=${cat}/${ebuild}" &&
+			[[ ${atom[2]:-} && ${atom[3]:-} && ${atom[4]:-} ]]; then
+			if shellimport "${!si}" "${ebuild}"; then
+				ATOM+=("${!atom}")
+				SI+=("${!si}")
+				i+=1
+			else
+				rcd-msg '!ra' "=${cat}/${ebuild%.ebuild}: ignored (shellimport failed)"
+			fi
+		else
+			rcd-msg '!ra' "=${cat}/${ebuild%.ebuild}: ignored (invalid atom)"
+		fi
+	done
+	set -f
+}
+
+# rcd-set_repopath
+#	Set REPOPATH array based on O[path] string.
+#	Skip and warn for invalid paths, or die if none left.
+declare -a REPOPATH=()
+rcd-set_repopath() {
+	local -a paths
+	split paths "${O[path]}" ':'
+
+	local path
+	for path in "${paths[@]}"; do
+		[[ ${path} ]] || continue
+
+		if [[ ${path} == default ]]; then
+			# use q to avoid portageq's slow startup
+			q -Cqo | while IFS= read -r path; do
+				# gentoo: /var/db/repos/gentoo (main)
+				path=${path% (*)}
+				path=${path#*: }
+
+				if [[ -d ${path} ]]; then
+					REPOPATH+=("${path}")
+				else
+					rcd-msg '!ra' "${path}: ignored path from repos.conf (not a directory)"
+				fi
+			done || die "failed to read repos.conf with q -Cqo"
+		else
+			# allow tilde expansion for convenience
+			[[ ${path} =~ ^(~[^/]*)(.*) ]] &&
+				path=$(eval "echo ${BASH_REMATCH[1]}")${BASH_REMATCH[2]}
+
+			if [[ -d ${path} ]]; then
+				REPOPATH+=("${path}")
+			else
+				rcd-msg '!ra' "${path}: ignored path (not a directory)"
+			fi
+		fi
+	done
+
+	(( ${#REPOPATH[@]} )) || die "no valid repo paths found, see \`${0##*/} --help\`"
+}
+
+rcd-set_repopath
+rcd-cd "${@}"
+rcd-set_atom_and_si
+if (( ${#ATOM[@]} )); then
+	rcd-print_package_data
+
+	# TODO: self-note taking system that reminds when cd to work on stuff
+
+	# TODO: just a test command, plans are to allow to run any commands #!SC2012
+	ls -1v --color=always | map array
+	rcd-msg '_g' "${array[@]}"
+fi
+
+# vim: ts=4

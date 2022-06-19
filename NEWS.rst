@@ -7,6 +7,9 @@ iwdevtools-next
 
 Changes
 -------
+- repo-cd(wip): new tool to jump to the directory of a package's atom then
+  display information such as remote-ids, notes, or custom commands' output
+
 - qa-cmp: replacing versions in lists by ``*`` is now more restrictive to
   avoid (some) cases like PV=1 doing ``python3.10 -> python3.*0`` when mostly
   want ``doc/name-1 -> doc/name-*`` (i.e. not show same docs as new files)

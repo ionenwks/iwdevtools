@@ -199,6 +199,40 @@ Primarily intended for verification of a stripped embedded system::
 Run ``find-unresolved --help`` or see **find-unresolved(1)** man page
 for details.
 
+repo-cd
+-------
+Dependencies: portage-utils (q), xmllint (libxml2)
+
+Can be used to jump to the repo directory (cd) of the specified atom,
+with a few added perks.
+
+Here I have my worktree at ``~/gentoo`` that I want to use with a ``rcd``
+alias rather than with the ``:default`` system ``/var/db/repos/gentoo``::
+
+	~$ eval "$(repo-cd --bash=rcd --path=~/gentoo:/other)" # for .bashrc
+	~$ rcd speed-dreams
+	 H http://www.speed-dreams.org/ (2.2.3)
+	 H https://sourceforge.net/projects/speed-dreams/
+	 _ Manifest
+	 _ files
+	 _ metadata.xml
+	 _ speed-dreams-2.2.3.ebuild
+
+	~/gentoo/games-sports/speed-dreams$ rcd zstd
+	 ? 1:~/gentoo/app-arch/zstd (default)
+	 ? 2:~/gentoo/dev-python/zstd
+	 ? Choice? 2
+	 H https://github.com/sergey-dryabzhinsky/python-zstd/
+	 H https://pypi.org/project/zstd/
+	 _ Manifest
+	 _ metadata.xml
+	 _ zstd-1.5.2.5.ebuild
+	~/gentoo/dev-python/zstd$ _
+
+	# TODO: output is WIP and more features planned
+
+Run ``repo-cd --help`` or see **repo-cd(1)** man page for details.
+
 Bashlibs
 ========
 

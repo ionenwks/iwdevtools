@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+PATH=${SCRIPT%/*}:${PATH}
+func=${SCRIPT##*/}
+
+eval "$(command "${func}" --bash="${func}" --path="${PWD}/dest")"
+
+declare -f "${func}"
+
+mkdir dest
+"${func}" -c1
+[[ ${PWD} == */dest ]] || fail "${PWD} is not in */dest"

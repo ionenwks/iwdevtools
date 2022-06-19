@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set_portroot
+
+mkdir -p extra home/homey
+cat >> "${ROOT}"/etc/portage/repos.conf <<-EOF
+	[missing]
+	location = ${PWD}/missing
+
+	[extra]
+	location = ${PWD}/extra
+EOF
+
+export HOME=${PWD}/home
+expect -2 "*invalid: ignored*missing: ignored*" -c1P "~/homey:~/invalid:default"
+expect -2 -! -e "(homey|gentoo|extra): ignored" -c1P "~/homey:~/invalid:default"
+expect -2 -! -e "(homey|gentoo|extra|missing): ignored" -c1P "~/homey:~/invalid"

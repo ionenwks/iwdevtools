@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+REPOPATH=${PWD}/high:${PWD}/low
+mkdir -p high/{metadata,.git}/test
+mkdir -p low/dev-test/test
+
+expect '*/dev-test/test' -c1P "${REPOPATH}" dev-test/test
+expect '*/dev-test' -c1P "${REPOPATH}" dev-test
+expect '*/dev-test/test' -c1P "${REPOPATH}" test
+xfail 104 expect "''" -c1P "${REPOPATH}" metadata
+xfail 1 expect -2 "*Error: invalid search*" -c1P "${REPOPATH}" .git

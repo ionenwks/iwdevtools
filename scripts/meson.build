@@ -6,6 +6,7 @@ scripts = {
 	'qa-openrc' : 'find mistakes in installed OpenRC services',
 	'qa-sed' : 'sed wrapper to detect if a call did no change',
 	'qa-vdb' : 'use portage VDB information to detect RDEPEND issues among others',
+	'repo-cd' : 'change directory based on atom then perform actions',
 	'scrub-patch' : 'strip patches of useless cruft and suggest improvements'
 }
 

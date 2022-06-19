@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+REPOPATH=${PWD}/dest:${PWD}/alt
+mkdir dest alt
+
+expect "*/dest" -c1P "${REPOPATH}"
+echo junk | expect "*/dest" -cP "${REPOPATH}"
+echo 2 | expect "*/alt" -cP "${REPOPATH}"
+echo 3 | expect "*/dest" -cP "${REPOPATH}"
