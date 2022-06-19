@@ -13,7 +13,7 @@ command="example"
 start_stop_daemon_args="--wait 1000"
 EOF
 
-# test with different shebang
+# test with non-openrc shebang
 cat <<EOF > example3
 #!/bin/sh
 command="example"
@@ -22,28 +22,28 @@ EOF
 
 # test with common snippet for backgrounding a service
 cat <<EOF > example4
-#!/sbin/openrc-run
+#!/usr/bin/openrc-run
 command="example"
 start_stop_daemon_args="-b -m --pidfile /run/\${RC_SVCNAME}.pid"
 EOF
 
 # test with common snippet for setting user/group
 cat <<EOF > example5
-#!/sbin/openrc-run
+#!/usr/bin/env openrc-run
 command="example"
 start_stop_daemon_args="-u nobody -g nobody"
 EOF
 
 # ... same but in reverse order
 cat <<EOF > example6
-#!/sbin/openrc-run
+#!/usr/bin/env - -S -i NAME=VALUE openrc-run --test
 command="example"
 start_stop_daemon_args="--group nobody --user nobody"
 EOF
 
 # test with useless --exec
 cat <<EOF > example7
-#!/sbin/openrc-run
+#!/usr/bin/env /sbin/openrc-run
 command="example"
 start_stop_daemon_args="--exec example"
 EOF
