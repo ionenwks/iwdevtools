@@ -52,7 +52,7 @@ shellimport() {
 
 			POSIXLY_CORRECT=1 unset -f compgen declare unset &&
 				unset -n _shellparse_import{,array,ref,output} &&
-				unset -v _shellparse_import{,array,ref,output} && {
+				unset -v _shellparse_import{,array,ref,output} POSIXLY_CORRECT && {
 					declare -A _shellparse_importarray=()
 
 					for _shellparse_import in \$(compgen -A function); do
