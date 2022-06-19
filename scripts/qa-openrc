@@ -5,15 +5,18 @@ depend grep portageq qlist sort stat
 esanitize
 include shellparse
 usage <<-EOU
-	Usage: ${0##*/} <image|atom>
+	Usage: ${0##*/} [-O <service-script>...] [<atom|image>]
 
-	Reports common mistakes in OpenRC services found in an installation image
-	(i.e. \${PORTAGE_TMPDIR}/[...]/image/) or the currently installed system
-	copy for the given atom.
+	Reports common mistakes in OpenRC service scripts. If scripts are not
+	given with the -O option, will look for scripts in the given installation
+	image (i.e. \${PORTAGE_TMPDIR}/[...]/image/), or the currently installed
+	system copy matching the given atom.
 
 	Options:
 	  -p, --no-perms     Disable file permissions QA check
 	  -s, --no-ssd-args  Disable start_stop_daemon_args linter
+
+	  -O, --openrc       Run checks on given scripts rather than the atom/image
 
 	      --confdir=PATH Configuration dir to use instead of defaults
 	                     (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
@@ -45,10 +48,15 @@ EOU
 optauto args "${@}" <<-EOO
 	p|!perms=bool:true
 	s|!ssd-args=bool:true
+	O|openrc=bool:false
 EOO
 set -- "${args[@]}"; unset args
 
-(( ${#} == 1 )) || die "need exactly one atom/image specified, see \`${0##*/} --help\`"
+if ${O[openrc]}; then
+	(( ${#} >= 1 )) || die "no scripts specified, see \`${0##*/} --help\`"
+else
+	(( ${#} == 1 )) || die "need exactly one atom/image specified, see \`${0##*/} --help\`"
+fi
 
 # openrc-get_services <array> <image|atom>
 #	Set <array> to list of OpenRC service files from <image|atom>.
@@ -73,28 +81,12 @@ openrc-get_services() {
 		servicefiles=("${servicefiles[@]/#/${ROOT}}")
 	fi
 
-	local servicefile shebang shebangelem
+	local servicefile
 	outref=()
 	for servicefile in "${servicefiles[@]}"; do
-		[[ -f ${servicefile} && ! -h ${servicefile} ]] || continue
-
-		IFS=' ' read -ra shebang < "${servicefile}" || die "failed reading '${servicefile}'"
-		[[ ${shebang[0]:-} == '#!'* ]] || continue
-
-		if [[ ${shebang[0]} == */openrc-run ]]; then
+		[[ -f ${servicefile} && ! -h ${servicefile} ]] &&
+			openrc-is_service "${servicefile}" &&
 			outref+=("${servicefile}")
-		elif [[ ${shebang[0]} == */env ]]; then
-			for shebangelem in "${shebang[@]:1}"; do
-				case ${shebangelem} in
-					# first non-option nor name=value should be the command
-					-*|*=*) continue;;
-					openrc-run|*/openrc-run)
-						outref+=("${servicefile}")
-					;;
-				esac
-				break
-			done
-		fi
 	done
 }
 
@@ -180,6 +172,29 @@ openrc-export_qvdb() {
 	export Q_VDB=${Q_VDB#"${ROOT}"}
 }
 
+# openrc-is_service <file>
+#	Return true if <file> has an openrc-run shebang.
+openrc-is_service() {
+	local -a shebang
+	IFS=' ' read -ra shebang < "${1}" || die "failed reading '${servicefile}'"
+	[[ ${shebang[0]:-} == '#!'* ]] || return 1
+
+	if [[ ${shebang[0]} == */openrc-run ]]; then
+		return 0
+	elif [[ ${shebang[0]} == */env ]]; then
+		local shebangelem
+		for shebangelem in "${shebang[@]:1}"; do
+			case ${shebangelem} in
+				# first non-option nor name=value should be the command
+				-*|*=*) continue;;
+				openrc-run|*/openrc-run) return 0;;
+			esac
+			break
+		done
+	fi
+	return 1
+}
+
 # openrc-ssd_msg <service> <flag> <replacement>
 #	Print a message, adding header if necessary.
 openrc-ssd_msg() {
@@ -204,18 +219,29 @@ openrc-ssd_msg() {
 
 # init globals
 SSD_HEADER_PRINTED=
-declare -a INSTALLED_SERVICES
+declare -a SERVICES=()
 
-openrc-get_services INSTALLED_SERVICES "${1}"
+if ${O[openrc]}; then
+	while (( ${#} )); do
+		if openrc-is_service "${1}"; then
+			SERVICES+=("${1}")
+		else
+			msg "${1}: skipped, does not appear to be an OpenRC service" >&2
+		fi
+		shift
+	done
+else
+	openrc-get_services SERVICES "${1}"
+fi
 
 if ${O[perms]}; then
-	for service in "${INSTALLED_SERVICES[@]}"; do
+	for service in "${SERVICES[@]}"; do
 		openrc-check_permissions "${service}"
 	done
 fi
 
 if ${O[ssd-args]}; then
-	for service in "${INSTALLED_SERVICES[@]}"; do
+	for service in "${SERVICES[@]}"; do
 		openrc-check_ssd_args "${service}"
 	done
 fi
