@@ -18,7 +18,7 @@ init() {
 			167) (( BASH_SUBSHELL )) && exit 167 || exit 1;;
 		esac' ERR
 
-	: "@eprefix@"
+	: @eprefix@ "${EPREFIX=}"
 	: "${ROOT=}"; ROOT=${ROOT%/}
 	: "${EROOT=${ROOT}${EPREFIX:-}}"; EROOT=${EROOT%/}
 	export ROOT EROOT EPREFIX
