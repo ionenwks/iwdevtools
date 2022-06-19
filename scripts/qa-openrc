@@ -176,7 +176,7 @@ openrc-export_qvdb() {
 #	Return true if <file> has an openrc-run shebang.
 openrc-is_service() {
 	local -a shebang
-	IFS=' ' read -ra shebang < "${1}" || die "failed reading '${servicefile}'"
+	IFS=' ' read -ra shebang < "${1}" || die "failed reading '${1}'"
 	[[ ${shebang[0]:-} == '#!'* ]] || return 1
 
 	if [[ ${shebang[0]} == */openrc-run ]]; then
