@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set_portroot
 
 # test correct script
 cat <<EOF > example1
@@ -63,8 +62,6 @@ command="example"
 start_stop_daemon_args="-1 \${EXAMPLE_LOGFILE:-/var/log/\${RC_SVCNAME}.log}"
 EOF
 
-ebuild "$(get_ebuild test 1.5 initd:example{1..9})" merge
-
 expect -s "'OPENRC: unnecessary usage of start_stop_daemon_args found:
 example4: -b should be replaced with command_background=yes
 example4: -m should be replaced with command_background=yes
@@ -74,4 +71,4 @@ example5: -g should be replaced with command_user=\"nobody:nobody\"
 example6: --group should be replaced with command_user=\"<user>:nobody\"
 example6: --user should be replaced with command_user=\"nobody\"
 example7: --exec should be deleted as it is included by default when command=\"\" is declared
-example9: -1 should be replaced with output_log=\"/var/log/example9.log\"'" -p test
+example9: -1 should be replaced with output_log=\"/var/log/example9.log\"'" -pO example{1..9}
