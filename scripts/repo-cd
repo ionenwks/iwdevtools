@@ -288,64 +288,74 @@ rcd-msg() {
 # rcd-print_package_data
 #	Print basic info package in ${PWD}, and aggregates HOMEPAGEs and
 #	remote-ids to print all while trying to avoid duplicates.
-# TODO: add at least DESCRIPTION
 rcd-print_package_data() {
-	local -a indexsort=()
-	local -A index
-
 	# build simplified HOMEPAGE index (no http:, trailing /, nor index.*) to
 	# detect most duplicates, latest name will be used unless it's a remote-id
-	local cache ebuild homepage pvr
+	local -a homesort=()
+	local -A homeindex
+
+	local cache description= data ebuild pvr pvr_display
+
 	local -i i
 	for ((i=0; i<${#ATOM[@]}; i++)); do
 		local -n atom=${ATOM[i]}
 		local -n si=${SI[i]}
 		pvr=${atom[4]}${atom[5]:+-r${atom[5]}}
 
-		# check both md5-cache and ebuild to manage eclass
-		# HOMEPAGE and being up to date
+		# check md5-cache to see eclass-set values (inherit is unhandled),
+		# and then ebuild to be up to date or fallback if cache is missing
 		cache=../../metadata/md5-cache/${atom[2]}/${atom[3]}-${pvr}
 		if [[ -d ../../metadata/md5-cache && -f ${cache} ]]; then
-			while IFS= read -r homepage; do
-				if [[ ${homepage} == HOMEPAGE=* ]]; then
-					for homepage in ${homepage#HOMEPAGE=}; do
-						_rcd_print_package_data_add_homepage
-					done
-				fi
+			pvr_display=" ${C[a]}(${pvr}, cached)${C[n]}"
+			while IFS= read -r data; do
+				case ${data} in
+					DESCRIPTION=*)
+						description=${data#DESCRIPTION=}${pvr_display}
+					;;
+					HOMEPAGE=*)
+						for data in ${data#HOMEPAGE=}; do
+							_rcd_print_package_data_add_homepage
+						done
+					;;
+				esac
 			done < "${cache}" || die "failed to read '${cache}'"
 		fi
-		cache=
 
-		for homepage in ${si[HOMEPAGE]:-}; do
+		pvr_display=" ${C[a]}(${pvr})${C[n]}"
+
+		[[ ${si[DESCRIPTION]:-} ]] && description=${si[DESCRIPTION]}${pvr_display}
+
+		for data in ${si[HOMEPAGE]:-}; do
 			_rcd_print_package_data_add_homepage
 		done
-		pvr=
 	done
 
 	if [[ -f metadata.xml ]]; then
 		local -a metadata
 
+		pvr_display=
 		rcd-get_metadata_remote_urls metadata
-		for homepage in "${metadata[@]}"; do
+		for data in "${metadata[@]}"; do
 			_rcd_print_package_data_add_homepage
 		done
 	fi
 
-	# display homepages
-	for homepage in "${indexsort[@]}"; do
-		rcd-msg Hg "${index[${homepage}]}"
+	# display contents
+	[[ ${description} ]] && rcd-msg Dgy "${description}"
+
+	for data in "${homesort[@]}"; do
+		rcd-msg Hg "${homeindex[${data}]}"
 	done
 }
 _rcd_print_package_data_add_homepage() {
-	local trim=${homepage#*://}
+	local trim=${data#*://}
 	trim=${trim%index.*}
 	trim=${trim%/}
 
 	# remember sort order given bash doesn't with hashes
-	[[ ${index[${trim}]:-} ]] || indexsort+=("${trim}")
+	[[ ${homeindex[${trim}]:-} ]] || homesort+=("${trim}")
 
-	# always keep an extra space in case of colors messing with terminal clicks
-	index[${trim}]="${C[lb]}${homepage} ${pvr:+${C[a]}(${pvr}${cache:+, cached})${C[n]}}"
+	homeindex[${trim}]="${C[lb]}${data}${C[n]}${pvr_display}"
 }
 
 # rcd-set_atom_and_si
