@@ -313,7 +313,15 @@ rcd-set_atom_and_si() {
 	cat=${cat##*/}
 
 	set +f
-	for ebuild in *.ebuild; do
+	local -a ebuilds=( *.ebuild )
+	set -f
+
+	# true PMS-sorting is not essential but still at least sort -V so
+	# e.g. HOMEPAGE outputs have right order
+	# TODO?: atomf.bashlib could have basic compare/sort, see eapi7-ver.eclass
+	printarray ebuilds | sort -V | map ebuilds || die
+
+	for ebuild in "${ebuilds[@]}"; do
 		local -n atom=RCD_ATOM_${i}
 		local -n si=RCD_SI_${i}
 		if atomsp "${!atom}" "=${cat}/${ebuild}" &&
@@ -329,7 +337,6 @@ rcd-set_atom_and_si() {
 			rcd-msg '!ra' "=${cat}/${ebuild%.ebuild}: ignored (invalid atom)"
 		fi
 	done
-	set -f
 }
 
 # rcd-set_repopath
