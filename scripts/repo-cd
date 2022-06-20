@@ -223,16 +223,14 @@ rcd-get_metadata() {
 
 # rcd-get_metadata_remote_urls <array>
 #	Set <array> with remote urls defined by metadata.xml remote-ids.
-#	Issues a warning if rcd-get_metadata failed or unknown remote-ids.
+#	Issues a warning if unknown remote-ids.
+#	Return 1 if rcd-get_metadata failed
 rcd-get_metadata_remote_urls() {
 	local -n outref=${1}
 	outref=()
 
 	local -a remoteids
-	if ! rcd-get_metadata remoteids 'upstream/remote-id[]' type; then
-		rcd-msg '!ra' "metadata.xml: issues while reading, remote-ids skipped if any"
-		return 1
-	fi
+	rcd-get_metadata remoteids 'upstream/remote-id[]' type || return 1
 
 	local entry remoteids
 	outref=()
@@ -289,11 +287,8 @@ rcd-msg() {
 #	Print basic info package in ${PWD}, and aggregates HOMEPAGEs and
 #	remote-ids to print all while trying to avoid duplicates.
 rcd-print_package_data() {
-	# build simplified HOMEPAGE index (no http:, trailing /, nor index.*) to
-	# detect most duplicates, latest name will be used unless it's a remote-id
-	local -a homesort=()
+	local -a homesort=() maintainers=()
 	local -A homeindex
-
 	local cache description= data ebuild pvr pvr_display
 
 	local -i i
@@ -331,14 +326,34 @@ rcd-print_package_data() {
 	done
 
 	if [[ -f metadata.xml ]]; then
-		local -a metadata
+		local -a metamaints metaurls
+		# stop if any reported errors as will likely all fail and be noisy
+		if rcd-get_metadata_remote_urls metaurls &&
+			rcd-get_metadata metamaints 'maintainer[]/email' type proxied; then
+			pvr_display=
+			for data in "${metaurls[@]}"; do
+				_rcd_print_package_data_add_homepage
+			done
 
-		pvr_display=
-		rcd-get_metadata_remote_urls metadata
-		for data in "${metadata[@]}"; do
-			_rcd_print_package_data_add_homepage
-		done
+			for data in "${metamaints[@]}"; do
+				if [[ ${data} =~ ([^ ]*)\ ([^ ]*)\ (.+) ]]; then
+					if [[ ${BASH_REMATCH[2]} == proxy ]]; then
+						data=${C[a]}
+					elif [[ ${BASH_REMATCH[2]} == yes ]]; then
+						data=${C[m]}
+					elif  [[ ${BASH_REMATCH[1]} == project ]]; then
+						data=${C[g]}
+					else
+						data=${C[lm]}
+					fi
+					maintainers+=("${data}${BASH_REMATCH[3]}${C[n]}")
+				fi
+			done
+		else
+			rcd-msg '!ra' "metadata.xml: issues reading, info may be missing"
+		fi
 	fi
+	(( ${#maintainers[@]} )) || maintainers=("${C[a]}maintainer-needed${C[n]}")
 
 	# display contents
 	[[ ${description} ]] && rcd-msg Dgy "${description}"
@@ -346,8 +361,13 @@ rcd-print_package_data() {
 	for data in "${homesort[@]}"; do
 		rcd-msg Hg "${homeindex[${data}]}"
 	done
+
+	rcd-msg Mg "${maintainers[*]}"
 }
 _rcd_print_package_data_add_homepage() {
+	# build simplified HOMEPAGE index (no http:, trailing /, nor index.*) to
+	# detect most duplicates, latest name will be used unless it's a remote-id
+
 	local trim=${data#*://}
 	trim=${trim%index.*}
 	trim=${trim%/}
