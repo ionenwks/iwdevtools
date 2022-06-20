@@ -186,28 +186,38 @@ rcd-cd() {
 	echo "${cd}" # for the interactive shell to use
 }
 
-# rcd-metadata <array> <path> [attribute]
+# rcd-metadata <array> <path[]> [attribute]...
 #	Get metadata.xml (current dir) results using xml <path> then store in
 #	<array>. If [attribute], will be set at start of array with a space,
-#	e.g. upstream/remote-id type results in "github repo/location"
+#	[] indicates the single element to iterate and use [attribute] for.
+#	e.g.
+#	'upstream/remote-id[]' type -> "github repo/location"
+#	'maintainer[]/email' type missing -> "person  larry@gentoo.org"
 #	Return 1 on xmllint errors (malformed, or couldn't read metadata.xml)
 rcd-metadata() {
 	local -n outref=${1}
-
-	local xpath
-	if (( ${#} == 3 )); then
-		xpath="concat(//pkgmetadata/${2}[{}]/@${3},' ',//pkgmetadata/${2}[{}])"
-	else
-		xpath="string(//pkgmetadata/${2}[{}])"
-	fi
+	local path=${2}
+	shift 2
 
 	local -i i max
-	max=$(xmllint --nonet --xpath "count(//pkgmetadata/${2})" metadata.xml) || return 1
+	max=$(xmllint --nonet --xpath \
+		"count(//pkgmetadata/${path%%'[]'*})" metadata.xml) || return 1
+
+	local xpath=
+	if (( ${#} )); then
+		while (( ${#} )); do
+			xpath+="//pkgmetadata/${path/'[]'*/[]/@${1}},' ',"
+			shift
+		done
+		xpath="concat(${xpath}//pkgmetadata/${path})"
+	else
+		xpath="string(//pkgmetadata/${path})"
+	fi
 
 	outref=()
 	for ((i=1; i<=max; i++)); do
 		outref+=("$(xmllint --nonet --xpath \
-			"${xpath//'{}'/${i}}" metadata.xml)") || return 1
+			"${xpath//'[]'/[${i}]}" metadata.xml)") || return 1
 	done
 }
 
@@ -267,7 +277,7 @@ rcd-print_package_data() {
 	if [[ -f metadata.xml ]]; then
 		local entry
 		local -a metadata
-		if rcd-metadata metadata upstream/remote-id type; then
+		if rcd-metadata metadata 'upstream/remote-id[]' type; then
 			local remoteid
 			for entry in "${metadata[@]}"; do
 				remoteid=${entry#* }
