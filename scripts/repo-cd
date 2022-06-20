@@ -186,6 +186,31 @@ rcd-cd() {
 	echo "${cd}" # for the interactive shell to use
 }
 
+# rcd-metadata <array> <path> [attribute]
+#	Get metadata.xml (current dir) results using xml <path> then store in
+#	<array>. If [attribute], will be set at start of array with a space,
+#	e.g. upstream/remote-id type results in "github repo/location"
+#	Return 1 on xmllint errors (malformed, or couldn't read metadata.xml)
+rcd-metadata() {
+	local -n outref=${1}
+
+	local xpath
+	if (( ${#} == 3 )); then
+		xpath="concat(//pkgmetadata/${2}[{}]/@${3},' ',//pkgmetadata/${2}[{}])"
+	else
+		xpath="string(//pkgmetadata/${2}[{}])"
+	fi
+
+	local -i i max
+	max=$(xmllint --nonet --xpath "count(//pkgmetadata/${2})" metadata.xml) || return 1
+
+	outref=()
+	for ((i=1; i<=max; i++)); do
+		outref+=("$(xmllint --nonet --xpath \
+			"${xpath//'{}'/${i}}" metadata.xml)") || return 1
+	done
+}
+
 # rcd-msg [-n] <char><prefix-color-id>[message-color-id] <message>...
 #	Print message with <char> prefix, e.g. msg '!r' "prefixed by red !".
 #	Multiple arguments will result in multiple lines with same prefix.
@@ -240,47 +265,47 @@ rcd-print_package_data() {
 	done
 
 	if [[ -f metadata.xml ]]; then
-		local -a remote
-		if xmllint --nonet --xpath "//pkgmetadata/upstream/remote-id/@type | //pkgmetadata/upstream/remote-id/text()" \
-			metadata.xml 2>/dev/null | map remote; then
-			for ((i=1; i<${#remote[@]}; i+=2)); do
+		local entry
+		local -a metadata
+		if rcd-metadata metadata upstream/remote-id type; then
+			local remoteid
+			for entry in "${metadata[@]}"; do
+				remoteid=${entry#* }
+
 				# based on https://gitweb.gentoo.org/sites/soko.git/tree/pkg/app/handler/packages/utils.go
-				case ${remote[i-1]} in
-					*cpe*) continue;; # unhandled
-					*bitbucket*) homepage="https://bitbucket.org/${remote[i]}/";;
-					*cpan-module*) homepage="https://metacpan.org/pod/${remote[i]}";;
-					*cpan*) homepage="https://metacpan.org/dist/${remote[i]}";;
-					*cran*) homepage="https://cran.r-project.org/web/packages/${remote[i]}/";;
-					*ctan*) homepage="https://ctan.org/pkg/${remote[i]}/";;
-					*gentoo*) homepage="https://gitweb.gentoo.org/${remote[i]}.git/";;
-					*github*) homepage="https://github.com/${remote[i]}/";;
-					*gitlab*) homepage="https://gitlab.com/${remote[i]}/";;
-					*gitorious*) homepage="https://gitorious.org/${remote[i]}/";;
-					*google-code*) homepage="https://code.google.com/archive/p/${remote[i]}/";;
-					*heptapod*) homepage="https://foss.heptapod.net/${remote[i]}/";;
-					*launchpad*) homepage="https://launchpad.net/${remote[i]}/";;
-					*osdn*) homepage="https://osdn.net/projects/${remote[i]}/";;
-					*pear*) homepage="https://pear.php.net/package/${remote[i]}/";;
-					*pecl*) homepage="https://pecl.php.net/package/${remote[i]}/";;
-					*pypi*) homepage="https://pypi.org/project/${remote[i]}/";;
-					*rubygems*) homepage="https://rubygems.org/gems/${remote[i]}/";;
-					*sourceforge*) homepage="https://sourceforge.net/projects/${remote[i]}/";;
-					*vim*) homepage="https://www.vim.org/scripts/script.php?script_id=${remote[i]}";;
+				case ${entry%% *} in
+					cpe) continue;; # unhandled
+					bitbucket) homepage="https://bitbucket.org/${remoteid}/";;
+					cpan-module) homepage="https://metacpan.org/pod/${remoteid}";;
+					cpan) homepage="https://metacpan.org/dist/${remoteid}";;
+					cran) homepage="https://cran.r-project.org/web/packages/${remoteid}/";;
+					ctan) homepage="https://ctan.org/pkg/${remoteid}/";;
+					gentoo) homepage="https://gitweb.gentoo.org/${remoteid}.git/";;
+					github) homepage="https://github.com/${remoteid}/";;
+					gitlab) homepage="https://gitlab.com/${remoteid}/";;
+					gitorious) homepage="https://gitorious.org/${remoteid}/";;
+					google-code) homepage="https://code.google.com/archive/p/${remoteid}/";;
+					heptapod) homepage="https://foss.heptapod.net/${remoteid}/";;
+					launchpad) homepage="https://launchpad.net/${remoteid}/";;
+					osdn) homepage="https://osdn.net/projects/${remoteid}/";;
+					pear) homepage="https://pear.php.net/package/${remoteid}/";;
+					pecl) homepage="https://pecl.php.net/package/${remoteid}/";;
+					pypi) homepage="https://pypi.org/project/${remoteid}/";;
+					rubygems) homepage="https://rubygems.org/gems/${remoteid}/";;
+					sourceforge) homepage="https://sourceforge.net/projects/${remoteid}/";;
+					vim) homepage="https://www.vim.org/scripts/script.php?script_id=${remoteid}";;
 					*)
-						rcd-msg '!ra' "metadata.xml: unknown remote-id ${remote[i-1]}"
+						rcd-msg '!ra' "metadata.xml: unknown remote-id ${entry%% *}"
 						continue
 					;;
 				esac
 				_rcd_print_homepages_add
 			done
 		else
-			# 10 just means no upstream metadata, but is noisy wrt 2>/dev/null
-			(( ${?} == 10 )) \
-				|| rcd-msg '!ra' "metadata.xml: issues while reading, remote-ids skipped if any"
+			rcd-msg '!ra' "metadata.xml: issues while reading, remote-ids skipped if any"
 		fi
 	fi
 
-	# debug
 	for homepage in "${indexsort[@]}"; do
 		rcd-msg Hg "${index[${homepage}]}"
 	done
