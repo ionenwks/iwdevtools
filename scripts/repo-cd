@@ -289,7 +289,7 @@ rcd-msg() {
 rcd-print_package_data() {
 	local -a homesort=() maintainers=()
 	local -A homeindex
-	local cache description= data ebuild pvr pvr_display
+	local cache description= data note ebuild pvr
 
 	local -i i
 	for ((i=0; i<${#ATOM[@]}; i++)); do
@@ -301,11 +301,11 @@ rcd-print_package_data() {
 		# and then ebuild to be up to date or fallback if cache is missing
 		cache=../../metadata/md5-cache/${atom[2]}/${atom[3]}-${pvr}
 		if [[ -d ../../metadata/md5-cache && -f ${cache} ]]; then
-			pvr_display=" ${C[a]}(${pvr}, cached)${C[n]}"
+			note="${pvr}, cached"
 			while IFS= read -r data; do
 				case ${data} in
 					DESCRIPTION=*)
-						description=${data#DESCRIPTION=}${pvr_display}
+						description="${C[ly]}${data#DESCRIPTION=} ${C[a]}(${note})${C[n]}"
 					;;
 					HOMEPAGE=*)
 						for data in ${data#HOMEPAGE=}; do
@@ -316,9 +316,10 @@ rcd-print_package_data() {
 			done < "${cache}" || die "failed to read '${cache}'"
 		fi
 
-		pvr_display=" ${C[a]}(${pvr})${C[n]}"
+		note=${pvr}
 
-		[[ ${si[DESCRIPTION]:-} ]] && description=${si[DESCRIPTION]}${pvr_display}
+		[[ ${si[DESCRIPTION]:-} ]] &&
+			description="${C[ly]}${si[DESCRIPTION]} ${C[a]}(${note})${C[n]}"
 
 		for data in ${si[HOMEPAGE]:-}; do
 			_rcd_print_package_data_add_homepage
@@ -326,12 +327,31 @@ rcd-print_package_data() {
 	done
 
 	if [[ -f metadata.xml ]]; then
-		local -a metamaints metaurls
+		local -a metabugs metachangelog metadocs metamaints metaurls
 		# stop if any reported errors as will likely all fail and be noisy
-		if rcd-get_metadata_remote_urls metaurls &&
-			rcd-get_metadata metamaints 'maintainer[]/email' type proxied; then
-			pvr_display=
+		if rcd-get_metadata metabugs 'upstream/bugs-to[]' &&
+			rcd-get_metadata metachangelog 'upstream/changelog[]' &&
+			rcd-get_metadata metadocs 'upstream/doc[]' &&
+			rcd-get_metadata_remote_urls metaurls &&
+			rcd-get_metadata metamaints 'maintainer[]/email' type proxied
+		then
+			note=
 			for data in "${metaurls[@]}"; do
+				_rcd_print_package_data_add_homepage
+			done
+
+			note=doc
+			for data in "${metadocs[@]}"; do
+				_rcd_print_package_data_add_homepage
+			done
+
+			note=bugs-to
+			for data in "${metabugs[@]}"; do
+				_rcd_print_package_data_add_homepage
+			done
+
+			note=changelog
+			for data in "${metachangelog[@]}"; do
 				_rcd_print_package_data_add_homepage
 			done
 
@@ -375,7 +395,7 @@ _rcd_print_package_data_add_homepage() {
 	# remember sort order given bash doesn't with hashes
 	[[ ${homeindex[${trim}]:-} ]] || homesort+=("${trim}")
 
-	homeindex[${trim}]="${C[lb]}${data}${C[n]}${pvr_display}"
+	homeindex[${trim}]="${C[lb]}${data}${note:+ ${C[a]}(${note})}${C[n]}"
 }
 
 # rcd-set_atom_and_si
