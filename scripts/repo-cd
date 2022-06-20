@@ -186,7 +186,7 @@ rcd-cd() {
 	echo "${cd}" # for the interactive shell to use
 }
 
-# rcd-metadata <array> <path[]> [attribute]...
+# rcd-get_metadata <array> <path[]> [attribute]...
 #	Get metadata.xml (current dir) results using xml <path> then store in
 #	<array>. If [attribute], will be set at start of array with a space,
 #	[] indicates the single element to iterate and use [attribute] for.
@@ -194,7 +194,7 @@ rcd-cd() {
 #	'upstream/remote-id[]' type -> "github repo/location"
 #	'maintainer[]/email' type missing -> "person  larry@gentoo.org"
 #	Return 1 on xmllint errors (malformed, or couldn't read metadata.xml)
-rcd-metadata() {
+rcd-get_metadata() {
 	local -n outref=${1}
 	local path=${2}
 	shift 2
@@ -218,6 +218,54 @@ rcd-metadata() {
 	for ((i=1; i<=max; i++)); do
 		outref+=("$(xmllint --nonet --xpath \
 			"${xpath//'[]'/[${i}]}" metadata.xml)") || return 1
+	done
+}
+
+# rcd-get_metadata_remote_urls <array>
+#	Set <array> with remote urls defined by metadata.xml remote-ids.
+#	Issues a warning if rcd-get_metadata failed or unknown remote-ids.
+rcd-get_metadata_remote_urls() {
+	local -n outref=${1}
+	outref=()
+
+	local -a remoteids
+	if ! rcd-get_metadata remoteids 'upstream/remote-id[]' type; then
+		rcd-msg '!ra' "metadata.xml: issues while reading, remote-ids skipped if any"
+		return 1
+	fi
+
+	local entry remoteids
+	outref=()
+	for entry in "${remoteids[@]}"; do
+		id=${entry#* }
+
+		# based on https://gitweb.gentoo.org/sites/soko.git/tree/pkg/app/handler/packages/utils.go
+		case ${entry%% *} in
+			bitbucket) outref+=("https://bitbucket.org/${id}/");;
+			cpan-module) outref+=("https://metacpan.org/pod/${id}");;
+			cpan) outref+=("https://metacpan.org/dist/${id}");;
+			cpe) continue;; # unhandled
+			cran) outref+=("https://cran.r-project.org/web/packages/${id}/");;
+			ctan) outref+=("https://ctan.org/pkg/${id}/");;
+			gentoo) outref+=("https://gitweb.gentoo.org/${id}.git/");;
+			github) outref+=("https://github.com/${id}/");;
+			gitlab) outref+=("https://gitlab.com/${id}/");;
+			gitorious) outref+=("https://gitorious.org/${id}/");;
+			google-code) outref+=("https://code.google.com/archive/p/${id}/");;
+			heptapod) outref+=("https://foss.heptapod.net/${id}/");;
+			launchpad) outref+=("https://launchpad.net/${id}/");;
+			osdn) outref+=("https://osdn.net/projects/${id}/");;
+			pear) outref+=("https://pear.php.net/package/${id}/");;
+			pecl) outref+=("https://pecl.php.net/package/${id}/");;
+			pypi) outref+=("https://pypi.org/project/${id}/");;
+			rubygems) outref+=("https://rubygems.org/gems/${id}/");;
+			sourceforge) outref+=("https://sourceforge.net/projects/${id}/");;
+			vim) outref+=("https://www.vim.org/scripts/script.php?script_id=${id}");;
+			*)
+				rcd-msg '!ra' "metadata.xml: unknown remote-id ${entry%% *}"
+				continue
+			;;
+		esac
 	done
 }
 
@@ -245,8 +293,8 @@ rcd-print_package_data() {
 	local -a indexsort=()
 	local -A index
 
-	# build index with simplified names (no protocol, trailing /, nor index.*)
-	# to detect most duplicates, latest name will be used unless it's remote-id
+	# build simplified HOMEPAGE index (no http:, trailing /, nor index.*) to
+	# detect most duplicates, latest name will be used unless it's a remote-id
 	local cache ebuild homepage pvr
 	local -i i
 	for ((i=0; i<${#ATOM[@]}; i++)); do
@@ -261,7 +309,7 @@ rcd-print_package_data() {
 			while IFS= read -r homepage; do
 				if [[ ${homepage} == HOMEPAGE=* ]]; then
 					for homepage in ${homepage#HOMEPAGE=}; do
-						_rcd_print_homepages_add
+						_rcd_print_package_data_add_homepage
 					done
 				fi
 			done < "${cache}" || die "failed to read '${cache}'"
@@ -269,58 +317,26 @@ rcd-print_package_data() {
 		cache=
 
 		for homepage in ${si[HOMEPAGE]:-}; do
-			_rcd_print_homepages_add
+			_rcd_print_package_data_add_homepage
 		done
 		pvr=
 	done
 
 	if [[ -f metadata.xml ]]; then
-		local entry
 		local -a metadata
-		if rcd-metadata metadata 'upstream/remote-id[]' type; then
-			local remoteid
-			for entry in "${metadata[@]}"; do
-				remoteid=${entry#* }
 
-				# based on https://gitweb.gentoo.org/sites/soko.git/tree/pkg/app/handler/packages/utils.go
-				case ${entry%% *} in
-					cpe) continue;; # unhandled
-					bitbucket) homepage="https://bitbucket.org/${remoteid}/";;
-					cpan-module) homepage="https://metacpan.org/pod/${remoteid}";;
-					cpan) homepage="https://metacpan.org/dist/${remoteid}";;
-					cran) homepage="https://cran.r-project.org/web/packages/${remoteid}/";;
-					ctan) homepage="https://ctan.org/pkg/${remoteid}/";;
-					gentoo) homepage="https://gitweb.gentoo.org/${remoteid}.git/";;
-					github) homepage="https://github.com/${remoteid}/";;
-					gitlab) homepage="https://gitlab.com/${remoteid}/";;
-					gitorious) homepage="https://gitorious.org/${remoteid}/";;
-					google-code) homepage="https://code.google.com/archive/p/${remoteid}/";;
-					heptapod) homepage="https://foss.heptapod.net/${remoteid}/";;
-					launchpad) homepage="https://launchpad.net/${remoteid}/";;
-					osdn) homepage="https://osdn.net/projects/${remoteid}/";;
-					pear) homepage="https://pear.php.net/package/${remoteid}/";;
-					pecl) homepage="https://pecl.php.net/package/${remoteid}/";;
-					pypi) homepage="https://pypi.org/project/${remoteid}/";;
-					rubygems) homepage="https://rubygems.org/gems/${remoteid}/";;
-					sourceforge) homepage="https://sourceforge.net/projects/${remoteid}/";;
-					vim) homepage="https://www.vim.org/scripts/script.php?script_id=${remoteid}";;
-					*)
-						rcd-msg '!ra' "metadata.xml: unknown remote-id ${entry%% *}"
-						continue
-					;;
-				esac
-				_rcd_print_homepages_add
-			done
-		else
-			rcd-msg '!ra' "metadata.xml: issues while reading, remote-ids skipped if any"
-		fi
+		rcd-get_metadata_remote_urls metadata
+		for homepage in "${metadata[@]}"; do
+			_rcd_print_package_data_add_homepage
+		done
 	fi
 
+	# display homepages
 	for homepage in "${indexsort[@]}"; do
 		rcd-msg Hg "${index[${homepage}]}"
 	done
 }
-_rcd_print_homepages_add() {
+_rcd_print_package_data_add_homepage() {
 	local trim=${homepage#*://}
 	trim=${trim%index.*}
 	trim=${trim%/}
