@@ -137,10 +137,14 @@ rcd-cd() {
 	if (( ${#} )); then
 		local search=${1%/} # trim / in case did tab-complete on a directory
 
-		# not much of an atom, but atomsp can sanitize most would throw at it
+		# most atom elements are unused, but atomsp can sanitize input
 		local atom
 		atomsp atom "${search}" && [[ ${atom[3]} ]] \
 			|| die "invalid search '${search}'"
+
+		# support portage-like ::repo_name if given
+		local userepo=
+		[[ ${search} =~ ::([A-Za-z0-9_-]+)$ ]] && userepo=${BASH_REMATCH[1]}
 
 		local cat=${atom[2]:-}
 		local name=${atom[3]} # can be a category-only search
@@ -168,6 +172,8 @@ rcd-cd() {
 		local path
 		local -a choice=()
 		for path in "${REPOPATH[@]}"; do
+			[[ ! ${userepo} || ${REPONAME[${path}]} == "${userepo}" ]] || continue
+
 			path+=${cat:+/}${cat}
 			[[ -d ${path} ]] || continue
 
@@ -177,8 +183,12 @@ rcd-cd() {
 		done | mapfile -d '' -t choice
 
 		if (( ! ${#choice[@]} )); then
-			rcd-msg '!r' "no match for '${C[m]}${search}${C[n]}' in any of:" \
-				"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
+			if [[ ${userepo} ]]; then
+				rcd-msg '!r' "no match for '${C[m]}${search}${C[n]}' in ::${userepo}"
+			else
+				rcd-msg '!r' "no match for '${C[m]}${search}${C[n]}' in any of:" \
+					"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
+			fi
 			exit 104
 		fi
 
@@ -451,9 +461,11 @@ rcd-set_atom_and_si() {
 
 # rcd-set_repopath
 #	Set REPOPATH array based on O[path] string.
+#	Also sets REPONANE[${path}] for name lookup.
 #	Skip repos with the same name in metadata/layout.conf so that e.g.
 #	path=~/gentoo:default doesn't asks to pick every time.
 #	Skip and warn for invalid paths, dies if none left.
+declare -A REPONAME
 declare -a REPOPATH=()
 rcd-set_repopath() {
 	local -A nameindex
@@ -490,6 +502,7 @@ _rcd-set_repopath_add_if_unique() {
 		if [[ -f ${file} ]]; then
 			name=$(<"${file}") || die "failed to read '${file}'"
 			if [[ ! -v nameindex['${name}'] ]] || ${O[duplicates]}; then
+				REPONAME[${path}]=${name}
 				REPOPATH+=("${PWD}")
 				nameindex[${name}]=
 			fi
