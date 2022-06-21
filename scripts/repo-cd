@@ -211,7 +211,7 @@ rcd-get_metadata() {
 		done
 		xpath="concat(${xpath}normalize-space(//pkgmetadata/${path}))"
 	else
-		xpath="normalize-space(string(//pkgmetadata/${path}))"
+		xpath="normalize-space(//pkgmetadata/${path})"
 	fi
 
 	outref=()
