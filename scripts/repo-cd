@@ -132,9 +132,12 @@ rcd-ask() {
 rcd-cd() {
 	local cd
 	if (( ${#} )); then
+		local search=${1%/} # trim / in case did tab-complete on a directory
+
 		# not much of an atom, but atomsp can sanitize most would throw at it
 		local atom
-		atomsp atom "${1}" && [[ ${atom[3]} ]] || die "invalid search '${1}'"
+		atomsp atom "${search}" && [[ ${atom[3]} ]] \
+			|| die "invalid search '${search}'"
 
 		local cat=${atom[2]:-}
 		local name=${atom[3]} # can be a category-only search
@@ -171,7 +174,7 @@ rcd-cd() {
 		done | mapfile -d '' -t choice
 
 		if (( ! ${#choice[@]} )); then
-			rcd-msg '!r' "no match for '${C[m]}${1}${C[n]}' in any of:" \
+			rcd-msg '!r' "no match for '${C[m]}${search}${C[n]}' in any of:" \
 				"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
 			exit 104
 		fi
