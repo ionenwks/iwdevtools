@@ -396,7 +396,7 @@ _rcd_print_package_data_add_homepage() {
 	trim=${trim%/}
 
 	# remember sort order given bash doesn't with hashes
-	[[ ${homeindex[${trim}]:-} ]] || homesort+=("${trim}")
+	[[ -v homeindex['${trim}'] ]] || homesort+=("${trim}")
 
 	homeindex[${trim}]="${C[lb]}${data}${note:+ ${C[a]}(${note})}${C[n]}"
 }
