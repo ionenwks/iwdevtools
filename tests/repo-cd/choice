@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 REPOPATH=${PWD}/dest:${PWD}/alt
-mkdir dest alt
+mkdir -p {dest,alt}/profiles
+echo dest > dest/profiles/repo_name
+echo alt > alt/profiles/repo_name
 
 expect "*/dest" -c1P "${REPOPATH}"
 echo junk | expect "*/dest" -cP "${REPOPATH}"

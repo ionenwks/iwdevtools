@@ -7,6 +7,8 @@ eval "$(command "${func}" --bash="${func}" --path="${PWD}/dest")"
 
 declare -f "${func}"
 
-mkdir dest
+mkdir -p dest/profiles
+echo dest > dest/profiles/repo_name
+
 "${func}" -c1
 [[ ${PWD} == */dest ]] || fail "${PWD} is not in */dest"

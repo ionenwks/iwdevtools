@@ -21,6 +21,7 @@ usage <<-EOU
 	  -P, --path=PATH:... Specify list of repos to search ordered by priority,
 	                      special keyword "default" adds all from repos.conf
 	                      (e.g. --path="~/gentoo:/tmp/overlay:default")
+	  -D, --duplicates    Allow multiple repos with the same metadata name in path
 
 	  -1, --first         Disable interactive prompts and always pick first choice
 
@@ -53,6 +54,7 @@ setmsg 2 # stdout only used to show cd path or shell integration
 
 optauto args "${@}" <<-EOO
 	P|path=str:default
+	D|duplicates=bool:false
 	1|first=bool:false
 	bash=str:
 	c|!color=bool:true
@@ -229,7 +231,7 @@ rcd-get_metadata() {
 #	Issues a warning if unknown remote-ids.
 #	Return 1 if rcd-get_metadata failed
 rcd-get_metadata_remote_urls() {
-	local -n outref=${1}
+	local -n outref=${1} #!SC2178
 	outref=()
 
 	local -a remoteids
@@ -445,9 +447,12 @@ rcd-set_atom_and_si() {
 
 # rcd-set_repopath
 #	Set REPOPATH array based on O[path] string.
-#	Skip and warn for invalid paths, or die if none left.
+#	Skip repos with the same name in metadata/layout.conf so that e.g.
+#	path=~/gentoo:default doesn't asks to pick every time.
+#	Skip and warn for invalid paths, dies if none left.
 declare -a REPOPATH=()
 rcd-set_repopath() {
+	local -A nameindex
 	local -a paths
 	split paths "${O[path]}" ':'
 
@@ -461,27 +466,34 @@ rcd-set_repopath() {
 				# gentoo: /var/db/repos/gentoo (main)
 				path=${path% (*)}
 				path=${path#*: }
-
-				if [[ -d ${path} ]]; then
-					REPOPATH+=("${path}")
-				else
-					rcd-msg '!ra' "${path}: ignored path from repos.conf (not a directory)"
-				fi
+				_rcd-set_repopath_add_if_unique
+				:
 			done || die "failed to read repos.conf with q -Cqo"
 		else
 			# allow tilde expansion for convenience
 			[[ ${path} =~ ^(~[^/]*)(.*) ]] &&
 				path=$(eval "echo ${BASH_REMATCH[1]}")${BASH_REMATCH[2]}
-
-			if [[ -d ${path} ]]; then
-				REPOPATH+=("${path}")
-			else
-				rcd-msg '!ra' "${path}: ignored path (not a directory)"
-			fi
+			_rcd-set_repopath_add_if_unique
 		fi
 	done
 
 	(( ${#REPOPATH[@]} )) || die "no valid repo paths found, see \`${0##*/} --help\`"
+}
+_rcd-set_repopath_add_if_unique() {
+	if [[ -d ${path} ]]; then
+		local file=${path}/profiles/repo_name
+		if [[ -f ${file} ]]; then
+			name=$(<"${file}") || die "failed to read '${file}'"
+			if [[ ! -v nameindex['${name}'] ]] || ${O[duplicates]}; then
+				REPOPATH+=("${path}")
+				nameindex[${name}]=
+			fi
+		else
+			rcd-msg '!ra' "${path}: ignored path (lacks profiles/repo_name)"
+		fi
+	else
+		rcd-msg '!ra' "${path}: ignored path (not a directory)"
+	fi
 }
 
 rcd-set_repopath

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set_portroot
 
-mkdir -p extra home/homey
+mkdir -p {extra,home/homey}/profiles
+echo extra > extra/profiles/repo_name
+echo homey > home/homey/profiles/repo_name
 cat >> "${ROOT}"/etc/portage/repos.conf <<-EOF
 	[missing]
 	location = ${PWD}/missing

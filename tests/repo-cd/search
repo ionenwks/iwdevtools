@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 REPOPATH=${PWD}/high:${PWD}/low
+mkdir -p {high,low}/profiles
+echo high > high/profiles/repo_name
+echo low > low/profiles/repo_name
+
 mkdir -p high/{metadata,.git}/test
 mkdir -p low/dev-test/test
 
