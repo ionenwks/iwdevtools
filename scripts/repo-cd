@@ -131,6 +131,7 @@ rcd-ask() {
 # rcd-cd [atom]
 #	Print directory for atom (or repo if missing) and change directory.
 #	Exit with value 104 if failed to find a directory to use.
+#	Return 1 if resulting directory is not a package directory.
 rcd-cd() {
 	local cd
 	if (( ${#} )); then
@@ -189,6 +190,13 @@ rcd-cd() {
 
 	cd "${cd}" || die "failed to cd '${cd}'"
 	echo "${cd}" # for the interactive shell to use
+
+	# roughly figure out if find(1)+rcd-ask gave a package directory without
+	# assuming from files, e.g. skel.ebuild is not from a package
+	for path in "${REPOPATH[@]}"; do
+		[[ ${path} == "${PWD%/*/*}" ]] && return 0
+	done
+	return 1
 }
 
 # rcd-get_metadata <array> <path[]> [attribute]...
@@ -411,10 +419,6 @@ rcd-set_atom_and_si() {
 	local cat ebuild
 	local -i i=0
 
-	# TODO: need a proper way to distinguish top level so
-	# don't pickup skel.ebuild or other stuff
-	[[ -d metadata ]] && return 0
-
 	cat=${PWD%/*}
 	cat=${cat##*/}
 
@@ -480,16 +484,17 @@ rcd-set_repopath() {
 	(( ${#REPOPATH[@]} )) || die "no valid repo paths found, see \`${0##*/} --help\`"
 }
 _rcd-set_repopath_add_if_unique() {
-	if [[ -d ${path} ]]; then
-		local file=${path}/profiles/repo_name
+	if [[ -d ${path} ]] && cd "${path}"; then
+		# use PWD to normalize path string
+		local file=${PWD}/profiles/repo_name
 		if [[ -f ${file} ]]; then
 			name=$(<"${file}") || die "failed to read '${file}'"
 			if [[ ! -v nameindex['${name}'] ]] || ${O[duplicates]}; then
-				REPOPATH+=("${path}")
+				REPOPATH+=("${PWD}")
 				nameindex[${name}]=
 			fi
 		else
-			rcd-msg '!ra' "${path}: ignored path (lacks profiles/repo_name)"
+			rcd-msg '!ra' "${PWD}: ignored path (lacks profiles/repo_name)"
 		fi
 	else
 		rcd-msg '!ra' "${path}: ignored path (not a directory)"
@@ -497,16 +502,17 @@ _rcd-set_repopath_add_if_unique() {
 }
 
 rcd-set_repopath
-rcd-cd "${@}"
-rcd-set_atom_and_si
-if (( ${#ATOM[@]} )); then
-	rcd-print_package_data
+if rcd-cd "${@}"; then
+	rcd-set_atom_and_si
+	if (( ${#ATOM[@]} )); then
+		rcd-print_package_data
 
-	# TODO: self-note taking system that reminds when cd to work on stuff
+		# TODO: self-note taking system that reminds when cd to work on stuff
 
-	# TODO: just a test command, plans are to allow to run any commands #!SC2012
-	ls -1v --color=always | map array
-	rcd-msg '_g' "${array[@]}"
+		# TODO: just a test command, plans are to allow to run any commands #!SC2012
+		ls -1v --color=always | map array
+		rcd-msg '_g' "${array[@]}"
+	fi
 fi
 
 # vim: ts=4
