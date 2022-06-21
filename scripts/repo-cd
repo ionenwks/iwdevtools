@@ -7,21 +7,23 @@ usage <<-EOU
 	Usage: ${0##*/} [atom]
 
 	Print directory location (or change directory with *Shell Integration*
-	below) corresponding to atom (can be partial) either using
+	below) plus some information corresponding to an atom either using
 	/etc/portage/repos.conf or a repo list given using the -P/--path option.
 
-	If no atom, will print top level location of a repository or ask if
-	there is multiple choices.
-
-	Additional tasks can be optionally performed on success, \`${0##*/} .\`
-	can be used to repeat, and \`${0##*/} ..\` returns to previous match.
-	(TODO)
+	atom can be partial or missing, e.g. from dev-category/example::repo
+	  - dev-category : print category directory
+	  - example      : lookup matches in all categories
+	  - example::repo: limit to repo by ::name
+      - (nothing)    : print the repository's top level directory
+	  - .            : show information again for current directory
+	In all cases, will ask if multiple results unless -1/--first is specified.
 
 	Options:
 	  -P, --path=PATH:... Specify list of repos to search ordered by priority,
 	                      special keyword "default" adds all from repos.conf
 	                      (e.g. --path="~/gentoo:/tmp/overlay:default")
-	  -D, --duplicates    Allow multiple repos with the same metadata name in path
+	  -D, --duplicates    Allow multiple repos with the same profiles/repo_name
+	                      (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
 
 	  -1, --first         Disable interactive prompts and always pick first choice
 
@@ -37,8 +39,8 @@ usage <<-EOU
 	      --version       Display version information and exit
 
 	*Known Limitations*
-	Will not print HOMEPAGE if set by an eclass unless its md5-cache exists,
-	and cpe-type remote-ids are currently ignored.
+	Some information may be missing if ebuilds rely on eclasses to set DESCRIPTION
+	or HOMEPAGE without metadata/md5-cache. cpe-type remote-ids are unsupported.
 
 	*Shell Integration*
 	To be able to change the directory of an interactive shell, a higher level
