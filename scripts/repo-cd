@@ -134,7 +134,25 @@ rcd-ask() {
 #	Return 1 if resulting directory is not a package directory.
 rcd-cd() {
 	local cd
-	if (( ${#} )); then
+	if (( ! ${#} )); then
+		# if no atom, just cd to repo's top level
+		rcd-ask cd "${REPOPATH[@]}"
+	elif [[ ${1} == . ]]; then
+		# repeat current to show information again if under a REPOPATH
+		cd=
+		for path in "${REPOPATH[@]}"; do
+			if [[ ${PWD} =~ ^"${path}"(/.*)? ]]; then
+				cd=${PWD}
+				break
+			fi
+		done
+
+		if [[ ! ${cd} ]]; then
+			rcd-msg '!r' "requested current directory is not under any of:" \
+				"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
+			exit 104
+		fi
+	else
 		local search=${1%/} # trim / in case did tab-complete on a directory
 
 		# most atom elements are unused, but atomsp can sanitize input
@@ -193,9 +211,6 @@ rcd-cd() {
 		fi
 
 		rcd-ask cd "${choice[@]}"
-	else
-		# if no atom, just cd to repo's top level
-		rcd-ask cd "${REPOPATH[@]}"
 	fi
 
 	cd "${cd}" || die "failed to cd '${cd}'"
@@ -496,7 +511,7 @@ rcd-set_repopath() {
 	(( ${#REPOPATH[@]} )) || die "no valid repo paths found, see \`${0##*/} --help\`"
 }
 _rcd-set_repopath_add_if_unique() {
-	if [[ -d ${path} ]] && cd "${path}"; then
+	if [[ -d ${path} ]] && pushd "${path}" >/dev/null; then #!SC2164
 		# use PWD to normalize path string
 		local file=${PWD}/profiles/repo_name
 		if [[ -f ${file} ]]; then
@@ -509,6 +524,7 @@ _rcd-set_repopath_add_if_unique() {
 		else
 			rcd-msg '!ra' "${PWD}: ignored path (lacks profiles/repo_name)"
 		fi
+		popd >/dev/null
 	else
 		rcd-msg '!ra' "${path}: ignored path (not a directory)"
 	fi
