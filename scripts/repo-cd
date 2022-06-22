@@ -27,7 +27,8 @@ usage <<-EOU
 
 	  -1, --first         Disable interactive prompts and always pick first choice
 
-	      --bash=alias    Print integration code, see *Shell Integration* below
+	      --bash=<alias>  Print integration code, see *Shell Integration* below
+	      --compgen       Print words for completion for partial [atom] and exit
 
 	  -c, --no-color      Disable use of colors
 
@@ -46,10 +47,11 @@ usage <<-EOU
 	To be able to change the directory of an interactive shell, a higher level
 	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
 
-	For bash, --bash[=alias] can be used to simplify, e.g. to be able to
-	use \`rcd <atom>\`, can add to ~/.bashrc (and/or run in current shell):
-
-	 > eval "\$(command ${0##*/} --bash=rcd --path=/custom/for/this/alias)"
+	For bash, --bash=<alias> can be used to simplify, e.g. to be able to
+	use \`rcd [atom]\` (also with atom tab completion), can add this to
+	a ~/.bashrc and/or run it current shell:
+	    eval "\$(command ${0##*/} --bash=rcd)"
+	(can pass other options like --path too, for per-path aliases)
 EOU
 
 setmsg 2 # stdout only used to show cd path or shell integration
@@ -59,6 +61,7 @@ optauto args "${@}" <<-EOO
 	D|duplicates=bool:false
 	1|first=bool:false
 	bash=str:
+	compgen=bool:false
 	c|!color=bool:true
 EOO
 
@@ -77,14 +80,21 @@ rcd-shell_integration() {
 		shift
 	done
 
-	#!SC2016
+	# pass COMP_WORDS so that `repo-cd --path=...` adds new paths / rules
+	# to compgen, may however silently fail if options are wrong #!SC2016
 	printf \
 '%s() {
 	local d
-	d=$(command %q%s "${@}") &&
-		[[ -n ${d} ]] && cd "${d}"
-}\n' "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}"
-
+	d=$(command %q%s "${@}") && [[ -n ${d} ]] && cd "${d}"
+}
+_%s() {
+	mapfile -t COMPREPLY < <(command %q%s "${COMP_WORDS[@]:1:COMP_CWORD-1}" --compgen -- "${2}" 2>/dev/null)
+	[[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]: -1} == / ]] && compopt -o nospace
+}
+complete -F _%s %s
+' "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}" \
+  "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}" \
+  "${O[bash]}" "${O[bash]}"
 }
 if [[ ${O[bash]} ]]; then
 	rcd-shell_integration "${@}"
@@ -173,7 +183,7 @@ rcd-cd() {
 				[[ -d ${path}/${cat}/${name} ]] &&
 					printf '%s\0' "${path}/${cat}/${name}"
 			else
-				rcd-find "${path}" -iname "${name}" -print0 | sort -z || die
+				rcd-find 1 2 "${path}" -iname "${name}" -print0 | sort -z || die
 			fi
 		done | mapfile -d '' -t choice
 
@@ -197,11 +207,14 @@ rcd-cd() {
 	return 1
 }
 
-# rcd-find <path>... <extra-find-args>
+# rcd-find <mindepth> <maxdepth> <path>... <extra-find-args>
 #	Run find(1) with preset exclusion/depth/directory rules on paths.
 #	<extra-find-args> should contain the action and optionally extra rules,
 #	e.g. -ipath '*/category/package' -print0
 rcd-find() {
+	local depth=(-mindepth "${1}" -maxdepth "${2}")
+	shift 2
+
 	local -a paths=()
 	while (( ${#} )); do
 		[[ ${1::1} == - ]] && break
@@ -238,7 +251,8 @@ rcd-find() {
 
 	# not trying to use pquery/portage/bashglobs given find(1) is faster
 	# and makes this simpler for ordering and custom --path repos
-	find "${paths[@]}" -maxdepth 2 -type d \( "${omit[@]}" \) -prune -o -type d "${@}" || die
+	find "${paths[@]}" "${depth[@]}" \
+		-type d \( "${omit[@]}" \) -prune -o -type d "${@}" || die
 }
 
 # rcd-get_metadata <array> <path[]> [attribute]...
@@ -336,6 +350,21 @@ rcd-msg() {
 	fi
 	local mcolor=${1:2:1}
 	printf " ${C[${1:1:1}]}${1::1} ${C[${mcolor:-n}]}%s${C[n]}${trail:+\n}" "${@:2}" >&2
+}
+
+# rcd-print_compgen [current]
+#	Print possible words for tab completion based on REPOPATH.
+rcd-print_compgen() {
+	# do nothing if no arguments rather print the rather slow full list
+	if (( ${#} )); then
+		if [[ ${1} == */* ]]; then
+			rcd-find 2 2 "${REPOPATH[@]}" -ipath "*/${1}*" -printf '%P\n'
+		else
+			# process categories separately to add /
+			rcd-find 1 1 "${REPOPATH[@]}" -iname "${1}*" -printf '%f/\n'
+			rcd-find 2 2 "${REPOPATH[@]}" -iname "${1}*" -printf '%f\n'
+		fi
+	fi | sort | uniq
 }
 
 # rcd-print_package_data
@@ -548,7 +577,9 @@ _rcd-set_repopath_add_if_unique() {
 }
 
 rcd-set_repopath
-if rcd-cd "${@}"; then
+if ${O[compgen]}; then
+	rcd-print_compgen "${@}"
+elif rcd-cd "${@}"; then
 	rcd-set_atom_and_si
 	if (( ${#ATOM[@]} )); then
 		rcd-print_package_data
