@@ -107,12 +107,10 @@ rcd-ask() {
 	fi
 
 	local default=" ${C[a]}(default)${C[n]}"
-	local usedefault=${default}
-
 	local -i i
 	for ((i=1; i<=${#}; i++)); do
-		rcd-msg '?m' "${C[y]}${i}${C[a]}:${C[c]}${!i}${C[n]}${usedefault}"
-		usedefault=
+		rcd-msg '?m' "${C[y]}${i}${C[a]}:${C[c]}${!i}${C[n]}${default}"
+		default=
 	done
 
 	rcd-msg -n '?y' "Choice? "
@@ -120,13 +118,8 @@ rcd-ask() {
 	local REPLY
 	read -ren ${##}
 	printf -v i %u "${REPLY}" 2>/dev/null
+	(( i <= 1 || i > ${#} )) && i=1 # default if non-integer / invalid reply
 
-	if (( i <= 1 || i > ${#} )); then
-		i=1 # use default if non-integer / invalid reply
-		usedefault=${default}
-	fi
-
-	rcd-msg '>g' "${C[y]}${i}${C[a]}:${C[c]}${!i}${usedefault}"
 	outref=${!i} #!SC2034
 }
 
@@ -215,6 +208,7 @@ rcd-cd() {
 		rcd-ask cd "${choice[@]}"
 	fi
 
+	rcd-msg '>gc' "${cd}"
 	cd "${cd}" || die "failed to cd '${cd}'"
 	echo "${cd}" # for the interactive shell to use
 
