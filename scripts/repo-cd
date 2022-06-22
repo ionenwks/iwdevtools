@@ -4,7 +4,7 @@ init
 depend find q sort xmllint
 include atomf shellparse
 usage <<-EOU
-	Usage: ${0##*/} [atom]
+	Usage: ${0##*/} [options] [atom]
 
 	Print directory location (or change directory with *Shell Integration*
 	below) plus some information corresponding to an atom either using
