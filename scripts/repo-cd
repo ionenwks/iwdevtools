@@ -19,28 +19,29 @@ usage <<-EOU
 	In all cases, will ask if multiple results unless -1 or --first is specified.
 
 	Options:
-	  -P, --path=PATH:... Specify list of repos to search ordered by priority,
-	                      special keyword "default" adds all from repos.conf
-	                      (e.g. --path="~/gentoo:/tmp/overlay:default")
-	  -D, --duplicates    Allow multiple repos with the same profiles/repo_name
-	                      (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
+	  -P, --path=PATH:...  Specify list of repos to search ordered by priority,
+	                       special keyword "default" adds all from repos.conf
+	                       (e.g. --path="~/gentoo:default", see --dumpconfig
+	                       or *Shell Integration* below to set permanently).
+	  -D, --duplicates     Allow multiple repos with the same profiles/repo_name
+	                       (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
 
-	  -1, --first         Disable interactive prompts and always pick first choice
+	  -1, --first          Disable interactive prompts and always pick first choice
 
-	      --posix=<alias> Print posix sh integration, see *Shell Integration* below
-	      --bash=<alias>  Print bash integration with atom completion support
-	      --fish=<alias>  Print fish integration with atom completion support
-	      --zsh=<alias>   Print zsh integration with atom completion support
-	      --compgen       Print words for completion with a partial [atom] and exit
+	      --posix=ALIAS    Print posix sh integration, see *Shell Integration* below
+	      --bash=ALIAS     Print bash integration with atom completion support
+	      --fish=ALIAS     Print fish integration with atom completion support
+	      --zsh=ALIAS      Print zsh integration with atom completion support
+	      --compgen        Print words for completion with a partial [atom] and exit
 
-	  -c, --no-color      Disable use of colors
+	  -c, --no-color       Disable use of colors
 
-	      --confdir=PATH  Configuration dir to use instead of defaults
-	                      (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
-	      --dumpconfig    Display config and exit (> ${0##*/}.conf)
+	      --confdir=PATH   Configuration dir to use instead of defaults
+	                       (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig     Display config and exit (> ${0##*/}.conf)
 
-	  -h, --help          Display usage information and exit
-	      --version       Display version information and exit
+	  -h, --help           Display usage information and exit
+	      --version        Display version information and exit
 
 	*Known Limitations*
 	Some information may be missing if ebuilds rely on eclasses to set DESCRIPTION
