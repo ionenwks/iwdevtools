@@ -27,7 +27,8 @@ usage <<-EOU
 
 	  -1, --first         Disable interactive prompts and always pick first choice
 
-	      --bash=<alias>  Print integration code, see *Shell Integration* below
+	      --bash=<alias>  Print bash integration, see *Shell Integration* below
+	      --zsh=<alias>   Print zsh integration, see *Shell Integration* below
 	      --compgen       Print words for completion for partial [atom] and exit
 
 	  -c, --no-color      Disable use of colors
@@ -47,9 +48,9 @@ usage <<-EOU
 	To be able to change the directory of an interactive shell, a higher level
 	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
 
-	For bash, --bash=<alias> can be used to simplify, e.g. to be able to
-	use \`rcd [atom]\` (also with atom tab completion), can add this to
-	a ~/.bashrc and/or run it current shell:
+	For bash and zsh, can be simplified with e.g. --bash=rcd to be able to use
+	\`rcd [atom]\` (also enables tab completion for atom), can add this to a
+	~/.bashrc and/or run it current shell (quotes are important):
 	    eval "\$(command ${0##*/} --bash=rcd)"
 	(can pass other options like --path too, for per-path aliases)
 EOU
@@ -61,6 +62,7 @@ optauto args "${@}" <<-EOO
 	D|duplicates=bool:false
 	1|first=bool:false
 	bash=str:
+	zsh=str:
 	compgen=bool:false
 	c|!color=bool:true
 EOO
@@ -73,16 +75,25 @@ rcd-shell_integration() {
 	local -a args=()
 	while (( ${#} )); do
 		case ${1} in
-			--bash) shift 2; continue;;
-			--bash=*) shift; continue;;
+			--bash|--zsh) shift 2; continue;;
+			--bash=*|--zsh=*) shift; continue;;
 		esac
 		args+=("${1}")
 		shift
 	done
 
-	# pass COMP_WORDS so that `repo-cd --path=...` adds new paths / rules
-	# to compgen, may however silently fail if options are wrong #!SC2016
-	printf \
+	local type=${O[bash]:-${O[zsh]}}
+	local pargs=(
+		"${type}" "${0##*/}" "${args[0]+ }${args[*]@Q}"
+		"${type}" "${0##*/}" "${args[0]+ }${args[*]@Q}"
+		"${type}" "${type}"
+	)
+
+	# pass words so that `repo-cd --path=...` adds new paths / rules
+	# to compgen, may however silently fail if options are wrong
+	if [[ ${O[bash]} ]]; then
+		#!SC2016
+		printf \
 '%s() {
 	local d
 	d=$(command %q%s "${@}") && [[ -n ${d} ]] && cd "${d}"
@@ -90,12 +101,25 @@ rcd-shell_integration() {
 _%s() {
 	mapfile -t COMPREPLY < <(command %q%s "${COMP_WORDS[@]:1:COMP_CWORD-1}" --compgen -- "${2}" 2>/dev/null)
 }
-complete -F _%s %s
-' "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}" \
-  "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}" \
-  "${O[bash]}" "${O[bash]}"
+complete -F _%s %s\n' "${pargs[@]}"
+	elif [[ ${O[zsh]} ]]; then
+		#!SC2016
+		printf \
+'%s() {
+	local d
+	d=$(command %q%s "${@}") && [[ -n ${d} ]] && cd "${d}"
 }
-if [[ ${O[bash]} ]]; then
+_%s() {
+	local w
+	read -cA w
+	reply=(${(f)"$(command %q%s "${w[@]:1:-1}" --compgen -- "${w[-1]}" 2>/dev/null)"})
+}
+compctl -K _%s %s\n' "${pargs[@]}"
+	fi
+}
+
+[[ ${O[bash]} && ${O[zsh]} ]] && die "cannot specify more than one shell integration option"
+if [[ ${O[bash]}${O[zsh]} ]]; then
 	rcd-shell_integration "${@}"
 	exit
 fi
