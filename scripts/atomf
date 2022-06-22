@@ -9,8 +9,8 @@ usage <<-EOU
 	spaces if a single atom with no format specified.
 
 	atom can be in dependency-format, or tree-style .ebuild format, e.g.
-	 -  !!>=cat/name-1.2.3-r1:*/0=[use] ([use] will be discarded)
-	 -  cat/name/name-1.2.3-r1.ebuild (.ebuild must be present)
+	 *  !!>=cat/name-1.2.3-r1:*/0=[use] ([use] will be discarded)
+	 *  cat/name/name-1.2.3-r1.ebuild (.ebuild must be present)
 
 	atom can be incomplete, but will return 1 if single elements are seen as
 	invalid per the Package Manager Specification (PMS) -- not that this

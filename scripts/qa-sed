@@ -46,7 +46,7 @@ usage <<-EOU
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
 
-	 >  source @datadir@/${0##*/}.bashrc
+	    source @datadir@/${0##*/}.bashrc
 
 	Creates a sed() function that most things will use instead. Should, in
 	theory, not break anything as it will call sed with same arguments even

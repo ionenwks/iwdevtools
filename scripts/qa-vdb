@@ -70,10 +70,12 @@ usage <<-EOU
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
-	 >  source @datadir@/${0##*/}.bashrc
-	 >  post_pkg_postinst() {
-	 >      qa-vdb_post_pkg_postinst
-	 >  }
+
+	    source @datadir@/${0##*/}.bashrc
+
+	    post_pkg_postinst() {
+	        qa-vdb_post_pkg_postinst
+	    }
 
 	bashrc environment options (export/make.conf/package.env):
 	  QA_VDB=y | =n         Enable or disable, can also use IWDT_ALL=y | =n

@@ -73,10 +73,12 @@ usage <<-EOU
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
-	 >  source @datadir@/${0##*/}.bashrc
-	 >  post_pkg_preinst() {
-	 >      qa-cmp_post_pkg_preinst
-	 >  }
+
+	    source @datadir@/${0##*/}.bashrc
+
+	    post_pkg_preinst() {
+	        qa-cmp_post_pkg_preinst
+	    }
 
 	bashrc environment options (export/make.conf/package.env):
 	  QA_CMP=y | =n         Enable or disable, can also use IWDT_ALL=y | =n

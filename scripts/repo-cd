@@ -8,15 +8,15 @@ usage <<-EOU
 
 	Print directory location (or change directory with *Shell Integration*
 	below) plus some information corresponding to an atom either using
-	/etc/portage/repos.conf or a repo list given using the -P/--path option.
+	/etc/portage/repos.conf or a repo list given using the -P or --path option.
 
 	atom can be partial or missing, e.g. from dev-category/example::repo
-	  - dev-category : print category directory
-	  - example      : lookup matches in all categories
-	  - example::repo: limit to repo by ::name
-      - (nothing)    : print the repository's top level directory
-	  - .            : show information again for current directory
-	In all cases, will ask if multiple results unless -1/--first is specified.
+	 > dev-category : print the category directory location
+	 > example      : lookup matches in all categories
+	 > example::repo: limit to a specific repo
+	 > (nothing)    : print the repository's top level directory
+	 > .            : show information again for current directory
+	In all cases, will ask if multiple results unless -1 or --first is specified.
 
 	Options:
 	  -P, --path=PATH:... Specify list of repos to search ordered by priority,
