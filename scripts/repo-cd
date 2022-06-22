@@ -89,7 +89,6 @@ rcd-shell_integration() {
 }
 _%s() {
 	mapfile -t COMPREPLY < <(command %q%s "${COMP_WORDS[@]:1:COMP_CWORD-1}" --compgen -- "${2}" 2>/dev/null)
-	[[ ${COMPREPLY[0]: -1} == / ]] && compopt -o nospace
 }
 complete -F _%s %s
 ' "${O[bash]}" "${0##*/}" "${args[0]+ }${args[*]@Q}" \
