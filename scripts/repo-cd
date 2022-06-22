@@ -97,6 +97,7 @@ set -- "${args[@]}"; unset args
 # rcd-ask <variable> <choice>...
 #	Ask to pick from <choices> and store result in <variable>.
 #	If only one choice, do nothing beside set <variable> to it.
+#	If choice starts with ${HOME}, replaces with ~ only when displaying.
 rcd-ask() {
 	local -n outref=${1}
 	shift
@@ -109,7 +110,7 @@ rcd-ask() {
 	local default=" ${C[a]}(default)${C[n]}"
 	local -i i
 	for ((i=1; i<=${#}; i++)); do
-		rcd-msg '?m' "${C[y]}${i}${C[a]}:${C[c]}${!i}${C[n]}${default}"
+		rcd-msg '?m' "${C[y]}${i}${C[a]}:${C[c]}${!i/#"${HOME}"/\~}${C[n]}${default}"
 		default=
 	done
 
@@ -143,8 +144,7 @@ rcd-cd() {
 		done
 
 		if [[ ! ${cd} ]]; then
-			rcd-msg '!r' "requested current directory is not under any of:" \
-				"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
+			rcd-msg '!r' "requested current directory is not a known repo"
 			exit 104
 		fi
 	else
@@ -196,19 +196,14 @@ rcd-cd() {
 		done | mapfile -d '' -t choice
 
 		if (( ! ${#choice[@]} )); then
-			if [[ ${userepo} ]]; then
-				rcd-msg '!r' "no match for '${C[m]}${search}${C[n]}' in ::${userepo}"
-			else
-				rcd-msg '!r' "no match for '${C[m]}${search}${C[n]}' in any of:" \
-					"${REPOPATH[@]/#/${C[y]}-${C[c]} }"
-			fi
+			rcd-msg '!r' "no match found for '${C[m]}${search}${C[n]}'${userepo:+ in ::${userepo}}"
 			exit 104
 		fi
 
 		rcd-ask cd "${choice[@]}"
 	fi
 
-	rcd-msg '>gc' "${cd}"
+	rcd-msg '>gc' "${cd/#"${HOME}"/\~}"
 	cd "${cd}" || die "failed to cd '${cd}'"
 	echo "${cd}" # for the interactive shell to use
 
