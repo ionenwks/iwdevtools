@@ -161,38 +161,20 @@ rcd-cd() {
 
 		local cat=${atom[2]:-}
 		local name=${atom[3]} # can be a category-only search
-		local depth=1
-		local omit=( -name '.*' )
 
-		# TODO: exclusion options, virtual/ by default, probably haskell too
-
-		if [[ ! ${cat} ]]; then
-			# no category, need to go deeper
-			depth=2
-			omit+=(
-				# omit a few known non-category directories (ideally would
-				# load category files, but REPOPATH lacks the full picture)
-				-o -path '{}/metadata'
-				-o -path '{}/licenses'
-				-o -path '{}/scripts'
-				-o -path '{}/eclass'
-				-o -path '{}/profiles'
-			)
-		fi
-
-		# want search to work on independent non-repos.conf, and not take too
-		# long, so use raw find(1) and sort per repo to be predictable
+		# search paths separately to sort each individually in REPOPATH order
 		local path
 		local -a choice=()
 		for path in "${REPOPATH[@]}"; do
 			[[ ! ${userepo} || ${REPONAME[${path}]} == "${userepo}" ]] || continue
 
-			path+=${cat:+/}${cat}
-			[[ -d ${path} ]] || continue
-
-			find "${path}" -maxdepth "${depth}" \
-				\( "${omit[@]/'{}'/${path}}" \) -prune \
-				-o -type d -iname "${name}" -print0 | sort -z
+			if [[ ${cat} ]]; then
+				# if exact match, no need for find or its exception rules
+				[[ -d ${path}/${cat}/${name} ]] &&
+					printf '%s\0' "${path}/${cat}/${name}"
+			else
+				rcd-find "${path}" -iname "${name}" -print0 | sort -z || die
+			fi
 		done | mapfile -d '' -t choice
 
 		if (( ! ${#choice[@]} )); then
@@ -213,6 +195,50 @@ rcd-cd() {
 		[[ ${path} == "${PWD%/*/*}" ]] && return 0
 	done
 	return 1
+}
+
+# rcd-find <path>... <extra-find-args>
+#	Run find(1) with preset exclusion/depth/directory rules on paths.
+#	<extra-find-args> should contain the action and optionally extra rules,
+#	e.g. -ipath '*/category/package' -print0
+rcd-find() {
+	local -a paths=()
+	while (( ${#} )); do
+		[[ ${1::1} == - ]] && break
+		paths+=("${1}")
+		shift
+	done
+
+	local omitdirs=(
+		# omit a few known non-category directories (ideally would
+		# load category files, but REPOPATH may lack the full picture)
+		metadata
+		licenses
+		scripts
+		eclass
+		profiles
+
+		# TODO: configurable exceptions, temporarily hardcoding a few
+		acct-group
+		acct-user
+		dev-haskell
+		virtual
+	)
+
+	local omit=( -name '.*' ) # .git and other hidden files
+
+	local dir path
+	for path in "${paths[@]}"; do
+		# add path to ensure doesn't match on packages themselves
+		# (loop over given can't safely rely on word splitting to /#/-o -path})
+		for dir in "${omitdirs[@]}"; do
+			omit+=(-o -path "${path}/${dir}")
+		done
+	done
+
+	# not trying to use pquery/portage/bashglobs given find(1) is faster
+	# and makes this simpler for ordering and custom --path repos
+	find "${paths[@]}" -maxdepth 2 -type d \( "${omit[@]}" \) -prune -o -type d "${@}" || die
 }
 
 # rcd-get_metadata <array> <path[]> [attribute]...
