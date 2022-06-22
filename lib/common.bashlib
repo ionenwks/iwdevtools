@@ -446,21 +446,21 @@ showline() {
 }
 
 # usage [<<]
-#	Read stdin for usage, then subsequent call will display it and exit.
+#	Read stdin for usage, a subsequent call displays it using msg() then exit.
 usage() {
 	if [[ ! -v _COMMON_USAGE ]]; then
-		mapfile _COMMON_USAGE
+		map _COMMON_USAGE
 		return 0
 	fi
-	printf %s "${_COMMON_USAGE[@]}"
-	exit
+	msg "${_COMMON_USAGE[@]}"
+	exit 0
 }
 
 # version
-#	Show version and exit
+#	Show version using msg() then exit
 version() {
-	echo "${0##*/} @version@"
-	exit
+	msg "${0##*/} @version@"
+	exit 0
 }
 
 # vim: ts=4

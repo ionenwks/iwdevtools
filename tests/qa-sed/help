@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-expect "Usage: ${SCRIPT##*/} *" --help
+expect -2 "Usage: ${SCRIPT##*/} *" --help

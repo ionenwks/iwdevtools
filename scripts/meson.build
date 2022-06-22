@@ -71,7 +71,11 @@ foreach script, desc : scripts
 			script + '.1',
 			input : run_script.get(script),
 			output : script + '.1',
-			command : [ help2man, '-N', '-n', desc, '@INPUT@', '-o', '@OUTPUT@' ],
+			command : [
+				help2man, '--no-discard-stderr', '-N',
+				'-n', desc,
+				'@INPUT@', '-o', '@OUTPUT@'
+			],
 			env : { 'ROOT' : '', 'EROOT' : eprefix, 'XDG_CONFIG_HOME' : '' },
 			install : true,
 			install_dir : get_option('mandir') / 'man1'
