@@ -29,6 +29,7 @@ usage <<-EOU
 
 	      --posix=<alias> Print posix sh integration, see *Shell Integration* below
 	      --bash=<alias>  Print bash integration with atom completion support
+	      --fish=<alias>  Print fish integration with atom completion support
 	      --zsh=<alias>   Print zsh integration with atom completion support
 	      --compgen       Print words for completion with a partial [atom] and exit
 
@@ -49,13 +50,16 @@ usage <<-EOU
 	To be able to change the directory of an interactive shell, a higher level
 	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
 
-	For simplicity, can use one of the shell integration functions, e.g. --bash=rcd
-	outputs code to be able to use \`rcd [atom]\` and enable atom tab completion.
-	Intended for use in ~/.bashrc (or can run in current shell) by adding:
+	For convenience, can use one of the shell integration functions, e.g.
+	--bash=rcd outputs code to enable \`rcd [atom]\` with atom tab completion
+	support using bash. Intended to be added to ~/.bashrc and/or ~/.bash_profile
+	(can also run in current shell to use immediately):
 
 	    eval "\$(command ${0##*/} --bash=rcd)"
 
-	(can pass other options like --path to the above too, for per-path aliases)
+	(can pass other options like --path to the above too, for per-path aliases).
+	The above eval works the same for each supported shells, except e.g. swap
+	--bash for --zsh and use ~/.zshrc, or --fish and ~/.config/fish/conf.d
 EOU
 
 setmsg 2 # stdout only used to show cd path or shell integration
@@ -66,6 +70,7 @@ optauto args "${@}" <<-EOO
 	1|first=bool:false
 	posix=str:
 	bash=str:
+	fish=str:
 	zsh=str:
 	compgen=bool:false
 	c|!color=bool:true
@@ -79,8 +84,8 @@ rcd-shell_integration() {
 	local -a args=()
 	while (( ${#} )); do
 		case ${1} in
-			--bash|--posix|--zsh) shift 2; continue;;
-			--bash=*|--posix=*|--zsh=*) shift; continue;;
+			--bash|--fish|--posix|--zsh) shift 2; continue;;
+			--bash=*|--fish=*|--posix=*|--zsh=*) shift; continue;;
 		esac
 		args+=("${1}")
 		shift
@@ -105,6 +110,18 @@ _%s() {
 	mapfile -t COMPREPLY < <(command %q%s "${COMP_WORDS[@]:1:COMP_CWORD-1}" --compgen -- "${2}" 2>/dev/null)
 }
 complete -F _%s %s\n' "${pargs[@]}"
+	elif [[ ${O[fish]} ]]; then
+		#!SC2016
+		printf \
+'function %s
+	set --local d (command %q%s $argv) && [ -n "$d" ] && cd $d
+end
+function _%s
+	set --local w (commandline -op)
+	command %q%s $w[2..-2] --compgen -- $w[-1] 2>/dev/null
+end
+complete -e %s
+complete -fa "(_%s)" %s\n' "${pargs[@]}" "${RCD_SHELL}"
 	elif [[ ${O[posix]} ]]; then
 		#!SC2016
 		printf \
@@ -128,9 +145,9 @@ compctl -K _%s %s\n' "${pargs[@]}"
 	fi
 }
 
-RCD_SHELL=${O[bash]:-${O[posix]:-${O[zsh]}}}
+RCD_SHELL=${O[bash]:-${O[fish]:-${O[posix]:-${O[zsh]}}}}
 if [[ ${RCD_SHELL} ]]; then
-	[[ ${O[bash]:+x}${O[posix]:+x}${O[zsh]:+x} > x ]] &&
+	[[ ${O[bash]:+x}${O[fish]:+x}${O[posix]:+x}${O[zsh]:+x} > x ]] &&
 		die "cannot specify more than one shell integration option"
 	rcd-shell_integration "${@}"
 	exit
