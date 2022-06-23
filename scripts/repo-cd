@@ -61,9 +61,9 @@ usage <<-EOU
 	*Running Commands*
 	If match a valid package, --run's COMMAND will be executed inside the directory
 	allowing to e.g. show directory contents (default), git logs, pkgcheck, and/or
-	display notes/reminders/links(like bugzilla queries) based on the package name
-	for a few ideas. The variables RCD_CATEGORY, RCD_PN, RCD_PACKAGE (cat/pn), and
-	RCD_REPONAME are exported for use with external scripts.
+	display notes/reminders based on the package name for some ideas. The variables
+	RCD_CATEGORY, RCD_PN, RCD_PACKAGE (cat/pn), and RCD_REPONAME are exported for
+	use with external scripts.
 
 	*Shell Integration*
 	To be able to change the directory of an interactive shell, a higher level
@@ -498,7 +498,7 @@ rcd-print_command() {
 rcd-print_package_data() {
 	local -a homesort=() maintainers=()
 	local -A homeindex
-	local cache description= data note ebuild pvr
+	local cache description= ebuild data note pvr
 
 	local -i i
 	for ((i=0; i<${#ATOM[@]}; i++)); do
@@ -584,12 +584,21 @@ rcd-print_package_data() {
 	fi
 	(( ${#maintainers[@]} )) || maintainers=("${C[a]}maintainer-needed${C[n]}")
 
-	# display contents
+	# display
 	[[ ${description} ]] && rcd-msg D:la "${description}"
 
 	for data in "${homesort[@]}"; do
 		rcd-msg H:a "${homeindex[${data}]}"
 	done
+
+	# Also show pgo and bgo links if ::gentoo, non-metadata simple links
+	# could use a --run=script to display but these are rather common
+	data=${PWD%/*/*}
+	if [[ ${REPONAME[${data%/}/]} == gentoo ]]; then
+		data=${PWD#"${data}"/}
+		rcd-msg G:m:lb "https://packages.gentoo.org/packages/${data}"
+		rcd-msg G:m:lb "https://bugs.gentoo.org/buglist.cgi?quicksearch=${data/\//%2F}"
+	fi
 
 	rcd-msg M:c "${maintainers[*]}"
 }
