@@ -206,7 +206,7 @@ rcd-cd() {
 		done
 
 		if [[ ! ${cd} ]]; then
-			rcd-msg '!:r' "requested current directory is not a known repo"
+			rcd-msg '!:r' "current directory is not a known repo"
 			exit 104
 		fi
 	else
