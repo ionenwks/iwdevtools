@@ -354,7 +354,7 @@ rcd-get_display_path() {
 		fi
 	fi
 
-	outref=${C[${2}]}${path_base#"${HOME}"/\~}${path_cat:+${C[${3}]}${path_cat}${path_pn:+/${path_pn}}}${C[n]}
+	outref=${C[${2}]}${path_base/#"${HOME}"/\~}${path_cat:+${C[${3}]}${path_cat}${path_pn:+/${path_pn}}}${C[n]}
 }
 
 # rcd-get_metadata <array> <path[]> [attribute]...
