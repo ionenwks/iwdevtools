@@ -30,6 +30,10 @@ usage <<-EOU
 	  -q, --quiet         Do not display non-error informational messages (to be
 	                      further quiet, also set --run='')
 
+	  -e, --exclude=LIST  Comma-separated list of categories to exclude from
+	                      searches unless explicitly specified
+	                      (default: acct-user,acct-group,dev-haskell,virtual)
+
 	  -R, --run=COMMAND   If atom matches a package, run COMMAND if non-empty
 	                      then exit with its status, see *Running Commands* for
 	                      details (default: ls -1v --color=always)
@@ -84,6 +88,7 @@ optauto args "${@}" <<-EOO
 	D|duplicates=bool:false
 	1|first=bool:false
 	q|quiet=bool:false
+	e|exclude=str:acct-user,acct-group,dev-haskell,virtual
 	R|run=str:ls -1v --color=always
 	r|!capture=bool:true
 	posix=str:
@@ -172,6 +177,9 @@ fi
 
 set -- "${args[@]}"; unset args
 (( ${#} <= 1 )) || die "too many atoms given, see \`${0##*/} --help\`"
+
+[[ ${O[exclude]} =~ ^[,A-Za-z0-9+_.-]*$ ]] \
+	|| die "--exclude list has invalid characters for categories"
 
 # rcd-ask <variable> <choice>...
 #	Ask to pick from <choices> and store result in <variable>.
@@ -291,7 +299,10 @@ rcd-find() {
 		shift
 	done
 
-	local omitdirs=(
+	local omitdirs
+	split omitdirs "${O[exclude]}" ','
+
+	omitdirs+=(
 		# omit a few known non-category directories (ideally would
 		# load category files, but REPOPATH may lack the full picture)
 		metadata
@@ -299,12 +310,6 @@ rcd-find() {
 		scripts
 		eclass
 		profiles
-
-		# TODO: configurable exceptions, temporarily hardcoding a few
-		acct-group
-		acct-user
-		dev-haskell
-		virtual
 	)
 
 	local omit=( -name '.*' ) # .git and other hidden files
