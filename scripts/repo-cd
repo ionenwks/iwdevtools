@@ -80,7 +80,6 @@ EOO
 # rcd-shell_integration <args>
 #	Print shell integration code using <args> after stripping
 #	integration options.
-# TODO: more shells, possibly some degree of completion support
 rcd-shell_integration() {
 	local -a args=()
 	while (( ${#} )); do
@@ -173,11 +172,11 @@ rcd-ask() {
 	local default=" ${C[a]}(default)${C[n]}"
 	local -i i
 	for ((i=1; i<=${#}; i++)); do
-		rcd-msg '?m' "${C[y]}${i}${C[a]}:${C[c]}${!i/#"${HOME}"/\~}${C[n]}${default}"
+		rcd-msg '?:m' "${C[y]}${i}${C[a]}:${C[c]}${!i/#"${HOME}"/\~}${C[n]}${default}"
 		default=
 	done
 
-	rcd-msg -n '?y' "Choice? "
+	rcd-msg -n '?:y' "Choice? "
 
 	local REPLY
 	read -ren ${##}
@@ -207,7 +206,7 @@ rcd-cd() {
 		done
 
 		if [[ ! ${cd} ]]; then
-			rcd-msg '!r' "requested current directory is not a known repo"
+			rcd-msg '!:r' "requested current directory is not a known repo"
 			exit 104
 		fi
 	else
@@ -241,14 +240,14 @@ rcd-cd() {
 		done | mapfile -d '' -t choice
 
 		if (( ! ${#choice[@]} )); then
-			rcd-msg '!r' "no match found for '${C[m]}${search}${C[n]}'${userepo:+ in ::${userepo}}"
+			rcd-msg '!:r' "no match found for '${C[m]}${search}${C[n]}'${userepo:+ in ::${userepo}}"
 			exit 104
 		fi
 
 		rcd-ask cd "${choice[@]}"
 	fi
 
-	rcd-msg '>gc' "${cd/#"${HOME}"/\~}"
+	rcd-msg '>:y:c' "${cd/#"${HOME}"/\~}"
 	cd "${cd}" || die "failed to cd '${cd}'"
 	echo "${cd}" # for the interactive shell to use
 
@@ -382,27 +381,31 @@ rcd-get_metadata_remote_urls() {
 			sourceforge) outref+=("https://sourceforge.net/projects/${id}/");;
 			vim) outref+=("https://www.vim.org/scripts/script.php?script_id=${id}");;
 			*)
-				rcd-msg '!ra' "metadata.xml: unknown remote-id ${entry%% *}"
+				rcd-msg '!:b:a' "metadata.xml: unknown remote-id ${entry%% *}"
 				continue
 			;;
 		esac
 	done
 }
 
-# rcd-msg [-n] <char><prefix-color-id>[message-color-id] <message>...
-#	Print message with <char> prefix, e.g. msg '!r' "prefixed by red !".
+# rcd-msg [-n] <char>[:<prefix-color-id>:[message-color-id]] <message>...
+#	Print message with <char> prefix, e.g. msg '!:r' "prefixed by red !".
 #	Multiple arguments will result in multiple lines with same prefix.
 #	Skip trailing newline if -n.
 #	More complex coloring can be used in the message itself.
-# TODO: redo the whole color-id thing.. doesn't allow nn color codes
 rcd-msg() {
 	local trail=1
 	if [[ ${1} == -n ]]; then
 		trail=
 		shift
 	fi
-	local mcolor=${1:2:1}
-	printf " ${C[${1:1:1}]}${1::1} ${C[${mcolor:-n}]}%s${C[n]}${trail:+\n}" "${@:2}" >&2
+
+	local -a m
+	IFS=: read -ra m <<<"${1}"
+	shift
+
+	printf " ${m[1]+${C[${m[1]}]}}${m[0]}${m[1]+${C[n]}} ${m[2]+${C[${m[2]}]}}%s${m[2]+${C[n]}}${trail:+\n}" \
+		"${@}" >&2
 }
 
 # rcd-print_compgen [current]
@@ -507,19 +510,19 @@ rcd-print_package_data() {
 				fi
 			done
 		else
-			rcd-msg '!ra' "metadata.xml: issues reading, info may be missing"
+			rcd-msg '!:b:a' "metadata.xml: issues reading, info may be missing"
 		fi
 	fi
 	(( ${#maintainers[@]} )) || maintainers=("${C[a]}maintainer-needed${C[n]}")
 
 	# display contents
-	[[ ${description} ]] && rcd-msg Dgy "${description}"
+	[[ ${description} ]] && rcd-msg D:la "${description}"
 
 	for data in "${homesort[@]}"; do
-		rcd-msg Hg "${homeindex[${data}]}"
+		rcd-msg H:a "${homeindex[${data}]}"
 	done
 
-	rcd-msg Mg "${maintainers[*]}"
+	rcd-msg M:c "${maintainers[*]}"
 }
 _rcd_print_package_data_add_homepage() {
 	# build simplified HOMEPAGE index (no http:, trailing /, nor index.*) to
@@ -565,10 +568,10 @@ rcd-set_atom_and_si() {
 				SI+=("${!si}")
 				i+=1
 			else
-				rcd-msg '!ra' "=${cat}/${ebuild%.ebuild}: ignored (shellimport failed)"
+				rcd-msg '!:b:a' "=${cat}/${ebuild%.ebuild}: ignored (shellimport failed)"
 			fi
 		else
-			rcd-msg '!ra' "=${cat}/${ebuild%.ebuild}: ignored (invalid atom)"
+			rcd-msg '!:b:a' "=${cat}/${ebuild%.ebuild}: ignored (invalid atom)"
 		fi
 	done
 }
@@ -621,11 +624,11 @@ _rcd-set_repopath_add_if_unique() {
 				nameindex[${name}]=
 			fi
 		else
-			rcd-msg '!ra' "${PWD}: ignored path (lacks profiles/repo_name)"
+			rcd-msg '!:b:a' "${PWD}: ignored path (lacks profiles/repo_name)"
 		fi
 		popd >/dev/null
 	else
-		rcd-msg '!ra' "${path}: ignored path (not a directory)"
+		rcd-msg '!:b:a' "${path}: ignored path (not a directory)"
 	fi
 }
 
@@ -641,7 +644,7 @@ elif rcd-cd "${@}"; then
 
 		# TODO: just a test command, plans are to allow to run any commands #!SC2012
 		ls -1v --color=always | map array
-		rcd-msg '_g' "${array[@]}"
+		rcd-msg '_:g' "${array[@]}"
 	fi
 fi
 
