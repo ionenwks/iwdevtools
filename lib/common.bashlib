@@ -125,7 +125,7 @@ getoptw() {
 
 # hasharray [+]<associative-array> <array>
 #	Set <array> as keys with empty values into <associative-array>
-#	(for non-glob -v searching).
+#	(for non-glob -v searching). Empty array elements are ignored.
 #	If no +, also resets.
 hasharray() {
 	local -n _c_inref=${2} _c_outref=${1#+}
@@ -133,7 +133,7 @@ hasharray() {
 	declare -p "${!_c_outref}" &>/dev/null || declare -gA "${!_c_outref}"
 	[[ ${1::1} == + ]] || _c_outref=()
 	for _c_elem in "${_c_inref[@]}"; do
-		_c_outref[${_c_elem}]= #!SC2034
+		[[ ${_c_elem} ]] && _c_outref[${_c_elem}]= #!SC2034
 	done
 }
 
