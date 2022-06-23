@@ -12,3 +12,6 @@ xfail 100 expect -2 -s "*' - dev-test test dev-test/test repo'" \
 	-c1P "${REPOPATH}" -R "${BASH}" test <<<'
 	echo "${RCD_CATEGORY} ${RCD_PN} ${RCD_PACKAGE} ${RCD_REPONAME}"
 	exit 100'
+
+expect -2 -! "*'badoutput'*" -c1P "${REPOPATH}" --no-command -sR "${BASH}" test <<<'
+	echo badoutput'

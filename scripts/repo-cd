@@ -33,17 +33,18 @@ usage <<-EOU
 	                      searches unless explicitly specified
 	                      (default: acct-user,acct-group,dev-haskell,virtual)
 
-	  -q, --quiet         Do not display non-error informational messages
-	                      (to be further quiet, also set --run='')
 	      --fields=LIST   Comma-separated list of information to display,
 	                      prefix with - to disable e.g. =all,-pgo
 	                      (choices: ${RCD_FIELDS}
 	                      all by default, pgo+bgo are only for the Gentoo repo)
+	  -q, --quiet         Do not display non-error informational messages
+	                      (to be further quiet, also set --no-command)
 
-	  -R, --run=COMMAND   If atom matches a package, run COMMAND if non-empty
-	                      then exit with its status, see *Running Commands* for
-	                      details (default: ls -1v --color=always)
-	  -r, --no-capture    Redirect COMMAND's output to stderr rather than capture
+	  -R, --run=COMMAND   If atom matches a package, run COMMAND then exit with
+	                      its status, see *Running Commands* for details
+	                      (default: ls -1v --color=always)
+	  -s, --no-capture    Redirect COMMAND's output to stderr rather than capture
+	  -r, --no-command    Do not run COMMAND even if defined
 
 	      --posix=ALIAS   Print posix sh integration, see *Shell Integration* below
 	      --bash=ALIAS    Print bash integration with atom completion support
@@ -94,10 +95,11 @@ optauto args "${@}" <<-EOO
 	D|duplicates=bool:false
 	1|first=bool:false
 	e|exclude=str:acct-user,acct-group,dev-haskell,virtual
-	q|quiet=bool:false
 	fields=str:all
+	q|quiet=bool:false
 	R|run=str:ls -1v --color=always
-	r|!capture=bool:true
+	s|!capture=bool:true
+	r|!command=bool:true
 	posix=str:
 	bash=str:
 	fish=str:
@@ -204,6 +206,8 @@ declare -A F
 split fields "${fields}" ','
 hasharray F fields; unset fields
 [[ -v F[*] ]] || O[quiet]=true
+
+[[ ${O[run]} ]] || O[command]=false
 
 # rcd-ask <variable> <choice>...
 #	Ask to pick from <choices> and store result in <variable>.
@@ -756,14 +760,14 @@ if ${O[compgen]}; then
 	rcd-print_compgen "${@}"
 elif rcd-cd "${@}"; then
 	# avoid doing some slower operations if not needed
-	if [[ ${O[run]} ]] || ! ${O[quiet]}; then
+	if ${O[command]} || ! ${O[quiet]}; then
 		# get ATOM either way as a sanity check
 		${O[quiet]} && rcd-set_atom_and_si nosi || rcd-set_atom_and_si
 
 		if (( ${#ATOM[@]} )); then
 			${O[quiet]} || rcd-print_package_data
 
-			if [[ ${O[run]} ]]; then
+			if ${O[command]}; then
 				rcd-print_command
 				exit ${?}
 			fi
