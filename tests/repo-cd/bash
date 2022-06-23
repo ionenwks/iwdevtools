@@ -3,14 +3,10 @@
 PATH=${SCRIPT%/*}:${PATH}
 func=${SCRIPT##*/}
 
-eval "$(command "${func}" -c1 --bash="${func}" --path="${PWD}/repo")"
-eval "$(command "${func}" -c1 --posix="${func}-posix" --path="${PWD}/repo")"
+eval "$(command "${func}" -c1 --bash="${func}" --path="${DATADIR}/repo")"
+eval "$(command "${func}" -c1 --posix "${func}-posix" --path="${DATADIR}/repo")"
 
 declare -f "${func}" "_${func}" "${func}-posix"
-
-mkdir -p repo/profiles
-echo repo > repo/profiles/repo_name
-mkdir -p repo/dev-test/test
 
 "${func}" -c1
 [[ ${PWD} == */repo ]] || fail "${PWD} is not in */repo"
