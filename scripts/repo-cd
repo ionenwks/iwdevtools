@@ -484,7 +484,7 @@ rcd-print_command() {
 
 	if ${O[capture]}; then
 		${O[run]} |& map output
-		(( ret=PIPESTATUS[0] )) && mod='-:r' || mod='_:g'
+		(( ret=PIPESTATUS[0] )) && mod='-:r' || mod='+:g'
 		(( ${#output[@]} )) && rcd-msg "${mod}" "${output[@]}"
 		return ${ret}
 	fi
