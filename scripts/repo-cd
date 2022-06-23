@@ -27,6 +27,8 @@ usage <<-EOU
 	                       (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
 
 	  -1, --first          Disable interactive prompts and always pick first choice
+	  -q, --quiet          Do not display non-error informational messages (to be
+	                       further quiet, also set --run='')
 
 	  -R, --run=COMMAND    If atom matches a package, run COMMAND if non-empty
 	                       then exit with its status, see *Running Commands* for
@@ -81,6 +83,7 @@ optauto args "${@}" <<-EOO
 	P|path=str:default
 	D|duplicates=bool:false
 	1|first=bool:false
+	q|quiet=bool:false
 	R|run=str:ls -1v --color=always
 	r|!capture=bool:true
 	posix=str:
@@ -261,7 +264,7 @@ rcd-cd() {
 		rcd-ask cd "${choice[@]}"
 	fi
 
-	rcd-msg '>:y:c' "${cd/#"${HOME}"/\~}"
+	${O[quiet]} || rcd-msg '>:y:c' "${cd/#"${HOME}"/\~}"
 	cd "${cd}" || die "failed to cd '${cd}'"
 	echo "${cd}" # for the interactive shell to use
 
@@ -571,13 +574,16 @@ _rcd_print_package_data_add_homepage() {
 	homeindex[${trim}]="${C[lb]}${data}${note:+ ${C[a]}(${note})}${C[n]}"
 }
 
-# rcd-set_atom_and_si
+# rcd-set_atom_and_si [nosi]
 #	Fill ATOM and SI arrays for all valid ebuilds in current directory
 #	(if any). Each element has a atomsp() and shellimport() reference.
+#	Skip the more expensive SI if [nosi].
 declare -a ATOM=() SI=()
 rcd-set_atom_and_si() {
 	local cat ebuild
 	local -i i=0
+	local nosi=false
+	[[ ${1:-} == nosi ]] && nosi=true
 
 	cat=${PWD%/*}
 	cat=${cat##*/}
@@ -595,8 +601,12 @@ rcd-set_atom_and_si() {
 		local -n atom=RCD_ATOM_${i}
 		local -n si=RCD_SI_${i}
 		if atomsp "${!atom}" "=${cat}/${ebuild}" &&
-			[[ ${atom[2]:-} && ${atom[3]:-} && ${atom[4]:-} ]]; then
-			if shellimport "${!si}" "${ebuild}"; then
+			[[ ${atom[2]:-} && ${atom[3]:-} && ${atom[4]:-} ]]
+		then
+			if ${nosi}; then
+				ATOM+=("${!atom}")
+				i+=1
+			elif shellimport "${!si}" "${ebuild}"; then
 				ATOM+=("${!atom}")
 				SI+=("${!si}")
 				i+=1
@@ -669,12 +679,18 @@ rcd-set_repopath
 if ${O[compgen]}; then
 	rcd-print_compgen "${@}"
 elif rcd-cd "${@}"; then
-	rcd-set_atom_and_si
-	if (( ${#ATOM[@]} )); then
-		rcd-print_package_data
-		if [[ ${O[run]} ]]; then
-			rcd-print_command
-			exit ${?}
+	# avoid doing some slower operations if not needed
+	if [[ ${O[run]} ]] || ! ${O[quiet]}; then
+		# get ATOM either way as a sanity check
+		${O[quiet]} && rcd-set_atom_and_si nosi || rcd-set_atom_and_si
+
+		if (( ${#ATOM[@]} )); then
+			${O[quiet]} || rcd-print_package_data
+
+			if [[ ${O[run]} ]]; then
+				rcd-print_command
+				exit ${?}
+			fi
 		fi
 	fi
 fi
