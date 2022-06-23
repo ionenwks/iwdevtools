@@ -195,9 +195,11 @@ rcd-ask() {
 	fi
 
 	local default=" ${C[a]}(default)${C[n]}"
+	local display
 	local -i i
 	for ((i=1; i<=${#}; i++)); do
-		rcd-msg '?:m' "${C[y]}${i}${C[a]}:${C[c]}${!i/#"${HOME}"/\~}${C[n]}${default}"
+		rcd-get_display_path display c lr "${!i}"
+		rcd-msg '?:m' "${C[y]}${i}${C[a]}:${display}${default}"
 		default=
 	done
 
@@ -272,16 +274,17 @@ rcd-cd() {
 		rcd-ask cd "${choice[@]}"
 	fi
 
-	${O[quiet]} || rcd-msg '>:y:c' "${cd/#"${HOME}"/\~}"
+	if ! ${O[quiet]}; then
+		rcd-get_display_path path c lr "${cd}"
+		rcd-msg '>:y:c' "${path}"
+	fi
 	cd "${cd}" || die "failed to cd '${cd}'"
 	echo "${cd}" # for the interactive shell to use
 
 	# roughly figure out if find(1)+rcd-ask gave a package directory without
 	# assuming from files, e.g. skel.ebuild is not from a package
-	for path in "${REPOPATH[@]}"; do
-		[[ ${path} == "${PWD%/*/*}" ]] && return 0
-	done
-	return 1
+	path=${PWD%/*/*}
+	[[ -v REPONAME['${path%/}/'] ]]
 }
 
 # rcd-find <mindepth> <maxdepth> <path>... <extra-find-args>
@@ -327,6 +330,31 @@ rcd-find() {
 	# and makes this simpler for ordering and custom --path repos
 	find "${paths[@]}" "${depth[@]}" \
 		-type d \( "${omit[@]}" \) -prune -o -type d "${@}" || die
+}
+
+# rcd-get_display_path <variable> <base-color> <cat/pkg-color> <path>
+#	Set <variable> with <path> adjusted for display with mixed colors
+#	for cat/pkg to stand out and ${HOME} be replaced by ~.
+rcd-get_display_path() {
+	local -n outref=${1}
+
+	local path_cat path_pn path_base
+	path_cat=${4%/*}
+	path_cat=${path_cat##*/}
+	path_pn=${4##*/}
+	path_base=${4%"${path_cat}/${path_pn}"}
+
+	if [[ ! -v REPONAME['${path_base%/}/'] ]]; then
+		path_cat=${path_pn}
+		path_pn=
+		path_base=${4%"${path_cat}"}
+		if [[ ! -v REPONAME['${path_base%/}/'] ]]; then
+			path_cat=
+			path_base=${4}
+		fi
+	fi
+
+	outref=${C[${2}]}${path_base#"${HOME}"/\~}${path_cat:+${C[${3}]}${path_cat}${path_pn:+/${path_pn}}}${C[n]}
 }
 
 # rcd-get_metadata <array> <path[]> [attribute]...
@@ -625,8 +653,8 @@ rcd-set_atom_and_si() {
 }
 
 # rcd-set_repopath
-#	Set REPOPATH array based on O[path] string.
-#	Also sets REPONANE[${path%/}/] for name lookup.
+#	Set REPOPATH array based on O[path] string. Also sets REPONANE[${path%/}/]
+#	for name lookup or testing if ${path} is a repo.
 #	Skip repos with the same name in metadata/layout.conf so that e.g.
 #	path=~/gentoo:default doesn't asks to pick every time.
 #	Skip and warn for invalid paths, dies if none left.
