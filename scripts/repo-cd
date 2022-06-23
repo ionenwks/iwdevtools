@@ -3,6 +3,7 @@
 init
 depend find q sort xmllint
 include atomf shellparse
+RCD_FIELDS=dir,desc,home,remote,maint,pgo,bgo
 usage <<-EOU
 	Usage: ${0##*/} [options] [atom]
 
@@ -27,12 +28,17 @@ usage <<-EOU
 	                      (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
 
 	  -1, --first         Disable interactive prompts and always pick first choice
-	  -q, --quiet         Do not display non-error informational messages (to be
-	                      further quiet, also set --run='')
 
 	  -e, --exclude=LIST  Comma-separated list of categories to exclude from
 	                      searches unless explicitly specified
 	                      (default: acct-user,acct-group,dev-haskell,virtual)
+
+	  -q, --quiet         Do not display non-error informational messages
+	                      (to be further quiet, also set --run='')
+	      --fields=LIST   Comma-separated list of information to display,
+	                      prefix with - to disable e.g. =all,-pgo
+	                      (choices: ${RCD_FIELDS}
+	                      all by default, pgo+bgo are only for the Gentoo repo)
 
 	  -R, --run=COMMAND   If atom matches a package, run COMMAND if non-empty
 	                      then exit with its status, see *Running Commands* for
@@ -87,8 +93,9 @@ optauto args "${@}" <<-EOO
 	P|path=str:default
 	D|duplicates=bool:false
 	1|first=bool:false
-	q|quiet=bool:false
 	e|exclude=str:acct-user,acct-group,dev-haskell,virtual
+	q|quiet=bool:false
+	fields=str:all
 	R|run=str:ls -1v --color=always
 	r|!capture=bool:true
 	posix=str:
@@ -180,6 +187,23 @@ set -- "${args[@]}"; unset args
 
 [[ ${O[exclude]} =~ ^[,A-Za-z0-9+_.-]*$ ]] \
 	|| die "--exclude list has invalid characters for categories"
+
+[[ ${O[fields]}, =~ ^,*((-?(all|${RCD_FIELDS//,/|}.{0}),+)+|$)$ ]] \
+	|| die "--field has invalid fields"
+
+# not perfect, but handles any sane usage
+fields=
+if [[ ${O[fields]} != *-all* ]]; then
+	fields=${O[fields]//all/${RCD_FIELDS}}
+	while [[ ${fields} =~ -([^,]+) ]]; do
+		fields=${fields//-"${BASH_REMATCH[1]}"/}
+		fields=${fields//"${BASH_REMATCH[1]}"/}
+	done
+fi
+declare -A F
+split fields "${fields}" ','
+hasharray F fields; unset fields
+[[ -v F[*] ]] || O[quiet]=true
 
 # rcd-ask <variable> <choice>...
 #	Ask to pick from <choices> and store result in <variable>.
@@ -274,7 +298,7 @@ rcd-cd() {
 		rcd-ask cd "${choice[@]}"
 	fi
 
-	if ! ${O[quiet]}; then
+	if ! ${O[quiet]} && [[ -v F[dir] ]]; then
 		rcd-get_display_path path c lr "${cd}"
 		rcd-msg '>:y:c' "${path}"
 	fi
@@ -500,49 +524,56 @@ rcd-print_package_data() {
 	local -A homeindex
 	local cache description= ebuild data note pvr
 
-	local -i i
-	for ((i=0; i<${#ATOM[@]}; i++)); do
-		local -n atom=${ATOM[i]}
-		local -n si=${SI[i]}
-		pvr=${atom[4]}${atom[5]:+-r${atom[5]}}
+	if [[ -v F[home] || -v F[desc] ]]; then
+		local -i i
+		for ((i=0; i<${#ATOM[@]}; i++)); do
+			local -n atom=${ATOM[i]}
+			local -n si=${SI[i]}
+			pvr=${atom[4]}${atom[5]:+-r${atom[5]}}
 
-		# check md5-cache to see eclass-set values (inherit is unhandled),
-		# and then ebuild to be up to date or fallback if cache is missing
-		cache=../../metadata/md5-cache/${atom[2]}/${atom[3]}-${pvr}
-		if [[ -d ../../metadata/md5-cache && -f ${cache} ]]; then
-			note="${pvr}, cached"
-			while IFS= read -r data; do
-				case ${data} in
-					DESCRIPTION=*)
-						description="${C[ly]}${data#DESCRIPTION=} ${C[a]}(${note})${C[n]}"
-					;;
-					HOMEPAGE=*)
-						for data in ${data#HOMEPAGE=}; do
-							_rcd_print_package_data_add_homepage
-						done
-					;;
-				esac
-			done < "${cache}" || die "failed to read '${cache}'"
-		fi
+			# check md5-cache to see eclass-set values (inherit is unhandled),
+			# and then ebuild to be up to date or fallback if cache is missing
+			cache=../../metadata/md5-cache/${atom[2]}/${atom[3]}-${pvr}
+			if [[ -d ../../metadata/md5-cache && -f ${cache} ]]; then
+				note="${pvr}, cached"
+				while IFS= read -r data; do
+					case ${data} in
+						DESCRIPTION=*)
+							description="${C[ly]}${data#DESCRIPTION=} ${C[a]}(${note})${C[n]}"
+						;;
+						HOMEPAGE=*)
+							[[ -v F[home] ]] &&
+								for data in ${data#HOMEPAGE=}; do
+									_rcd_print_package_data_add_homepage
+								done
+						;;
+					esac
+				done < "${cache}" || die "failed to read '${cache}'"
+			fi
 
-		note=${pvr}
+			note=${pvr}
 
-		[[ ${si[DESCRIPTION]:-} ]] &&
-			description="${C[ly]}${si[DESCRIPTION]} ${C[a]}(${note})${C[n]}"
-
-		for data in ${si[HOMEPAGE]:-}; do
-			_rcd_print_package_data_add_homepage
+			[[ ${si[DESCRIPTION]:-} ]] &&
+				description="${C[ly]}${si[DESCRIPTION]} ${C[a]}(${note})${C[n]}"
+			[[ -v F[home] ]] &&
+				for data in ${si[HOMEPAGE]:-}; do
+					_rcd_print_package_data_add_homepage
+				done
 		done
-	done
+	fi
 
-	if [[ -f metadata.xml ]]; then
+	if [[ ( -v F[remote] || -v F[maint] ) && -f metadata.xml ]]; then
 		local -a metabugs metachangelog metadocs metamaints metaurls
-		# stop if any reported errors as will likely all fail and be noisy
-		if rcd-get_metadata metabugs 'upstream/bugs-to[]' &&
-			rcd-get_metadata metachangelog 'upstream/changelog[]' &&
-			rcd-get_metadata metadocs 'upstream/doc[]' &&
-			rcd-get_metadata_remote_urls metaurls &&
-			rcd-get_metadata metamaints 'maintainer[]/email' type proxied
+		# stop at once if any errors as will likely all fail and be noisy
+		if { [[ ! -v F[remote] ]] || {
+				rcd-get_metadata metabugs 'upstream/bugs-to[]' &&
+				rcd-get_metadata metachangelog 'upstream/changelog[]' &&
+				rcd-get_metadata metadocs 'upstream/doc[]' &&
+				rcd-get_metadata_remote_urls metaurls
+			} } &&
+			{ [[ ! -v F[maint] ]] ||
+				rcd-get_metadata metamaints 'maintainer[]/email' type proxied
+			}
 		then
 			note=
 			for data in "${metaurls[@]}"; do
@@ -585,22 +616,25 @@ rcd-print_package_data() {
 	(( ${#maintainers[@]} )) || maintainers=("${C[a]}maintainer-needed${C[n]}")
 
 	# display
-	[[ ${description} ]] && rcd-msg D:la "${description}"
+	[[ -v F[desc] && ${description} ]] && rcd-msg D:la "${description}"
 
-	for data in "${homesort[@]}"; do
-		rcd-msg H:a "${homeindex[${data}]}"
-	done
+	[[ -v F[home] || -v F[remote] ]] &&
+		for data in "${homesort[@]}"; do
+			rcd-msg H:a "${homeindex[${data}]}"
+		done
 
 	# Also show pgo and bgo links if ::gentoo, non-metadata simple links
 	# could use a --run=script to display but these are rather common
 	data=${PWD%/*/*}
 	if [[ ${REPONAME[${data%/}/]} == gentoo ]]; then
 		data=${PWD#"${data}"/}
-		rcd-msg G:m:lb "https://packages.gentoo.org/packages/${data}"
-		rcd-msg G:m:lb "https://bugs.gentoo.org/buglist.cgi?quicksearch=${data/\//%2F}"
+		[[ -v F[pgo] ]] &&
+			rcd-msg G:m:lb "https://packages.gentoo.org/packages/${data}"
+		[[ -v F[bgo] ]] &&
+			rcd-msg G:m:lb "https://bugs.gentoo.org/buglist.cgi?quicksearch=${data/\//%2F}"
 	fi
 
-	rcd-msg M:c "${maintainers[*]}"
+	[[ -v F[maint] ]] && rcd-msg M:c "${maintainers[*]}"
 }
 _rcd_print_package_data_add_homepage() {
 	# build simplified HOMEPAGE index (no http:, trailing /, nor index.*) to

@@ -20,3 +20,28 @@ expect -2 -s "*'/repo/dev-test/alt'*'syntax error'*'
  D alt description (1.0.0)
  H https://cached/ (1.0.0, cached)
  M maintainer-needed'*" -c1P "${REPOPATH}" alt
+
+# note: github is re-ordered given not registered as an homepage anymore
+expect -2 -s "*'/repo/dev-test/test
+ H https://gitweb.gentoo.org/proj/iwdevtools.git/
+ H https://github.com/ionenwks/iwdevtools/
+ H https://doc/ (doc)
+ H https://bugs-to/ (bugs-to)
+ H https://changelog/ (changelog)'*" -c1P "${REPOPATH}" test \
+	--fields='all,-home,-maint,-desc'
+
+# note: github loses / and gain version with homepage version
+expect -2 -s "*' D new description (1.0.1)
+ H http://outdated-cache/ (1.0.0, cached)
+ H https://old-homepage/ (1.0.0)
+ H https://github.com/ionenwks/iwdevtools (1.0.1)
+ H https://homepage/ (1.0.1)
+ H https://new-homepage/ (1.0.1)
+ M person-email proxied-email proxy-project-email'*" -c1P "${REPOPATH}" test \
+	--fields='desc,home,maint'
+
+expect -2 -s "' > '*/repo/dev-test/test" -c1P "${REPOPATH}" test \
+	--fields='dir' --run=''
+
+expect -2 "''" -c1P "${REPOPATH}" --quiet --run='' test
+expect -2 "''" -c1P "${REPOPATH}" --fields='' --run='' test
