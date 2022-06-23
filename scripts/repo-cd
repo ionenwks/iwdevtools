@@ -57,9 +57,9 @@ usage <<-EOU
 	*Running Commands*
 	If match a valid package, --run's COMMAND will be executed inside the directory
 	allowing to e.g. show directory contents (default), git logs, pkgcheck, and/or
-	display notes/reminders based on the package name for a few ideas. The variables
-	RCD_CATEGORY, RCD_PN, RCD_PACKAGE (cat/pn), and RCD_REPONAME are exported for
-	use with external scripts.
+	display notes/reminders/links(like bugzilla queries) based on the package name
+	for a few ideas. The variables RCD_CATEGORY, RCD_PN, RCD_PACKAGE (cat/pn), and
+	RCD_REPONAME are exported for use with external scripts.
 
 	*Shell Integration*
 	To be able to change the directory of an interactive shell, a higher level
