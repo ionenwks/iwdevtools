@@ -3,12 +3,23 @@
 PATH=${SCRIPT%/*}:${PATH}
 func=${SCRIPT##*/}
 
-eval "$(command "${func}" --bash="${func}" --path="${PWD}/dest")"
+eval "$(command "${func}" -c1 --bash="${func}" --path="${PWD}/repo")"
+eval "$(command "${func}" -c1 --posix="${func}-posix" --path="${PWD}/repo")"
 
-declare -f "${func}"
+declare -f "${func}" "_${func}" "${func}-posix"
 
-mkdir -p dest/profiles
-echo dest > dest/profiles/repo_name
+mkdir -p repo/profiles
+echo repo > repo/profiles/repo_name
+mkdir -p repo/dev-test/test
 
 "${func}" -c1
-[[ ${PWD} == */dest ]] || fail "${PWD} is not in */dest"
+[[ ${PWD} == */repo ]] || fail "${PWD} is not in */repo"
+
+"${func}-posix" -c1 test
+[[ ${PWD} == */repo/dev-test/test ]] || fail "${PWD} is not in */repo/dev-test/test"
+
+COMP_WORDS=("${func}" -c -1 te)
+COMP_CWORD=3
+COMPREPLY=()
+_"${func}" '' te
+[[ ${COMPREPLY[0]:-} == test ]] || fail "COMPREPLY is not 'test'"

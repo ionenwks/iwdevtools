@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+REPOPATH=${PWD}/repo
+mkdir -p repo/profiles
+echo repo > repo/profiles/repo_name
+
+mkdir -p repo/dev-{test,alt}/{a,b}{a,b}test
+mkdir -p repo/dev-test/extra
+
+testcomp() {
+	local word=${1}
+	shift
+	expect -s "'$(printf %s "${@/%/$'\n'}")'" -c1P "${REPOPATH}" --compgen ${word}
+}
+
+testcomp '' ''
+testcomp a aatest abtest
+testcomp aa aatest
+testcomp dev dev-alt/ dev-test/
+testcomp dev-t dev-test/
+testcomp dev-test/ex dev-test/extra

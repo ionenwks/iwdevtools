@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>person-email</email>
+	</maintainer>
+	<maintainer type="person" proxied="yes">
+		<email>proxied-email</email>
+	</maintainer>
+	<maintainer type="project" proxied="proxy">
+		<email>proxy-project-email</email>
+	</maintainer>
+	<upstream>
+		<bugs-to>https://bugs-to/</bugs-to>
+		<changelog>https://changelog/</changelog>
+		<doc>https://doc/</doc>
+		<remote-id type="gentoo">proj/iwdevtools</remote-id>
+		<remote-id type="github">ionenwks/iwdevtools</remote-id>
+	</upstream>
+</pkgmetadata>

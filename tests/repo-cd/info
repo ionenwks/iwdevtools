@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+REPOPATH=${DATADIR}/info
+
+expect -2 -s "*'/info/dev-test/test
+ D new description (1.0.1)
+ H http://outdated-cache/ (1.0.0, cached)
+ H https://old-homepage/ (1.0.0)
+ H https://github.com/ionenwks/iwdevtools/
+ H https://homepage/ (1.0.1)
+ H https://new-homepage/ (1.0.1)
+ H https://gitweb.gentoo.org/proj/iwdevtools.git/
+ H https://doc/ (doc)
+ H https://bugs-to/ (bugs-to)
+ H https://changelog/ (changelog)
+ M person-email proxied-email proxy-project-email'*" -c1P "${REPOPATH}" test
+
+expect -2 -s "*'/info/dev-test/alt'*'syntax error'*'
+ ! metadata.xml: issues reading, info may be missing
+ D alt description (1.0.0)
+ H https://cached/ (1.0.0, cached)
+ M maintainer-needed'*" -c1P "${REPOPATH}" alt

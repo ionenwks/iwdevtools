@@ -2,8 +2,6 @@
 set_portroot
 
 mkdir -p {extra,home/homey}/profiles
-echo extra > extra/profiles/repo_name
-echo homey > home/homey/profiles/repo_name
 cat >> "${ROOT}"/etc/portage/repos.conf <<-EOF
 	[missing]
 	location = ${PWD}/missing
@@ -13,6 +11,11 @@ cat >> "${ROOT}"/etc/portage/repos.conf <<-EOF
 EOF
 
 export HOME=${PWD}/home
+
+xfail 1 expect -2 "*extra: ignored*Error: no valid*" -c1P "${PWD}/extra"
+echo extra > extra/profiles/repo_name
+echo homey > home/homey/profiles/repo_name
+
 expect -2 "*invalid: ignored*missing: ignored*" -c1P "~/homey:~/invalid:default"
 expect -2 -! -e "(homey|gentoo|extra): ignored" -c1P "~/homey:~/invalid:default"
 expect -2 -! -e "(homey|gentoo|extra|missing): ignored" -c1P "~/homey:~/invalid"
