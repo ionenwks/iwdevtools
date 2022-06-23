@@ -75,10 +75,10 @@ usage <<-EOU
 	To be able to change the directory of an interactive shell, a higher level
 	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
 
-	For convenience, can use one of the shell integration functions, e.g.
-	--bash=rcd outputs code to enable \`rcd [atom]\` with atom tab completion
-	support using bash. Intended to be added to ~/.bashrc and/or ~/.bash_profile
-	(can also run in current shell to use immediately):
+	For convenience, can use one of the shell integration option, e.g. --bash=rcd
+	outputs code to enable \`rcd [atom]\` with atom tab completion support using
+	bash. Intended to be added to ~/.bashrc and/or ~/.bash_profile (can also run
+	in current shell to use immediately):
 
 	    eval "\$(command ${0##*/} --bash=rcd)"
 
@@ -288,7 +288,7 @@ rcd-cd() {
 			else
 				rcd-find 1 2 "${path}" -iname "${name}" -print0 | sort -z || die
 			fi
-		done | mapfile -d '' -t choice
+		done | mapfile -td '' choice
 
 		if (( ! ${#choice[@]} )); then
 			rcd-msg '!:r' "no match found for '${C[m]}${search}${C[n]}'${userepo:+ in ::${userepo}}"
