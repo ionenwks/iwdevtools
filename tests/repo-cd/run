@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+REPOPATH=${DATADIR}/repo
+
+expect -2 -s "*'
+test
+extra line'" -c1P "${REPOPATH}" --no-capture --run="${BASH}" test <<<'
+	echo ${PWD##*/}
+	echo extra line'
+
+xfail 100 expect -2 -s "*' - dev-test test dev-test/test repo'" \
+	-c1P "${REPOPATH}" -R "${BASH}" test <<<'
+	echo "${RCD_CATEGORY} ${RCD_PN} ${RCD_PACKAGE} ${RCD_REPONAME}"
+	exit 100'

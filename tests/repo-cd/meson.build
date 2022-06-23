@@ -5,6 +5,7 @@ tests = [
 	'help',
 	'info',
 	'repopath',
+	'run',
 	'search',
 	'shellcheck'
 ]

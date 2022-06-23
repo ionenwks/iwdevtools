@@ -15,18 +15,23 @@ usage <<-EOU
 	 > example      : lookup matches in all categories
 	 > example::repo: limit to a specific repo
 	 > (nothing)    : print the repository's top level directory
-	 > .            : show information again for current directory
+	 > .            : run again for current directory
 	In all cases, will ask if multiple results unless -1 or --first is specified.
 
 	Options:
 	  -P, --path=PATH:...  Specify list of repos to search ordered by priority,
 	                       special keyword "default" adds all from repos.conf
 	                       (e.g. --path="~/gentoo:default", see --dumpconfig
-	                       or *Shell Integration* below to set permanently).
+	                       or *Shell Integration* below to set permanently)
 	  -D, --duplicates     Allow multiple repos with the same profiles/repo_name
 	                       (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
 
 	  -1, --first          Disable interactive prompts and always pick first choice
+
+	  -R, --run=COMMAND    If atom matches a package, run COMMAND if non-empty
+	                       then exit with its status, see *Running Commands* for
+	                       details (default: ls -1v --color=always)
+	  -r, --no-capture     Redirect COMMAND's output to stderr rather than capture
 
 	      --posix=ALIAS    Print posix sh integration, see *Shell Integration* below
 	      --bash=ALIAS     Print bash integration with atom completion support
@@ -47,6 +52,13 @@ usage <<-EOU
 	Some information may be missing if ebuilds rely on eclasses to set DESCRIPTION
 	or HOMEPAGE without metadata/md5-cache. cpe-type remote-ids are unsupported.
 
+	*Running Commands*
+	If match a valid package, --run's COMMAND will be executed inside the directory
+	allowing to e.g. show directory contents (default), git logs, pkgcheck, and/or
+	display notes/reminders based on the package name for a few ideas. The variables
+	RCD_CATEGORY, RCD_PN, RCD_PACKAGE (cat/pn), and RCD_REPONAME are exported for
+	use with external scripts.
+
 	*Shell Integration*
 	To be able to change the directory of an interactive shell, a higher level
 	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
@@ -58,9 +70,9 @@ usage <<-EOU
 
 	    eval "\$(command ${0##*/} --bash=rcd)"
 
-	(can pass other options like --path to the above too, for per-path aliases).
-	The above eval works the same for each supported shells, except e.g. swap
-	--bash for --zsh and use ~/.zshrc, or --fish and ~/.config/fish/conf.d
+	Can also pass other options like --path or --run to the above for per-aliases
+	effects. The above eval works the same for each supported shells, except e.g.
+	swap --bash for --zsh and use ~/.zshrc, or --fish and ~/.config/fish/conf.d
 EOU
 
 setmsg 2 # stdout only used to show cd path or shell integration
@@ -69,6 +81,8 @@ optauto args "${@}" <<-EOO
 	P|path=str:default
 	D|duplicates=bool:false
 	1|first=bool:false
+	R|run=str:ls -1v --color=always
+	r|!capture=bool:true
 	posix=str:
 	bash=str:
 	fish=str:
@@ -228,7 +242,7 @@ rcd-cd() {
 		local path
 		local -a choice=()
 		for path in "${REPOPATH[@]}"; do
-			[[ ! ${userepo} || ${REPONAME[${path}]} == "${userepo}" ]] || continue
+			[[ ! ${userepo} || ${REPONAME[${path}/]} == "${userepo}" ]] || continue
 
 			if [[ ${cat} ]]; then
 				# if exact match, no need for find or its exception rules
@@ -423,6 +437,25 @@ rcd-print_compgen() {
 	fi | sort | uniq
 }
 
+# rcd-print_command
+#	Run ${O[run]}, output through rcd-msg, and return its exit status
+rcd-print_command() {
+	local -x RCD_CATEGORY=${PWD%/*}
+	RCD_CATEGORY=${RCD_CATEGORY##*/}
+	local -x RCD_PN=${PWD##*/}
+	local -x RCD_PACKAGE=${RCD_CATEGORY}/${RCD_PN}
+	local -x RCD_REPONAME=${REPONAME[${PWD%/*/*}/]}
+
+	if ${O[capture]}; then
+		${O[run]} |& map output
+		(( ret=PIPESTATUS[0] )) && mod='-:r' || mod='_:g'
+		(( ${#output[@]} )) && rcd-msg "${mod}" "${output[@]}"
+		return ${ret}
+	fi
+
+	${O[run]} >&2
+}
+
 # rcd-print_package_data
 #	Print basic info package in ${PWD}, and aggregates HOMEPAGEs and
 #	remote-ids to print all while trying to avoid duplicates.
@@ -578,7 +611,7 @@ rcd-set_atom_and_si() {
 
 # rcd-set_repopath
 #	Set REPOPATH array based on O[path] string.
-#	Also sets REPONANE[${path}] for name lookup.
+#	Also sets REPONANE[${path%/}/] for name lookup.
 #	Skip repos with the same name in metadata/layout.conf so that e.g.
 #	path=~/gentoo:default doesn't asks to pick every time.
 #	Skip and warn for invalid paths, dies if none left.
@@ -619,7 +652,7 @@ _rcd-set_repopath_add_if_unique() {
 		if [[ -f ${file} ]]; then
 			name=$(<"${file}") || die "failed to read '${file}'"
 			if [[ ! -v nameindex['${name}'] ]] || ${O[duplicates]}; then
-				REPONAME[${path}]=${name}
+				REPONAME[${path%/}/]=${name}
 				REPOPATH+=("${PWD}")
 				nameindex[${name}]=
 			fi
@@ -639,13 +672,13 @@ elif rcd-cd "${@}"; then
 	rcd-set_atom_and_si
 	if (( ${#ATOM[@]} )); then
 		rcd-print_package_data
-
-		# TODO: self-note taking system that reminds when cd to work on stuff
-
-		# TODO: just a test command, plans are to allow to run any commands #!SC2012
-		ls -1v --color=always | map array
-		rcd-msg '_:g' "${array[@]}"
+		if [[ ${O[run]} ]]; then
+			rcd-print_command
+			exit ${?}
+		fi
 	fi
 fi
+
+:
 
 # vim: ts=4
