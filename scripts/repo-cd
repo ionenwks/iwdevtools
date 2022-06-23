@@ -423,7 +423,7 @@ rcd-msg() {
 	fi
 
 	local -a m
-	IFS=: read -ra m <<<"${1}"
+	split m "${1}" ':'
 	shift
 
 	printf " ${m[1]+${C[${m[1]}]}}${m[0]}${m[1]+${C[n]}} ${m[2]+${C[${m[2]}]}}%s${m[2]+${C[n]}}${trail:+\n}" \

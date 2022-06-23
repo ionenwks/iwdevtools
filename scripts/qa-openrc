@@ -179,7 +179,7 @@ openrc-export_qvdb() {
 openrc-is_service() {
 	local -a shebang
 	[[ -s ${1} || ! -f ${1} ]] || return 1 # empty, avoids die
-	IFS=' ' read -ra shebang < "${1}" || die "failed reading '${1}'"
+	split- shebang < "${1}" || die "failed to read '${1}'"
 	[[ ${shebang[0]:-} == '#!'* ]] || return 1
 
 	if [[ ${shebang[0]} == */openrc-run ]]; then
