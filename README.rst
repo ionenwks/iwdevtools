@@ -3,7 +3,7 @@ iwdevtools
 
 Overview
 --------
-* `qa-vdb`_ tries to find missing/incorrect shared libraries in RDEPEND
+* `qa-vdb`_ tries to find missing/incorrect shared libraries in ``RDEPEND``
 * `qa-cmp`_ compares old and newly installed packages, e.g. list new files
 * `qa-sed`_ warns when ``sed`` did nothing, bit like a failing patch would
 * `qa-openrc`_ tries to find a few common mistakes in OpenRC init scripts
@@ -11,7 +11,7 @@ Overview
 + `repo-cd`_ facilitates navigating Gentoo repos' directories with some perks
 + `eoldnew`_ emerges the previous version then newest, useful with `qa-cmp`_
 + `scrub-patch`_ removes dirt from patches and may suggest improvements
-+ `find-unresolved`_ helps find missing libraries on a stripped embedded ROOT
++ `find-unresolved`_ helps find missing libraries on a stripped embedded system
 
 - `atomf.bashlib`_ provides various pure-bash accurate atom splitting functions
 - ``atomf`` is also provided as a simple command to use the above
@@ -25,8 +25,8 @@ qa-vdb
 ------
 Dependencies: portage (portageq), portage-utils (qfile,qlist)
 
-Tries to find issues based on information provided by VDB (/var/db/pkg).
-Currently this compares RDEPEND and DT_NEEDED (i.e. from ``scanelf -n``)
+Tries to find issues based on information provided by VDB (``/var/db/pkg``).
+Currently this compares ``RDEPEND`` and ``DT_NEEDED`` (from ``scanelf -n``)
 for missing dependencies, binding operators, and unspecified slots, then
 suggest changes with a diff style output.
 
@@ -44,10 +44,10 @@ Example output::
 
 Left is current, and right is the suggested replacement.
 
-Says sqlite seems unused despite being in RDEPEND (xmms2 did implement its own
-database backend), and it's linking with libogg and readline with current USE
-without RDEPEND. glib -> glib:2 is to suggest explicit SLOT use when available
-(can be disabled with --no-slot among other options).
+Says sqlite seems unused despite being in ``RDEPEND`` (xmms2 did implement its
+own database backend), and it's linking with libogg and readline with current
+``USE`` without ``RDEPEND``. glib -> glib:2 is to suggest explicit ``SLOT``
+use when available (can be disabled with ``--no-slot`` among other options).
 
 Alternate output::
 
@@ -59,8 +59,8 @@ Alternate output::
     +x11-libs/pango
 
 Note that "unused" dependencies should be taken with a grain of salt, package
-may or may not still need it in some other way than DT_NEEDED. dlopen(), build
-time checks/headers, executables, and other potential non-library files.
+may or may not still need it in some other way than ``DT_NEEDED``. ``dlopen()``,
+build time checks/headers, executables, and other potential non-library files.
 
 Run ``qa-vdb --help`` or see **qa-vdb(1)** man page for details.
 
@@ -86,8 +86,8 @@ Dependencies: pax-utils (scanelf), portage (portageq), portage-utils
 
 Compares an image (i.e. ``/var/tmp/portage/<category>/<package>/image``) with
 either another image or installed files, then consolidates differences.
-Will display added and removed files, DT_SONAME changes, ABI changes on
-libraries without a new DT_SONAME (requires ``abidiff`` and debug symbols
+Will display added and removed files, ``DT_SONAME`` changes, ABI changes on
+libraries without a new ``DT_SONAME`` (requires ``abidiff`` and debug symbols
 for proper checks), and size difference if above a certain threshold.
 
 For filelist differences, by default package version is stripped from
@@ -236,7 +236,7 @@ find-unresolved
 ---------------
 Dependencies: pax-utils (scanelf)
 
-Scan a ROOT path's ELF files for missing soname dependencies.
+Scan a ``ROOT`` path's ELF files for missing soname dependencies.
 Primarily intended for verification of a stripped embedded system::
 
     $ find-unresolved netboot-hppa32-20200319T011207Z/
@@ -262,7 +262,7 @@ May potentially be subject to breaking changes for the time being.
 atomf.bashlib
 -------------
 
-Bash-only functions to split portage atoms and version strings. Similar
+Pure bash functions to split portage atoms and version strings. Similar
 functionality to **qatom(1)** but is intended to ease usage in bash scripts.
 
 .. code-block:: bash
@@ -296,10 +296,10 @@ On Gentoo, simply ``emerge app-portage/iwdevtools``
 
 Or for a manual install:
 
-- mkdir build && cd build
-- meson --prefix /path/to/prefix
-- meson test
-- meson install
+- ``mkdir build && cd build``
+- ``meson --prefix /path/to/prefix``
+- ``meson test``
+- ``meson install``
 
 To (optionally) integrate with portage, an example bashrc will be installed
 at ``<prefix>/share/iwdevtools/bashrc`` which can be either symlinked to or
