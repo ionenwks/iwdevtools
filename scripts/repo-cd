@@ -719,10 +719,17 @@ rcd-set_repopath() {
 
 		if [[ ${path} == default ]]; then
 			# use q to avoid portageq's slow startup
+			unset DEBUG # avoid q noise if set
 			q -Cqo | while IFS= read -r path; do
-				# gentoo: /var/db/repos/gentoo (main)
+				# gentoo: ${ROOT}/var/db/repos/gentoo (main)
 				path=${path% (*)}
 				path=${path#*: }
+
+				# q properly uses repos.conf from prefix but does not include
+				# the prefix in the output (just ROOT), so do hacky stuff
+				[[ ${EPREFIX} && ${path} != "${EROOT}/"* ]] &&
+					path=${EROOT}${path#"${ROOT}"}
+
 				_rcd-set_repopath_add_if_unique
 				:
 			done || die "failed to read repos.conf with q -Cqo"
