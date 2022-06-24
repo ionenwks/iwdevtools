@@ -337,11 +337,13 @@ rcd-find() {
 	omitdirs+=(
 		# omit a few known non-category directories (ideally would
 		# load category files, but REPOPATH may lack the full picture)
-		metadata
-		licenses
-		scripts
+		distfiles
 		eclass
+		licenses
+		metadata
+		packages
 		profiles
+		scripts
 	)
 
 	local omit=( -name '.*' ) # .git and other hidden files
