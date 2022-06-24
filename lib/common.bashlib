@@ -267,7 +267,8 @@ optsetconf() {
 
 # optend [-d]
 #	See optstart()
-#	If -d is specified, dump configuration and exit (usable as .conf)
+#	If -d is specified, dump configuration using std out from setmsg() then
+#	exit (usable as .conf)
 optend() {
 	local file l key val
 
@@ -289,7 +290,7 @@ optend() {
 	done
 
 	if [[ ${1:-} == -d ]]; then
-		echo "# ${0##*/}.conf (from \`${0##*/} --dumpconfig\`, see --help for info)"
+		echo "# ${0##*/}.conf (from \`${0##*/} --dumpconfig\`, see --help for info)" >&"${_COMMON_MSG_STD:-1}"
 		for key in "${_COMMON_OPT_SORT[@]}"; do
 			[[ ! ${_COMMON_OPT[${key}]} =~ ^[%@]*ignore:? ]] || continue
 
@@ -314,7 +315,7 @@ optend() {
 					echo "${l}${key} ="
 				fi
 			fi
-		done
+		done >&"${_COMMON_MSG_STD:-1}"
 		exit
 	fi
 
@@ -394,9 +395,14 @@ printarray() {
 # setmsg [12] [format]
 #	Set how to output messages from msg()
 #	Default if not used: 1(stdout) '%s\n'
+#	If IWCOMMON_MSG_STD_FORCE is set to 1 or 2, enforce over arguments
+#	Use enforcing with care, only intended for capturing usage/config
+#	without risking error messages and may break normal use.
 setmsg() {
 	if [[ ${1} == [12] ]]; then
-		_COMMON_MSG_STD=${1}
+		[[ ${IWCOMMON_MSG_STD_FORCE:-} == [12] ]] &&
+			_COMMON_MSG_STD=${IWCOMMON_MSG_STD_FORCE} ||
+			_COMMON_MSG_STD=${1}
 		shift
 	fi
 	(( ! ${#} )) || _COMMON_MSG_FMT=${1}
@@ -446,20 +452,21 @@ showline() {
 }
 
 # usage [<<]
-#	Read stdin for usage, a subsequent call displays it using msg() then exit.
+#	Read stdin for usage, a subsequent call displays it using std output
+#	from setmsg() then exit.
 usage() {
 	if [[ ! -v _COMMON_USAGE ]]; then
-		map _COMMON_USAGE
+		mapfile _COMMON_USAGE
 		return 0
 	fi
-	msg "${_COMMON_USAGE[@]}"
+	printf %s "${_COMMON_USAGE[@]}" >&"${_COMMON_MSG_STD:-1}"
 	exit 0
 }
 
 # version
-#	Show version using msg() then exit
+#	Show version using std outupt from setmsg() then exit
 version() {
-	msg "${0##*/} @version@"
+	echo "${0##*/} @version@" >&"${_COMMON_MSG_STD:-1}"
 	exit 0
 }
 

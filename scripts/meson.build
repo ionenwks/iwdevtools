@@ -61,6 +61,7 @@ foreach script, desc : scripts
 			output : script + '.conf',
 			command : [ run_script.get(script), dumpconfig ],
 			capture : true,
+			env : { 'IWCOMMON_MSG_STD_FORCE' : '1' },
 			install : true,
 			install_dir : confdir
 		)
@@ -71,12 +72,11 @@ foreach script, desc : scripts
 			script + '.1',
 			input : run_script.get(script),
 			output : script + '.1',
-			command : [
-				help2man, '--no-discard-stderr', '-N',
-				'-n', desc,
-				'@INPUT@', '-o', '@OUTPUT@'
-			],
-			env : { 'ROOT' : '', 'EROOT' : eprefix, 'XDG_CONFIG_HOME' : '' },
+			command : [ help2man, '-N', '-n', desc, '@INPUT@', '-o', '@OUTPUT@' ],
+			env : {
+				'ROOT' : '', 'EROOT' : eprefix, 'XDG_CONFIG_HOME' : '',
+				'IWCOMMON_MSG_STD_FORCE' : '1'
+			},
 			install : true,
 			install_dir : get_option('mandir') / 'man1'
 		)
