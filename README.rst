@@ -1,13 +1,25 @@
 iwdevtools
 ==========
 
-Inspired by `mgorny-dev-scripts`_, keeping scripts I happen to
-use tracked here for whomever might want to use.
+Overview
+--------
+* `qa-vdb`_ tries to find missing/incorrect shared libraries in RDEPEND
+* `qa-cmp`_ compares old and newly installed packages, e.g. list new files
+* `qa-sed`_ warns when ``sed`` did nothing, bit like a failing patch would
+* `qa-openrc`_ tries to find a few common mistakes in OpenRC init scripts
 
-Nothing here had that much care given to it and is sloppily
-written, but should (I hope) still be mostly functional.
++ `repo-cd`_ facilitates navigating Gentoo repos' directories with some perks
++ `eoldnew`_ emerges the previous version then newest, useful with `qa-cmp`_
++ `scrub-patch`_ removes dirt from patches and may suggest improvements
++ `find-unresolved`_ helps find missing libraries on a stripped embedded ROOT
 
-.. _mgorny-dev-scripts: https://github.com/mgorny/mgorny-dev-scripts
+- `atomf.bashlib`_ provides various pure-bash accurate atom splitting functions
+- ``atomf`` is also provided as a simple command to use the above
+
+Available from ``app-portage/iwdevtools`` in Gentoo, see `installing`_.
+
+Tools
+=====
 
 qa-vdb
 ------
