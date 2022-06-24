@@ -22,7 +22,7 @@ expect '*/high/dev-alt/alt' -c1P "${REPOPATH}" alt
 expect '*/low/dev-alt/alt' -c1P "${REPOPATH}" alt::low
 
 expect "*/dup/dev-test/dup" -c1P "${REPOPATH}" --duplicates dup
-xfail 104 expect -2 "*no match found*" -c1P "${REPOPATH}" dup
+xfail 104 expect -2 "*no non-excluded match found*" -c1P "${REPOPATH}" dup
 
 xfail 104 expect "''" -c1P "${REPOPATH}" metadata
 xfail 1 expect -2 "*Error: invalid search*" -c1P "${REPOPATH}" .git
