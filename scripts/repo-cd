@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend find q sort xmllint
+depend find q sort uniq xmllint
 include atomf shellparse
 RCD_FIELDS=dir,desc,home,remote,maint,pgo,bgo
 usage <<-EOU
