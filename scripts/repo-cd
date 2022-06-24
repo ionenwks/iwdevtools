@@ -64,6 +64,7 @@ usage <<-EOU
 	*Known Limitations*
 	Some information may be missing if ebuilds rely on eclasses to set DESCRIPTION
 	or HOMEPAGE without metadata/md5-cache. cpe-type remote-ids are unsupported.
+	Initial invocation may be slow until the system caches the repo directories.
 
 	*Running Commands*
 	If match a valid package, --run's COMMAND will be executed inside the directory
