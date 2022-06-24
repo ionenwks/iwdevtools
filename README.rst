@@ -148,6 +148,48 @@ Example output::
 
 Run ``qa-openrc --help`` or see **qa-openrc(1)** man page for details.
 
+repo-cd
+-------
+Dependencies: portage-utils (q), libxml2 (xmllint)
+
+Can be used to jump to the repo directory (cd) of the specified atom,
+with a few added perks like displaying ``metadata.xml``'s remote-ids.
+
+Here I have my work tree at ``~/gentoo`` that I want to use with ``:default``
+as fallback (adds all from ``repos.conf``), using a ``rcd`` alias::
+
+	~$ eval "$(command repo-cd --bash=rcd --path="~/gentoo:default")"
+	~$ rcd speed-d<tab>
+	 > ~/gentoo/games-sports/speed-dreams
+	 D Fork of the famous open racing car simulator TORCS (2.2.3)
+	 H http://www.speed-dreams.org/ (2.2.3)
+	 H https://sourceforge.net/projects/speed-dreams/
+	 G https://packages.gentoo.org/packages/games-sports/speed-dreams
+	 G https://bugs.gentoo.org/buglist.cgi?quicksearch=games-sports%2Fspeed-dreams
+	 M games@gentoo.org
+	 + Manifest
+	 + files
+	 + metadata.xml
+	 + speed-dreams-2.2.3.ebuild
+	~/gentoo/games-sports/speed-dreams$ _
+
+Has some customization options, like hiding fields and running commands in
+the directory (in the above case it ran ``ls`` by default), and these can
+be saved in a ``repo-cd.conf`` or like ``--path`` was above::
+
+	~$ rcd zstd --fields=all,-bgo,-pgo,-maint --run="echo hello world"
+	 ? 1:~/gentoo/app-arch/zstd (default)
+	 ? 2:~/gentoo/dev-python/zstd
+	 ? Choice? 2
+	 > ~/gentoo/dev-python/zstd
+	 D Simple python bindings to Yann Collet ZSTD compression library (1.5.2.5)
+	 H https://github.com/sergey-dryabzhinsky/python-zstd/
+	 H https://pypi.org/project/zstd/
+	 + hello world
+	~/gentoo/dev-python/zstd$ _
+
+Run ``repo-cd --help`` or see **repo-cd(1)** man page for details.
+
 eoldnew
 -------
 Dependencies: portage (portageq)
@@ -198,40 +240,6 @@ Primarily intended for verification of a stripped embedded system::
 
 Run ``find-unresolved --help`` or see **find-unresolved(1)** man page
 for details.
-
-repo-cd
--------
-Dependencies: portage-utils (q), xmllint (libxml2)
-
-Can be used to jump to the repo directory (cd) of the specified atom,
-with a few added perks.
-
-Here I have my worktree at ``~/gentoo`` that I want to use with a ``rcd``
-alias rather than with the ``:default`` system ``/var/db/repos/gentoo``::
-
-	~$ eval "$(repo-cd --bash=rcd --path=~/gentoo:/other)" # for .bashrc
-	~$ rcd speed-dreams
-	 H http://www.speed-dreams.org/ (2.2.3)
-	 H https://sourceforge.net/projects/speed-dreams/
-	 _ Manifest
-	 _ files
-	 _ metadata.xml
-	 _ speed-dreams-2.2.3.ebuild
-
-	~/gentoo/games-sports/speed-dreams$ rcd zstd
-	 ? 1:~/gentoo/app-arch/zstd (default)
-	 ? 2:~/gentoo/dev-python/zstd
-	 ? Choice? 2
-	 H https://github.com/sergey-dryabzhinsky/python-zstd/
-	 H https://pypi.org/project/zstd/
-	 _ Manifest
-	 _ metadata.xml
-	 _ zstd-1.5.2.5.ebuild
-	~/gentoo/dev-python/zstd$ _
-
-	# TODO: output is WIP and more features planned
-
-Run ``repo-cd --help`` or see **repo-cd(1)** man page for details.
 
 Bashlibs
 ========
