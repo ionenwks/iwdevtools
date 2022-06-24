@@ -24,7 +24,7 @@ atomf() {
 }
 
 # vatomf [-M] <format> "${atom[@]}"
-#	Same as atomf() but uses the array set by atomsp()
+#	Same as atomf() but uses the given arguments from an atomsp() array
 vatomf() {
 	local miss=false
 	if [[ ${1} == -M ]]; then
@@ -78,20 +78,25 @@ vatomf() {
 atoma() {
 	local -a _a_atom
 	atomsp _a_atom "${2}" || return ${?}
+	vatoma "${1}" "${_a_atom[@]}"
+}
 
+# vatoma <associative-array> "${atom[@]}"
+#	Same as atoma() but uses the given arguments from an atomsp() array
+vatoma() {
 	local -n _a_outref=${1}
 	declare -p "${1}" &>/dev/null || declare -gA "${1}"
 
 	_a_outref=(
-		[block]="${_a_atom[0]}"
-		[operator]="${_a_atom[1]}"
-		[category]="${_a_atom[2]}"
-		[name]="${_a_atom[3]}"
-		[version]="${_a_atom[4]}"
-		[revision]="${_a_atom[5]}"
-		[slot]="${_a_atom[6]}"
-		[subslot]="${_a_atom[7]}"
-		[bind]="${_a_atom[8]}"
+		[block]="${2}"
+		[operator]="${3}"
+		[category]="${4}"
+		[name]="${5}"
+		[version]="${6}"
+		[revision]="${7}"
+		[slot]="${8}"
+		[subslot]="${9}"
+		[bind]="${10}"
 	)
 }
 
@@ -104,17 +109,26 @@ atoma() {
 atomset() {
 	local -a atom
 	atomsp atom "${2-${1}}" || return ${?}
+	vatomset ${2+"${1}"} "${atom[@]}"
+}
 
-	[[ ${1} == -M || ( ${atom[2]} && ${atom[3]} && ${atom[4]} ) ]] || return 2
+# vatomset [-M] "${atom[@]}"
+#	Same as atomset() but uses the given arguments from an atomsp() array
+vatomset() {
+	if [[ ${1} == -M ]]; then
+		shift
+	elif ! [[ ${3} && ${4} && ${5} ]]; then
+		return 2
+	fi
 
-	CATEGORY=${atom[2]} #!SC2034
-	PN=${atom[3]} #!SC2034
-	PV=${atom[4]} #!SC2034
-	PR=r${atom[5]:-0} #!SC2034
-	PVR=${PV:+${PV}${atom[5]:+-${PR}}} #!SC2034
+	CATEGORY=${3} #!SC2034
+	PN=${4} #!SC2034
+	PV=${5} #!SC2034
+	PR=r${6:-0} #!SC2034
+	PVR=${PV:+${PV}${6:+-${PR}}} #!SC2034
 	P=${PN:+${PV:+${PN}-${PV}}} #!SC2034
-	PF=${P:+${P}${atom[5]:+-${PR}}} #!SC2034
-	SLOT=${atom[6]:-0}${atom[7]:+/${atom[7]}} #!SC2034
+	PF=${P:+${P}${6:+-${PR}}} #!SC2034
+	SLOT=${7:-0}${8:+/${8}} #!SC2034
 }
 
 # atomsp [array] <atom>
