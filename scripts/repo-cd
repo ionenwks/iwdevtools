@@ -357,7 +357,7 @@ rcd-find() {
 
 	# not trying to use pquery/portage/bashglobs given find(1) is faster
 	# and makes this simpler for ordering and custom --path repos
-	find "${paths[@]}" "${depth[@]}" \
+	find -H "${paths[@]}" "${depth[@]}" \
 		-type d \( "${omit[@]}" \) -prune -o -type d "${@}" || die
 }
 
