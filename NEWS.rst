@@ -48,6 +48,9 @@ Fixes
 - qa-cmp: fix occasional showing of version-replaced ``-file* +file*`` when it
   should be hidden
 
+- qa-vdb: fix bad display on slot change, e.g. ``python:3.10 | python:3.11``
+  showing red 0 and green 1 at end when it was rather removing ``python:3.10``
+
 - qa-vdb: fix using ``--no-ldpath`` when ``/etc/ld.so.conf`` doesn't exist
 
 - qa-vdb: fix off-by-one that could sometime skip a line in non-unified diff,

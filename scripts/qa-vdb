@@ -192,7 +192,13 @@ vdb-get_libdiff() {
 	local -i i j
 	for ((i=0; i < ${#f1ref[@]}; i++)); do
 		for ((j=i; j < ${#f2ref[@]}; j++)); do
-			if [[ ${f1ref[i]%:*} == "${f2ref[j]%:*}" ]]; then
+			if [[ ${f1ref[i]%:*} == "${f2ref[j]%:*}" &&
+				! ( ${f1ref[i]} == *:* && ${f2ref[j]} == *:* &&
+					${f1ref[i]##*:*[!=]} == "${f2ref[j]##*:*[!=]}" &&
+					${f1ref[i]#*:} != "${f2ref[j]#*:}" ) ]]
+			# ^ same name + bind, both have slot but is diff, then exception
+			# no(pkg:3= | pkg:4=) yes(pkg:3= | pkg:4) yes(pkg | pkg:4=) ...
+			then
 				(( i == j )) || f1ref=("${f1ref[@]::i}" '' "${f1ref[@]:i}")
 				continue 2
 			fi
