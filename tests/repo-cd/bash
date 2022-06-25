@@ -8,10 +8,10 @@ eval "$(command "${func}" -c1 --posix "${func}-posix" --path="${DATADIR}/repo")"
 
 declare -f "${func}" "_${func}" "${func}-posix"
 
-"${func}" -c1
+"${func}"
 [[ ${PWD} == */repo ]] || fail "${PWD} is not in */repo"
 
-"${func}-posix" -c1 test
+"${func}-posix" test
 [[ ${PWD} == */repo/dev-test/test ]] || fail "${PWD} is not in */repo/dev-test/test"
 
 COMP_WORDS=("${func}" -c -1 te)
