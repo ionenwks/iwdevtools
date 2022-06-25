@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+-----
+- qa-vdb: fix -U/--unified showing spurious unbound errors if nothing to report
+
 iwdevtools-0.11.0 (2022-06-24)
 ==============================
 

@@ -288,7 +288,7 @@ vdb-get_libdiff_unified() {
 		| grep -v '^@@\|^---\|^+++' | map output
 	[[ ${PIPESTATUS[*]} == [01]\ [01]\ 0 ]] || die "diff failed for ${1}"
 
-	[[ ${output} ]] || return 0
+	(( ${#output[@]} )) || return 0
 
 	local color
 	for output in "${output[@]}"; do
