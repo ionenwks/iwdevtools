@@ -213,7 +213,7 @@ Then in ``/tmp/my-repo-cd-cmd`` (with ``chmod +x``):
 .. code-block:: bash
 
 	#!/usr/bin/env bash
-	printf "\e[094mhttps://extra-useful-link-in-blue/${RCD_PACKAGE}\n"
+	echo -e "\e[094mhttps://blue-extra-link/?search=${RCD_CATEGORY}%2F${RCD_PN}"
 
 	# show lines after 'package-name:' in red if starts with dash
 	red=$'\e[091m'
@@ -230,7 +230,7 @@ Results in::
 	~$ rcd dxvk --fields=dir,bgo
 	 > /var/db/repos/gentoo/app-emulation/dxvk
 	 G https://bugs.gentoo.org/buglist.cgi?quicksearch=app-emulation%2Fdxvk
-	 + https://extra-useful-link-in-blue/app-emulation/dxvk
+	 + https://blue-extra-link/?search=app-emulation%2Fdxvk
 	 + - remember that thing next bump you silly goose
 	 + - also this, you always forget to do it
 	 + dxvk-1.10.1.ebuild
