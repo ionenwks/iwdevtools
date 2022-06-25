@@ -388,6 +388,21 @@ rcd-get_display_path() {
 	outref=${C[${2}]}${path_base/#"${HOME}"/\~}${path_cat:+${C[${3}]}${path_cat}${path_pn:+/${path_pn}}}${C[n]}
 }
 
+# rcd-get_expand_tilde <variable> <string>
+#	Expand ~ in <string> then store back in <variable>
+rcd-get_expand_tilde() {
+	local -n outref=${1}
+	if [[ ${2::1} == '~' ]]; then
+		# use printf %q to escape anything potentially harmful then unescape ~
+		# and let the shell handle all use-cases, e.g. ~user/ ~+/ etc...
+		# Not that there's a real need for safety here, but it doesn't hurt.
+		printf -v outref %q "${2}"
+		eval "outref=${outref//\\\~/\~}"
+	else
+		outref=${2}
+	fi
+}
+
 # rcd-get_metadata <array> <path[]> [attribute]...
 #	Get metadata.xml (current dir) results using xml <path> then store in
 #	<array>. If [attribute], will be set at start of array with a space,
@@ -513,19 +528,22 @@ rcd-print_command() {
 	local -x RCD_PACKAGE=${RCD_CATEGORY}/${RCD_PN}
 	local -x RCD_REPONAME=${REPONAME[${PWD%/*/*}/]}
 
-	# allow tilde expansion if common at-the-start use case
-	local run=${O[run]}
-	[[ ${run} =~ ^(~[^/]*)(.*) ]] &&
-		run=$(eval "echo ${BASH_REMATCH[1]}")${BASH_REMATCH[2]}
+	# roughly allow tilde expansion for any arguments
+	local arg
+	local -a cmd=()
+	for arg in ${O[run]}; do
+		rcd-get_expand_tilde arg "${arg}"
+		cmd+=("${arg}")
+	done
 
 	if ${O[capture]}; then
-		${run} |& map output
+		"${cmd[@]}" |& map output
 		(( ret=PIPESTATUS[0] )) && mod='-:r' || mod='+:g'
 		(( ${#output[@]} )) && rcd-msg "${mod}" "${output[@]}"
 		return ${ret}
 	fi
 
-	${run} >&2
+	"${cmd[@]}" >&2
 }
 
 # rcd-print_package_data
@@ -742,8 +760,7 @@ rcd-set_repopath() {
 			done || die "failed to read repos.conf with q -Cqo"
 		else
 			# allow tilde expansion for convenience
-			[[ ${path} =~ ^(~[^/]*)(.*) ]] &&
-				path=$(eval "echo ${BASH_REMATCH[1]}")${BASH_REMATCH[2]}
+			rcd-get_expand_tilde path "${path}"
 			_rcd-set_repopath_add_if_unique
 		fi
 	done

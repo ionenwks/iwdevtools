@@ -13,5 +13,13 @@ xfail 100 expect -2 -s "*' - dev-test test dev-test/test repo'" \
 	echo "${RCD_CATEGORY} ${RCD_PN} ${RCD_PACKAGE} ${RCD_REPONAME}"
 	exit 100'
 
-expect -2 -! "*'badoutput'*" -c1P "${REPOPATH}" --no-command -sR "${BASH}" test <<<'
+expect -2 -! "*badoutput*" -c1P "${REPOPATH}" --no-command -sR "${BASH}" test <<<'
 	echo badoutput'
+
+HOME=${PWD}/home
+mkdir home
+echo -n 'hello' > home/file1
+echo -n ' world' > home/file2
+echo 'cat "${1}" "${3}"; echo "${2}"' > home/testcmd
+chmod +x home/testcmd
+expect -2 "*hello world!*" -c1P "${REPOPATH}" --run="~/testcmd ~/file1 ! ~/file2" test
