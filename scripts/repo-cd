@@ -752,7 +752,7 @@ _rcd-set_repopath_add_if_unique() {
 		if [[ -f ${file} ]]; then
 			name=$(<"${file}") || die "failed to read '${file}'"
 			if [[ ! -v nameindex['${name}'] ]] || ${O[duplicates]}; then
-				REPONAME[${path%/}/]=${name}
+				REPONAME[${PWD%/}/]=${name}
 				REPOPATH+=("${PWD}")
 				nameindex[${name}]=
 			fi

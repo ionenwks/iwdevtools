@@ -11,6 +11,8 @@ Fixes
 
 - qa-vdb: fix -U/--unified showing spurious unbound errors if nothing to report
 
+- repo-cd: fix info not being displayed if using e.g. --path=./overlay
+
 iwdevtools-0.11.0 (2022-06-24)
 ==============================
 
