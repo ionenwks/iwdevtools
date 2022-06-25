@@ -7,6 +7,8 @@ iwdevtools-next
 
 Fixes
 -----
+- scripts: prevent boolean-type --no-* being passed twice from re-enabling
+
 - qa-vdb: fix -U/--unified showing spurious unbound errors if nothing to report
 
 iwdevtools-0.11.0 (2022-06-24)

@@ -366,11 +366,13 @@ optauto() {
 			*)
 				_c_arg=${_c_arg#--}
 				_c_arg=${_c_arg#no-}
-				if [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]?bool:(.*) ]]; then
-					if [[ ${BASH_REMATCH[1]} == true ]]; then
-						optset "${_c_arg}" false
-					else
-						optset "${_c_arg}" true
+				if [[ ${_COMMON_OPT[${_c_arg}]} =~ ^([%@])?bool:(.*) ]]; then
+					if [[ ${BASH_REMATCH[1]} != % ]]; then
+						if [[ ${BASH_REMATCH[2]} == true ]]; then
+							optset "${_c_arg}" false
+						else
+							optset "${_c_arg}" true
+						fi
 					fi
 				elif [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]?ignore(:?) ]]; then
 					[[ ! ${BASH_REMATCH[1]} ]] || getoptw
