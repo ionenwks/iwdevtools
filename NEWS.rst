@@ -5,6 +5,10 @@ Release Notes
 iwdevtools-next
 ===============
 
+Changes
+-------
+- repo-cd: support tilde for command in --run=~/mycmd like --path does
+
 Fixes
 -----
 - scripts: prevent boolean-type --no-* being passed twice from re-enabling

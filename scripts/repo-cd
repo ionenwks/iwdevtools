@@ -513,14 +513,19 @@ rcd-print_command() {
 	local -x RCD_PACKAGE=${RCD_CATEGORY}/${RCD_PN}
 	local -x RCD_REPONAME=${REPONAME[${PWD%/*/*}/]}
 
+	# allow tilde expansion if common at-the-start use case
+	local run=${O[run]}
+	[[ ${run} =~ ^(~[^/]*)(.*) ]] &&
+		run=$(eval "echo ${BASH_REMATCH[1]}")${BASH_REMATCH[2]}
+
 	if ${O[capture]}; then
-		${O[run]} |& map output
+		${run} |& map output
 		(( ret=PIPESTATUS[0] )) && mod='-:r' || mod='+:g'
 		(( ${#output[@]} )) && rcd-msg "${mod}" "${output[@]}"
 		return ${ret}
 	fi
 
-	${O[run]} >&2
+	${run} >&2
 }
 
 # rcd-print_package_data
