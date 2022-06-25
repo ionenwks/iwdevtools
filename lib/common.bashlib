@@ -292,11 +292,11 @@ optend() {
 	if [[ ${1:-} == -d ]]; then
 		echo "# ${0##*/}.conf (from \`${0##*/} --dumpconfig\`, see --help for info)" >&"${_COMMON_MSG_STD:-1}"
 		for key in "${_COMMON_OPT_SORT[@]}"; do
-			[[ ! ${_COMMON_OPT[${key}]} =~ ^[%@]*ignore:? ]] || continue
+			[[ ! ${_COMMON_OPT[${key}]} =~ ^[%@]?ignore:? ]] || continue
 
 			[[ ${_COMMON_OPT[${key}]} =~ ^[%@] ]] && l= || l='#'
 
-			if [[ ${_COMMON_OPT[${key}]} =~ ^[%@]*float: ]]; then
+			if [[ ${_COMMON_OPT[${key}]} =~ ^[%@]?float: ]]; then
 				printf -v "_COMMON_OPT[${key}]" "%.2f" "${_COMMON_OPT[${key}]#*:}e-2"
 			fi
 
@@ -366,13 +366,13 @@ optauto() {
 			*)
 				_c_arg=${_c_arg#--}
 				_c_arg=${_c_arg#no-}
-				if [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]*bool:(.*) ]]; then
+				if [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]?bool:(.*) ]]; then
 					if [[ ${BASH_REMATCH[1]} == true ]]; then
 						optset "${_c_arg}" false
 					else
 						optset "${_c_arg}" true
 					fi
-				elif [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]*ignore(:?) ]]; then
+				elif [[ ${_COMMON_OPT[${_c_arg}]} =~ ^[%@]?ignore(:?) ]]; then
 					[[ ! ${BASH_REMATCH[1]} ]] || getoptw
 				else
 					_c_prev=${_c_arg}; getoptw
