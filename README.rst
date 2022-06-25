@@ -200,7 +200,7 @@ be saved in a ``repo-cd.conf`` or like ``--path`` was above::
 	 + hello world
 	~/gentoo/dev-python/zstd$ _
 
-For a more involved ``--run`` example, in ``/tmp/my-gentoo-notes``, have::
+For a more involved ``--run`` example, in ``~/my-gentoo-notes``, have::
 
 	dxvk:
 	- remember that thing next bump you silly goose
@@ -208,7 +208,7 @@ For a more involved ``--run`` example, in ``/tmp/my-gentoo-notes``, have::
 	vkd3d-proton:
 	- some other stuff
 
-Then in ``/tmp/my-repo-cd-cmd`` (with ``chmod +x``):
+Then in ``~/my-repo-cd-cmd`` (with ``chmod +x``):
 
 .. code-block:: bash
 
@@ -218,13 +218,13 @@ Then in ``/tmp/my-repo-cd-cmd`` (with ``chmod +x``):
 	# use sed to show lines after 'package-name:' in red if starts with dash,
 	# could also use simple options like [[ -f path/${RCD_PACKAGE} ]] && cat ...
 	red=$'\e[091m'
-	sed -n "/^${RCD_PN}:/,/^[^-].*:/{s/^-/${red}-/p}" /tmp/my-gentoo-notes
+	sed -n "/^${RCD_PN}:/,/^[^-].*:/{s/^-/${red}-/p}" ~/my-gentoo-notes
 
 	ls -1v *.ebuild
 
 In ``~/.config/iwdevtools/repo-cd.conf`` (also see ``--dumpconfig`` option)::
 
-	run=/tmp/my-repo-cd-cmd
+	run=~/my-repo-cd-cmd
 
 Results in::
 
