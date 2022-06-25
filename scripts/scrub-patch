@@ -3,7 +3,7 @@
 init
 depend cat file mktemp readlink rm stat
 usage <<-EOU
-	Usage: ${0##*/} [options] [patches]
+	Usage: ${0##*/} [option]... [patch]...
 
 	Strip patches of typically useless cruft such as "diff --git"
 	lines and timestamps to reduce size and improve readability.

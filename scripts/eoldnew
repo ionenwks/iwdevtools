@@ -5,7 +5,7 @@ depend portageq # emerge
 esanitize
 include atomf
 usage <<-EOU
-	Usage: ${0##*/} [2-9][-] <atom> [emerge options]
+	Usage: ${0##*/} [2-9][-] <atom> [emerge option]...
 
 	Helper for using \`qa-cmp\` which emerges the package defined by <atom> but
 	by first emerging its previous (visible) version if not already installed.

@@ -3,7 +3,7 @@
 init
 depend find scanelf
 usage <<-EOU
-	Usage: ${0##*/} [options] <ROOT>
+	Usage: ${0##*/} [option]... <ROOT>
 
 	Scan <ROOT>'s ELF files for unresolved soname dependencies.
 

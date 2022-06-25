@@ -5,7 +5,7 @@ depend diff grep portageq qfile qlist sed sort tr uniq
 esanitize
 include atomf
 usage <<-EOU
-	Usage: ${0##*/} [options] <atom>
+	Usage: ${0##*/} [option]... <atom>
 
 	Perform basic QA checks based on vdb's contents (/var/db/pkg). Currently
 	supports comparing RDEPEND with DT_NEEDED (i.e. from \`scanelf -n\`), and

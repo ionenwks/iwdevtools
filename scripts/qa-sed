@@ -3,7 +3,7 @@
 init
 depend cksum readlink sed tee
 usage <<-EOU
-	Usage: ${0##*/} [sed options] [--qa-sed-args] [options]
+	Usage: ${0##*/} [sed option]... [--qa-sed-args] [option]...
 
 	sed wrapper that reports when all files were unmodified to help with
 	detection of outdated constructs similarly to a failing patch.

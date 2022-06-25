@@ -5,7 +5,7 @@ depend find q sort uniq xmllint
 include atomf shellparse
 RCD_FIELDS=dir,desc,home,remote,maint,pgo,bgo
 usage <<-EOU
-	Usage: ${0##*/} [options] [atom]
+	Usage: ${0##*/} [option]... [atom]
 
 	Print directory location (or change directory with *Shell Integration*
 	below) plus some information corresponding to an atom either using
