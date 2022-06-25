@@ -215,7 +215,8 @@ Then in ``/tmp/my-repo-cd-cmd`` (with ``chmod +x``):
 	#!/usr/bin/env bash
 	echo -e "\e[094mhttps://blue-extra-link/?search=${RCD_CATEGORY}%2F${RCD_PN}"
 
-	# show lines after 'package-name:' in red if starts with dash
+	# use sed to show lines after 'package-name:' in red if starts with dash,
+	# could also use simple options like [[ -f path/${RCD_PACKAGE} ]] && cat ...
 	red=$'\e[091m'
 	sed -n "/^${RCD_PN}:/,/^[^-].*:/{s/^-/${red}-/p}" /tmp/my-gentoo-notes
 
