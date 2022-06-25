@@ -200,6 +200,43 @@ be saved in a ``repo-cd.conf`` or like ``--path`` was above::
 	 + hello world
 	~/gentoo/dev-python/zstd$ _
 
+For a more involved ``--run`` example, in ``/tmp/my-gentoo-notes``, have::
+
+	dxvk:
+	- remember that thing next bump you silly goose
+	- also this, you always forget to do it
+	vkd3d-proton:
+	- some other stuff
+
+Then in ``/tmp/my-repo-cd-cmd`` (with ``chmod +x``):
+
+.. code-block:: bash
+
+	#!/usr/bin/env bash
+	printf "\e[094mhttps://extra-useful-link-in-blue/${RCD_PACKAGE}\n"
+
+	# show lines after 'package-name:' in red if starts with dash
+	red=$'\e[091m'
+	sed -n "/^${RCD_PN}:/,/^[^-].*:/{s/^-/${red}-/p}" /tmp/my-gentoo-notes
+
+	ls -1v *.ebuild
+
+In ``~/.config/iwdevtools/repo-cd.conf`` (also see ``--dumpconfig`` option)::
+
+	run=/tmp/my-repo-cd-cmd
+
+Results in::
+
+	~$ rcd dxvk --fields=dir,bgo
+	 > /var/db/repos/gentoo/app-emulation/dxvk
+	 G https://bugs.gentoo.org/buglist.cgi?quicksearch=app-emulation%2Fdxvk
+	 + https://extra-useful-link-in-blue/app-emulation/dxvk
+	 + - remember that thing next bump you silly goose
+	 + - also this, you always forget to do it
+	 + dxvk-1.10.1.ebuild
+	 + dxvk-9999.ebuild
+	/var/db/repos/gentoo/app-emulation/dxvk$ _
+
 Run ``repo-cd --help`` or see **repo-cd(1)** man page for details.
 
 eoldnew
