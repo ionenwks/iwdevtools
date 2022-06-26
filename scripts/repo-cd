@@ -397,7 +397,7 @@ rcd-get_expand_tilde() {
 		# and let the shell handle all use-cases, e.g. ~user/ ~+/ etc...
 		# Not that there's a real need for safety here, but it doesn't hurt.
 		printf -v outref %q "${2}"
-		eval "outref=${outref//\\\~/\~}"
+		eval "outref=${outref/#\\\~/\~}"
 	else
 		outref=${2}
 	fi
