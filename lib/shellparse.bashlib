@@ -2,13 +2,13 @@
 # Helpers to read/analyze shell scripts (subject to changes)
 [[ ! -v _SHELLPARSE_BASHLIB ]] || return 0; _SHELLPARSE_BASHLIB=
 
-# shellimport <associative-array> <source> [VAR=assign]...
+# shellimport [-a] [-A] [-f] <associative-array> <source> [VAR=assign]...
 #	Source <source> in and import declarations into array as:
 #		assoc[variable_name]='contents'
-#		assoc[function_name@f]='function() { contents; }'
-#		assoc[array_name@a]='first second "has spaces"'
+#		assoc[function_name@f]='function() { contents; }' (with -f)
+#		assoc[array_name@a]='first second "has spaces"' (with -a)
 #			-> safe to eval "local -a array=( ${assoc[name@a]} )"
-#		assoc[associative_array_name@A]='index1 "first" index2 "has spaces"'
+#		assoc[assoc_name@A]='index1 "first" index2 "has spaces"' (with -A)
 #
 #	Uses `set +r` (restricted shell) and empty PATH+env to reduce odds of
 #	performing unintended potentially harmful actions or picking up wrong
@@ -23,6 +23,17 @@
 #	Intended as a bit safer + all-at-once `var=$( . file; echo ${var} )`.
 #	Warning: no hang protection if source has infinite loops
 shellimport() {
+	local _s_assoc=false _s_array=false _s_func=false
+	while (( ${#} )); do
+		case ${1} in
+			-a) _s_array=true;;
+			-A) _s_assoc=true;;
+			-f) _s_func=true;;
+			*) break;;
+		esac
+		shift
+	done
+
 	local _s_output=${1}
 	local _s_source=${2}
 	shift 2
@@ -55,7 +66,7 @@ shellimport() {
 				unset -v _shellparse_import{,array,ref,output} POSIXLY_CORRECT && {
 					declare -A _shellparse_importarray=()
 
-					for _shellparse_import in \$(compgen -A function); do
+					${_s_func} && for _shellparse_import in \$(compgen -A function); do
 						_shellparse_importarray[\${_shellparse_import}@f]=\$(declare -f \"\${_shellparse_import}\")
 					done
 
@@ -63,8 +74,8 @@ shellimport() {
 						[[ -v _COMMON_IMPORTSKIP[\${_shellparse_import}] ]] && continue
 						declare -n _shellparse_importref=\${_shellparse_import}
 						case \${_shellparse_importref@a} in
-							*A*) _shellparse_importarray[\${_shellparse_import}@A]=\${_shellparse_importref[*]@K};;
-							*a*) _shellparse_importarray[\${_shellparse_import}@a]=\${_shellparse_importref[*]@Q};;
+							*a*) ${_s_array} && _shellparse_importarray[\${_shellparse_import}@a]=\${_shellparse_importref[*]@Q};;
+							*A*) ${_s_assoc} && _shellparse_importarray[\${_shellparse_import}@A]=\${_shellparse_importref[*]@K};;
 							*) _shellparse_importarray[\${_shellparse_import}]=\${_shellparse_importref};;
 						esac
 					done

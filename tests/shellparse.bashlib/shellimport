@@ -1,7 +1,32 @@
 #!/usr/bin/env bash
 declare -A assoc
-shellimport assoc "${DATADIR}"/script.sh env1=val1 env2=val2
 
+shellimport assoc "${DATADIR}"/script.sh
+output=$(printf "%s\n" "${!assoc[@]}" | sort)
+[[ ${output} == "var1
+var2
+var4
+var5" ]] || fail "'${output}' mismatch"
+
+shellimport -a assoc "${DATADIR}"/script.sh
+output=$(printf "%s\n" "${!assoc[@]}" | sort)
+[[ ${output} == "array1@a
+array2@a
+var1
+var2
+var4
+var5" ]] || fail "'${output}' mismatch"
+
+shellimport -A assoc "${DATADIR}"/script.sh
+output=$(printf "%s\n" "${!assoc[@]}" | sort)
+[[ ${output} == "assoc1@A
+assoc2@A
+var1
+var2
+var4
+var5" ]] || fail "'${output}' mismatch"
+
+shellimport -a -A -f assoc "${DATADIR}"/script.sh env1=val1 env2=val2
 output=$(printf "%s\n" "${!assoc[@]}" | sort)
 [[ ${output} == "array1@a
 array2@a

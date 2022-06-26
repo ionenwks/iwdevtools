@@ -9,6 +9,9 @@ Changes
 -------
 - repo-cd: support tilde for command in --run=~/mycmd like --path does
 
+- shellparse.bashlib: functions/arrays disabled by default for speedups,
+  notably with repo-cd if many large ebuilds
+
 Fixes
 -----
 - scripts: prevent boolean-type --no-* being passed twice from re-enabling
