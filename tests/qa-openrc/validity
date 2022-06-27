@@ -2,6 +2,6 @@
 
 echo "#!/sbin/openrc-run" > valid
 echo "#!/usr/bin/env systemd" > invalid
-> empty
+:> empty
 
 expect -2 "invalid: skipped*empty: skipped*" -O valid invalid empty
