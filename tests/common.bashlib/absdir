@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+tpwd=${PWD}
+
+absdir tpwd
+[[ ${tpwd} == ${PWD} ]] || fail "'${tpwd}' is not '${PWD}'"
+
+# historical posix leading // rule
+absdir path //
+[[ ${path} == // ]] || fail "'${path}' is not '//'"
+
+mkdir dir
+path=./dir/../dir//
+absdir path
+[[ ${path} == "${tpwd}/dir" ]] || fail "'${path}' is not '${tpwd}/dir'"
+
+xfail 1 absdir path missing
+:> file
+xfail 1 absdir path file

@@ -27,6 +27,17 @@ init() {
 	_COMMON_INIT=
 }
 
+# absdir <variable> [dir]
+#	Get normalized absolute path for [dir] then store in <variable> without
+#	trailing slash. If [dir] is unspecified, read path from <variable>.
+#	Return 1 if not a dir or can't cd to it, die on unexpected issues.
+absdir() {
+	local -n outref=${1}
+	[[ -d ${2-${outref}} ]] && pushd "${2-${outref}}" >/dev/null || return 1
+	outref=${PWD}
+	popd >/dev/null || die
+}
+
 # depend <executables...>
 #	Check for executables availability to die early if any missing.
 depend() {

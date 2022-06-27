@@ -1,4 +1,5 @@
 tests = [
+	'absdir',
 	'die',
 	'esanitize',
 	'getoptw',
