@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # basic/common functions for internal use (no API guarantees)
-[[ ! -v _COMMON_BASHLIB ]] || return 0; _COMMON_BASHLIB=
+[[ ! -v _COMMON_BASHLIB[1] ]] || return 0; _COMMON_BASHLIB[1]=
 
 # init
 #	Initiate basic settings / traps / check minimum bash version
 #	Some functions may not work as expected if skipped.
+unset _COMMON_INIT
 init() {
 	(( BASH_VERSINFO[0] > 5 || ( BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 1 ) )) \
 		|| die "minimum bash version 5.1 required (current: ${BASH_VERSION})"
@@ -85,6 +86,7 @@ esanitize() {
 #	If reach --, set named <array> to remaining options.
 #	Return 1 when no options left.
 #	Dies if invalid options passed unless -n.
+unset _COMMON_SETOPT
 getoptw() {
 	if (( ${#} )); then
 		local getopt
@@ -400,6 +402,7 @@ printarray() {
 #	If IWCOMMON_MSG_STD_FORCE is set to 1 or 2, enforce over arguments
 #	Use enforcing with care, only intended for capturing usage/config
 #	without risking error messages and may break normal use.
+unset _COMMON_MSG_FMT _COMMON_MSG_STD
 setmsg() {
 	if [[ ${1} == [12] ]]; then
 		[[ ${IWCOMMON_MSG_STD_FORCE:-} == [12] ]] &&
@@ -456,6 +459,7 @@ showline() {
 # usage [<<]
 #	Read stdin for usage, a subsequent call displays it using std output
 #	from setmsg() then exit.
+unset _COMMON_USAGE
 usage() {
 	if [[ ! -v _COMMON_USAGE ]]; then
 		mapfile _COMMON_USAGE

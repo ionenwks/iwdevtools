@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PMS/Gentoo package atom splitting functions (fine to use in any scripts)
-[[ ! -v _ATOMF_BASHLIB ]] || return 0; _ATOMF_BASHLIB=
+[[ ! -v _ATOMF_BASHLIB[1] ]] || return 0; _ATOMF_BASHLIB[1]=
 
 # atomf [-M] <format> <atom>
 #	Echoes back <atom> using <format>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Helpers to read/analyze shell scripts (subject to changes)
-[[ ! -v _SHELLPARSE_BASHLIB ]] || return 0; _SHELLPARSE_BASHLIB=
+[[ ! -v _SHELLPARSE_BASHLIB[1] ]] || return 0; _SHELLPARSE_BASHLIB[1]=
 
 # shellimport [-a] [-A] [-f] <associative-array> <source> [VAR=assign]...
 #	Source <source> in and import declarations into array as:
