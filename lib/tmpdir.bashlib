@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# basic functions to use and cleanup a temporary directory
+[[ ! -v _TMPDIR_BASHLIB[1] ]] || return 0; _TMPDIR_BASHLIB[1]=
+
+# tmpinit [-E]
+#	Create a general purpose temporary directory using mktemp(1) (respects
+#	TMPDIR) and sets and EXIT trap for cleanup unless -E. Return 1 on issues.
+#	Directory will have ._tmpdir file for sanity checks, should not be deleted.
+unset _TMPDIR_PATH
+tmpinit() {
+	[[ ! -v _TMPDIR_PATH ]] || return 0
+
+	if [[ ${1:-} != -E ]]; then
+		trap '
+			if [[ -d ${_TMPDIR_PATH} ]]; then
+				if [[ -e ${_TMPDIR_PATH}/._tmpdir ]]; then
+					rm -r -- "${_TMPDIR_PATH}" >&2
+				else
+					rmdir -- "${_TMPDIR_PATH}" >&2
+				fi
+			fi' EXIT
+	fi
+
+	_TMPDIR_PATH=$(mktemp -p '' -d "${0##*/}.XXXXXXXXXX") || return 1
+
+	# keep file as a sanity check before doing destructive actions
+	:> "${_TMPDIR_PATH}"/._tmpdir || return 1
+}
+
+# tmpcd [subdir]
+#	Change directory to the tmpinit() directory (or given [subdir]}.
+#	[subdir] is created if it doesn't exist. Return 1 on issues.
+tmpcd() {
+	tmppushd "${@}" && popd -n >/dev/null || return 1
+}
+
+# tmppath <variable>
+#	Set <variable> to the absolute path of the tmpinit() directory.
+#	Return 1 if the path is invalid (tmpinit not ran, or deleted).
+#	Recommend tmpcd/pushd instead and not worry about the path if possible.
+tmppath() {
+	local -n outref=${1}
+	if [[ -e ${_TMPDIR_PATH}/._tmpdir ]]; then
+		outref=${_TMPDIR_PATH} #!SC2034
+	else
+		return 1
+	fi
+}
+
+# tmppopd
+#	Simple wrapper to popd for use after tmppushd(). Return 1 on issues.
+tmppopd() {
+	popd >/dev/null || return 1
+}
+
+# tmppushd [subdir]
+#	Same as tmpcd() but keeps pushd dirstack, see also tmppopd().
+tmppushd() {
+	if pushd "${_TMPDIR_PATH}"; then
+		if [[ -e ._tmpdir ]]; then
+			(( ${#} )) || return 0
+
+			if [[ -d ${1} ]] || mkdir -p "${1}"; then
+				if pushd "${1}" && popd -1; then
+					return 0
+				fi
+			fi
+		fi
+
+		popd || return 1
+	fi >/dev/null
+
+	return 1
+}
+
+# tmprm <file|dir>...
+#	If it exists, delete relative <file|dir>... from the toplevel tmpinit()
+#	directory. Does sanity checks to avoid rm -r accidents. Return 1 on issues.
+tmprm() {
+	tmppushd || return 1
+
+	local f
+	for f in "${@}"; do
+		if [[ -e ./${f} ]]; then
+			rm -r -- "./${f}" >&2 || { tmppopd; return 1; }
+		fi
+	done
+
+	tmppopd || return 1
+}
+
+# vim: ts=4

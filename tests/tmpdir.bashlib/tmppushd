@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+TMPDIR=${PWD} tmpinit
+tmppath dir
+tmppushd
+[[ ${PWD} == ${dir} ]] || fail "'${PWD}' is not '${dir}'"
+tmppushd sub
+[[ ${PWD} == ${dir}/sub ]] || fail "'${PWD}' is not '${dir}/sub'"
+tmppopd
+[[ ${PWD} == ${dir} ]] || fail "'${PWD}' is not '${dir}'"

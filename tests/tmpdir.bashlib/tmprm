@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+TMPDIR=${PWD} tmpinit
+tmppath dir
+:> "${dir}"/test
+mkdir "${dir}"/sub
+:> "${dir}"/sub/test
+tmprm sub test
+[[ ! -e ${dir}/sub && ! -e ${dir}/test ]] \
+	|| fail "tmprm did not delete files"
