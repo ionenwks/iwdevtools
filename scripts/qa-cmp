@@ -303,8 +303,8 @@ cmp-get_makereport() {
 cmp-get_normalized_image() {
 	local image=${1} atom=0
 
-	if [[ -d ${image} ]]; then
-		image=$(readlink -e -- "${image}" || die "readlink -e failed for '${image}'")
+	if absdir image; then
+		:
 	elif [[ -d $(cmp-get_tmp)/${image#=} ]]; then
 		image=$(cmp-get_tmp)/${image#=} # exact tmp dir match
 		atom=2
@@ -381,11 +381,7 @@ cmp-get_tmp() {
 	[[ ${CMP_TMP} ]] || die "could not determine PORTAGE_TMPDIR"
 
 	CMP_TMP+=/portage
-
-	[[ -d ${CMP_TMP} ]] || die "'${CMP_TMP}' is not a directory"
-
-	# use readlink to normalize (no symlinks, double //, etc..)
-	CMP_TMP=$(readlink -e -- "${CMP_TMP}" || die "readlink -e failed for '${CMP_TMP}'")
+	absdir CMP_TMP || die "'${CMP_TMP}' is not a directory"
 
 	# portage often uses 700 for tmp/cat/pkg which can lead to confusing errors,
 	# e.g. -d tmp/cat/pkg/image is 'not a directory' despite being one
