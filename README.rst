@@ -344,6 +344,8 @@ at ``<prefix>/share/iwdevtools/bashrc`` which can be either symlinked to or
 sourced from ``/etc/portage/bashrc``. See ``--help`` or man pages of commands
 for further information and environment options.
 
-Note: only portage is supported at the moment, some tools rely on non-standard
-elements like VDB/tempdir structure and alternate package managers (e.g.
-pkgcore) may cause erroneous reports among other issues.
+Note: normal Gentoo ecosystem is generally expected (e.g. have a typical system
+set with GNU coreutils rather than plain POSIX tools). Also, only portage is
+supported at the moment as some tools rely on non-standard elements like
+VDB/tempdir structure and alternate package managers (e.g. pkgcore) may cause
+erroneous reports among other issues.
