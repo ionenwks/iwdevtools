@@ -17,7 +17,7 @@ sed() {
 		--lineno=${BASH_LINENO[0]} --source="${BASH_SOURCE[1]}" \
 		${QA_SED_ARGS} 2>&1 1>&3-); errno=${?}; } 3>&1
 
-	(( ${errno} )) && eerror "qa-sed: running '${QA_SED_CMD}' failed (disable with QA_SED=n)"
+	(( ${errno} )) && eerror "qa-sed: running '${QA_SED_CMD}' failed, broken sed? (disable with QA_SED=n)"
 	[[ ${output} ]] && ${QA_SED_LOG} "${output}"
 
 	return ${errno}
