@@ -206,7 +206,7 @@ fi
 declare -A F
 split fields "${fields}" ','
 hasharray F fields; unset fields
-[[ -v F[*] ]] || O[quiet]=true
+(( ${#F[@]} )) || O[quiet]=true
 
 [[ ${O[run]} ]] || O[command]=false
 
