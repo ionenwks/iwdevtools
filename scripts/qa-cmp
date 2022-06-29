@@ -269,7 +269,7 @@ cmp-get_images() {
 #	Echoes CATEGORY/PF best match for installed atom, or empty string if none
 declare -A CMP_INSTALLED=() CMP_INSTALLED_SET=()
 cmp-get_installed() {
-	if [[ ! -v CMP_INSTALLED_SET['${1}'] ]]; then
+	if [[ ! ${CMP_INSTALLED_SET[${1}]+x} ]]; then
 		# note: unlike best_visible, does not return false if no match
 		CMP_INSTALLED[${1}]=$(portageq match "${EROOT:-/}" "${1}" | tail -n 1) \
 			|| die "portageq match failed for '${1}'"
@@ -485,7 +485,7 @@ cmp-get_vdb() {
 #	Echoes CATEGORY/PF best visible for atom, or die if none
 declare -A CMP_VISIBLE=() CMP_VISIBLE_SET=()
 cmp-get_visible() {
-	if [[ ! -v CMP_VISIBLE_SET['${1}'] ]]; then
+	if [[ ! ${CMP_VISIBLE_SET[${1}]+x} ]]; then
 		CMP_VISIBLE[${1}]=$(portageq best_visible "${EROOT:-/}" "${1}") \
 			|| die "portageq best_visible failed for '${1}', atom not in tree?"
 		# empty string shouldn't happen as it returns false, but check anyway
@@ -727,7 +727,7 @@ cmp-output_filelist_diff() {
 		old=()
 		for line in "${iter[@]}"; do
 			file=${line% (*}
-			if [[ -v newindex['${file}'] ]]; then
+			if [[ ${newindex[${file}]+x} ]]; then
 				if [[ ${oldindex[${file}]} != '(?)' && ${newindex[${file}]} == '(?)' ]]; then
 					line="${file} (?)"
 				elif [[ ${oldindex[${file}]:1:10} =~ s && ${newindex[${file}]:1:10} =~ s ]]; then
@@ -790,7 +790,7 @@ cmp-output_filelist_diff() {
 				fi
 
 				# display permissions in different colors if file is in both
-				if [[ -v oldindex['${file}'] && -v newindex['${file}'] ]]; then
+				if [[ ${oldindex[${file}]+x} && ${newindex[${file}]+x} ]]; then
 					line=${color}${line::1}${C[a]}${file}${color}${perm}${C[n]}
 				elif ${O[show-perms]}; then
 					line=${color}${line::1}${file}${C[a]}${perm}${C[n]}

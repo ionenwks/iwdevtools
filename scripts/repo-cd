@@ -313,7 +313,7 @@ rcd-cd() {
 	# roughly figure out if find(1)+rcd-ask gave a package directory without
 	# assuming from files, e.g. skel.ebuild is not from a package
 	path=${PWD%/*/*}
-	[[ -v REPONAME['${path%/}/'] ]]
+	[[ ${REPONAME[${path%/}/]+x} ]]
 }
 
 # rcd-find <mindepth> <maxdepth> <path>... <extra-find-args>
@@ -375,11 +375,11 @@ rcd-get_display_path() {
 	path_pn=${4##*/}
 	path_base=${4%"${path_cat}/${path_pn}"}
 
-	if [[ ! -v REPONAME['${path_base%/}/'] ]]; then
+	if [[ ! ${REPONAME[${path_base%/}/]+x} ]]; then
 		path_cat=${path_pn}
 		path_pn=
 		path_base=${4%"${path_cat}"}
-		if [[ ! -v REPONAME['${path_base%/}/'] ]]; then
+		if [[ ! ${REPONAME[${path_base%/}/]+x} ]]; then
 			path_cat=
 			path_base=${4}
 		fi
@@ -675,7 +675,7 @@ _rcd_print_package_data_add_homepage() {
 	trim=${trim%/}
 
 	# remember sort order given bash doesn't with hashes
-	[[ -v homeindex['${trim}'] ]] || homesort+=("${trim}")
+	[[ ${homeindex[${trim}]+x} ]] || homesort+=("${trim}")
 
 	homeindex[${trim}]="${C[lb]}${data}${note:+ ${C[a]}(${note})}${C[n]}"
 }
@@ -772,7 +772,7 @@ _rcd-set_repopath_add_if_unique() {
 		local file=${path}/profiles/repo_name
 		if [[ -f ${file} ]]; then
 			name=$(<"${file}") || die "failed to read '${file}'"
-			if [[ ! -v nameindex['${name}'] ]] || ${O[duplicates]}; then
+			if [[ ! ${nameindex[${name}]+x} ]] || ${O[duplicates]}; then
 				REPONAME[${path%/}/]=${name}
 				REPOPATH+=("${path}")
 				nameindex[${name}]=

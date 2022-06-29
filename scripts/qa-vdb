@@ -319,14 +319,14 @@ vdb-get_ldpath() {
 			continue
 		fi
 
-		if [[ ! -v VDB_LDPATH_CACHE['${1}'] ]]; then
+		if [[ ! ${VDB_LDPATH_CACHE[${1}]+x} ]]; then
 			for fullpath in "${VDB_LDPATH[@]/%//${1}}"; do
 				if [[ -e ${fullpath} ]]; then
 					VDB_LDPATH_CACHE[${1}]=${fullpath#"${ROOT}"}
 					break
 				fi
 			done
-			[[ -v VDB_LDPATH_CACHE['${1}'] ]] || VDB_LDPATH_CACHE[${1}]=${1}
+			[[ ${VDB_LDPATH_CACHE[${1}]+x} ]] || VDB_LDPATH_CACHE[${1}]=${1}
 		fi
 
 		[[ ${VDB_LDPATH_CACHE[${1}]} != "${1}" ]] || errno=1
@@ -393,7 +393,7 @@ vdb-get_deps() {
 		[[ ${atom[8]} == = && ${atom[7]} == 0 ]] && atom[7]=1
 
 		# in case of duplicates, keep the one that defines a subslot
-		if [[ -v deps['${entry}'] ]]; then
+		if [[ ${deps[${entry}]+x} ]]; then
 			split rdep "${deps[${entry}]}"
 			[[ ${atom[7]} == 0 || ${rdep[2]} != 0 ]] && continue
 		fi
