@@ -2,12 +2,12 @@
 Release Notes
 =============
 
-iwdevtools-next
-===============
+iwdevtools-0.11.2 (2022-06-29)
+==============================
 
 Fixes
 -----
-- scripts: fix with bash-5.2
+- scripts: fix with bash-5.2_rc1
 
 iwdevtools-0.11.1 (2022-06-27)
 ==============================
