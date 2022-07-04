@@ -22,7 +22,7 @@ EOF
 
 # test with common snippet for backgrounding a service
 cat <<EOF > example4
-#!/usr/bin/openrc-run
+#! 	/usr/bin/openrc-run
 command="example"
 start_stop_daemon_args="-b -m --pidfile /run/\${RC_SVCNAME}.pid"
 EOF
@@ -36,7 +36,7 @@ EOF
 
 # ... same but in reverse order
 cat <<EOF > example6
-#!/usr/bin/env - -S -i NAME=VALUE openrc-run --test
+#!/usr/bin/env - -S 	-i NAME=VALUE openrc-run --test
 command="example"
 start_stop_daemon_args="--group nobody --user nobody"
 EOF

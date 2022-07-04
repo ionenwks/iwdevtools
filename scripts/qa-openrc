@@ -178,9 +178,9 @@ openrc-export_qvdb() {
 #	Return true if <file> has an openrc-run shebang.
 openrc-is_service() {
 	local -a shebang
-	[[ -s ${1} || ! -f ${1} ]] || return 1 # empty, avoids die
-	split- shebang < "${1}" || die "failed to read '${1}'"
-	[[ ${shebang[0]:-} == '#!'* ]] || return 1
+	mapfile -tn1 shebang < "${1}" || die
+	[[ ${shebang[0]:-} =~ ^'#!'[[:space:]]*(.+) ]] || return 1
+	split shebang "${BASH_REMATCH[1]}" $' \t'
 
 	if [[ ${shebang[0]} == */openrc-run ]]; then
 		return 0
