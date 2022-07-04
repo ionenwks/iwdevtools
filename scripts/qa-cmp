@@ -39,6 +39,9 @@ usage <<-EOU
 	  -O, --ver-dironly     Limit filelist version replacements to directories
 	(default is to try to prevent showing uninteresting version-only changes)
 
+	      --no-skip-large   Do not abort even if operations would be slow, e.g.
+	                        would for gentoo-sources package with >10000 files
+
 	  -M, --allow-missing   Do nothing and exit normally if lacking a 2nd image
 	                        (intended for automated scripts)
 
@@ -102,6 +105,7 @@ optauto args "${@}" <<-EOO
 	P|show-perms=bool:false
 	K|ver-keep=bool:false
 	O|ver-dironly=bool:false
+	!skip-large=bool:true
 	M|allow-missing=bool:false
 	W|confirm=bool:false
 	F|single-filelist=bool:false
@@ -146,6 +150,8 @@ cmp-get_compare2readable() {
 #	" (-rw-r--r-- user:group)" will be set after paths, or
 #	" (?)" if unknown or O[ignore-perms] is set.
 cmp-get_filelist() {
+	local flimit=()
+	${O[skip-large]} && flimit=(-n 10001)
 	{
 		local -i size
 		if [[ ${2::1} == = ]]; then
@@ -187,7 +193,13 @@ cmp-get_filelist() {
 			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P (%M %u:%g)\n' | sort \
 				|| die "find failed for '${2}'"
 		fi
-	} | map "${1}"
+	} | mapfile -t "${flimit[@]}" "${1}"
+
+	if ${O[skip-large]}; then
+		local -n ref=${1}
+		(( ${#ref[@]} > 10000 )) &&
+			die "aborting due to too many files, force with --no-skip-large"
+	fi
 }
 
 # cmp-get_image2atomf <format> <normalized-image>

@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- qa-cmp: abort on slow large lists, e.g. gentoo-sources unless --no-skip-large
+
 iwdevtools-0.11.2 (2022-06-29)
 ==============================
 
