@@ -11,7 +11,7 @@ Changes
 
 Fixes
 -----
-- qa-cmp: fix version replacement by ``*`` in the common <ver>.dist-info case
+- qa-cmp: fix version replacement by ``*`` in the common ``<ver>.dist-info``
 
 iwdevtools-0.11.2 (2022-06-29)
 ==============================
