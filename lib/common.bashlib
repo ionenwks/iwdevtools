@@ -32,6 +32,7 @@ init() {
 #	trailing slash. If [dir] is unspecified, read path from <variable>.
 #	Return 1 if not a dir or can't cd to it, die on unexpected issues.
 absdir() {
+	[[ -d ${PWD} ]] || die "working directory '${PWD}' is invalid, can't resolve relative paths"
 	local -n outref=${1}
 	[[ -d ${2-${outref}} ]] && pushd "${2-${outref}}" >/dev/null || return 1
 	outref=${PWD}
