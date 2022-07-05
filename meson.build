@@ -1,7 +1,7 @@
 project(
 	'iwdevtools',
 	license : 'BSD-2-Clause',
-	version : '0.11.2',
+	version : '0.11.3',
 	meson_version : '>=0.57.0'
 )
 
