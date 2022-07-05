@@ -830,7 +830,7 @@ _cmp-output_filelist_diff-replace_versions() {
 			# shouldn't happen, but infinite guard in case of bad data
 			[[ ! ${ver} || ${ver} == '*' ]] && continue
 
-			while [[ ${path} =~ (^|[^0-9.])("${ver}")([^0-9.]|$) ]]; do
+			while [[ ${path} =~ (^|[^0-9.])("${ver}")([^0-9.]|\.[^0-9]|$) ]]; do
 				path=${path//"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]}*${BASH_REMATCH[3]}}
 			done
 		done

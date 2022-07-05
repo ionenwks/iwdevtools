@@ -9,6 +9,10 @@ Changes
 -------
 - qa-cmp: abort on slow large lists, e.g. gentoo-sources unless --no-skip-large
 
+Fixes
+-----
+- qa-cmp: fix version replacement by ``*`` in the common <ver>.dist-info case
+
 iwdevtools-0.11.2 (2022-06-29)
 ==============================
 
