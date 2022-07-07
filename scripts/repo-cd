@@ -454,7 +454,7 @@ rcd-get_metadata_remote_urls() {
 	for entry in "${remoteids[@]}"; do
 		id=${entry#* }
 
-		# based on https://gitweb.gentoo.org/sites/soko.git/tree/pkg/app/handler/packages/utils.go
+		# see https://wiki.gentoo.org/wiki/Project:Quality_Assurance/Upstream_remote-id_types
 		case ${entry%% *} in
 			bitbucket) outref+=("https://bitbucket.org/${id}/");;
 			cpan-module) outref+=("https://metacpan.org/pod/${id}");;
@@ -465,7 +465,6 @@ rcd-get_metadata_remote_urls() {
 			gentoo) outref+=("https://gitweb.gentoo.org/${id}.git/");;
 			github) outref+=("https://github.com/${id}/");;
 			gitlab) outref+=("https://gitlab.com/${id}/");;
-			gitorious) outref+=("https://gitorious.org/${id}/");;
 			google-code) outref+=("https://code.google.com/archive/p/${id}/");;
 			heptapod) outref+=("https://foss.heptapod.net/${id}/");;
 			launchpad) outref+=("https://launchpad.net/${id}/");;
