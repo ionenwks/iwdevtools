@@ -468,6 +468,7 @@ rcd-get_metadata_remote_urls() {
 			google-code) outref+=("https://code.google.com/archive/p/${id}/");;
 			heptapod) outref+=("https://foss.heptapod.net/${id}/");;
 			launchpad) outref+=("https://launchpad.net/${id}/");;
+			nimble) outref+=("https://nimble.directory/pkg/${id}/");;
 			osdn) outref+=("https://osdn.net/projects/${id}/");;
 			pear) outref+=("https://pear.php.net/package/${id}/");;
 			pecl) outref+=("https://pecl.php.net/package/${id}/");;
