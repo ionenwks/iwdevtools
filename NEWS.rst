@@ -11,6 +11,10 @@ Changes
   gives a list of choices even without tab completion), and add -f/-F options
   to control the behavior like forcing fuzzy even if an exact match.
 
+- qa-vdb: print warning about QML for dev-qt/ and kde-frameworks/ when
+  suggesting removal as it's often incorrect if using qtdeclarative
+  (unfortunately can't detect usage from the VDB information alone)
+
 iwdevtools-0.11.3 (2022-07-05)
 ==============================
 

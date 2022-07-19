@@ -208,7 +208,7 @@ vdb-get_libdiff() {
 
 	# create combined output
 	local -i len=0
-	local o mark changes=false
+	local o mark changes=false qmlwarn=false
 	for ((i=0; i < (${#f1[@]}>${#f2[@]}?${#f1[@]}:${#f2[@]}); i++)); do
 		: "${f1[i]:=}${f2[i]:=}"
 		if [[ ${f1[i]} == "${f2[i]}" ]]; then
@@ -220,6 +220,7 @@ vdb-get_libdiff() {
 			mark='>'; changes=true
 		else
 			mark='<'; changes=true
+			[[ ${f1[i]} == @(dev-qt|kde-frameworks)/* ]] && qmlwarn=true
 		fi
 		(( ${#f1[i]} > len )) && len=${#f1[i]}
 		o[i*2]=${f1[i]}
@@ -270,6 +271,9 @@ vdb-get_libdiff() {
 	else
 		printarray o
 	fi
+
+	${qmlwarn} && [[ " ${VDB_LIBNEED[*]}" == *" dev-qt/qtdeclarative"* ]] &&
+		echo "Warning: KDE/QT may be using QML plugins, review before removing dependencies"
 }
 
 # vdb-get_libdiff_unified <CATEGORY/PN>
@@ -290,15 +294,19 @@ vdb-get_libdiff_unified() {
 
 	(( ${#output[@]} )) || return 0
 
-	local color
+	local color qmlwarn=false
 	for output in "${output[@]}"; do
 		case ${output::1} in
 			+) color=${C[g]};;
-			-) color=${C[r]};;
+			-) color=${C[r]}
+				[[ ${output} == -@(dev-qt|kde-frameworks)/* ]] && qmlwarn=true
+			;;
 			*) color=${C[a]};;
 		esac
 		echo "${color}${output}${C[n]}"
 	done
+	${qmlwarn} && [[ " ${VDB_LIBNEED[*]}" == *" dev-qt/qtdeclarative"* ]] &&
+		echo "Warning: KDE/QT may be using QML plugins, review before removing dependencies"
 }
 
 # vdb-get_ldpath <array> <libraries...>
