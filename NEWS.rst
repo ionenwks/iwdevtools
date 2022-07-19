@@ -2,6 +2,15 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- repo-cd: fallback to fuzzy search if no exact name match (e.g. ``rcd sdl2-``
+  gives a list of choices even without tab completion), and add -f/-F options
+  to control the behavior like forcing fuzzy even if an exact match.
+
 iwdevtools-0.11.3 (2022-07-05)
 ==============================
 

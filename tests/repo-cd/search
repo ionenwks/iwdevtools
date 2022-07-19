@@ -8,12 +8,16 @@ echo low > dup/profiles/repo_name
 
 mkdir -p high/{{metadata,.git}/test,dev-alt/alt}
 mkdir -p high/virtual/test # excluded by default
-mkdir -p low/{dev-test/test,dev-alt/alt}
+mkdir -p low/{dev-test/test{,-fuzzy},dev-alt/alt}
 mkdir -p dup/dev-test/dup
 
 expect '*/low/dev-test/test' -c1P "${REPOPATH}" dev-test/test
 expect '*/low/dev-test' -c1P "${REPOPATH}" dev-test
 expect '*/low/dev-test/test' -c1P "${REPOPATH}" test
+
+expect '*/low/dev-test/test-fuzzy' -c1P "${REPOPATH}" fuzzy
+expect '*/low/dev-test' -c1P "${REPOPATH}" --fuzzy test
+xfail 104 expect -2 "*no non-excluded match found*" -c1P "${REPOPATH}" --exact fuzzy
 
 expect '*/high/virtual/test' -c1P "${REPOPATH}" virtual/test
 expect '*/high/virtual/test' -c1P "${REPOPATH}" --exclude='' test

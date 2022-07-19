@@ -29,6 +29,11 @@ usage <<-EOU
 
 	  -1, --first         Disable interactive prompts and always pick first choice
 
+	  -F, --fuzzy         Always enable fuzzy search (e.g. 'gcc' matches both 'gcc'
+	                      and 'gcc-config'), used by default if no exact name match
+	  -f, --exact         Do not return fuzzy matches even if no exact name match
+	                      (this still allows matching in multiple categories)
+
 	  -e, --exclude=LIST  Comma-separated list of categories to exclude from
 	                      searches unless explicitly specified
 	                      (default: acct-user,acct-group,dev-haskell,virtual)
@@ -95,6 +100,8 @@ optauto args "${@}" <<-EOO
 	P|path=str:default
 	D|duplicates=bool:false
 	1|first=bool:false
+	F|fuzzy=bool:false
+	f|exact=bool:false
 	e|exclude=str:acct-user,acct-group,dev-haskell,virtual
 	fields=str:all
 	q|quiet=bool:false
@@ -194,6 +201,9 @@ set -- "${args[@]}"; unset args
 [[ ${O[fields]}, =~ ^,*((-?(all|${RCD_FIELDS//,/|}.{0}),+)+|$)$ ]] \
 	|| die "--field has invalid fields"
 
+${O[fuzzy]} && ${O[exact]} \
+	&& die "-F/--fuzzy and -f/--exact cannot be specified together"
+
 # not perfect, but handles any sane usage
 fields=
 if [[ ${O[fields]} != *-all* ]]; then
@@ -281,23 +291,33 @@ rcd-cd() {
 		local name=${atom[3]} # can be a category-only search
 
 		# search paths separately to sort each individually in REPOPATH order
-		local path
+		local path search
 		local -a choice=()
+		${O[exact]} && search=${name} || search="*${name}*"
 		for path in "${REPOPATH[@]}"; do
 			[[ ! ${userepo} || ${REPONAME[${path}/]} == "${userepo}" ]] || continue
 
-			if [[ ${cat} ]]; then
-				# if exact match, no need for find or its exception rules
-				[[ -d ${path}/${cat}/${name} ]] &&
-					printf '%s\0' "${path}/${cat}/${name}"
+			if [[ ${cat} && -d ${path}/${cat}/${name} ]] && ! ${O[fuzzy]}; then
+				# exact match and no fuzzy, print as-is ignoring exceptions
+				printf '%s\0' "${path}/${cat}/${name}"
 			else
-				rcd-find 1 2 "${path}" -iname "${name}" -print0 | sort -z || die
+				rcd-find 1 2 "${path}" -iname "${search}" -print0 | sort -z || die
 			fi
 		done | mapfile -td '' choice
 
 		if (( ! ${#choice[@]} )); then
 			rcd-msg '!:r' "no non-excluded match found for '${C[m]}${search}${C[n]}'${userepo:+ in ::${userepo}}"
 			exit 104
+		fi
+
+		if ! ${O[fuzzy]} && ! ${O[exact]}; then
+			# only do fuzzy if no exact name matches when fuzziness is
+			# undefined, and post-process to avoid running find(1) twice
+			local -a exact=()
+			for path in "${choice[@]}"; do
+				[[ ${path##*/} == "${name}" ]] && exact+=("${path}")
+			done
+			(( ${#exact[@]} )) && choice=("${exact[@]}")
 		fi
 
 		rcd-ask cd "${choice[@]}"
