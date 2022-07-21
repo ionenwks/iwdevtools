@@ -313,9 +313,11 @@ rcd-cd() {
 		if ! ${O[fuzzy]} && ! ${O[exact]}; then
 			# only do fuzzy if no exact name matches when fuzziness is
 			# undefined, and post-process to avoid running find(1) twice
+			local base
 			local -a exact=()
 			for path in "${choice[@]}"; do
-				[[ ${path##*/} == "${name}" ]] && exact+=("${path}")
+				base=${path##*/}
+				[[ ${base,,} == "${name,,}" ]] && exact+=("${path}")
 			done
 			(( ${#exact[@]} )) && choice=("${exact[@]}")
 		fi

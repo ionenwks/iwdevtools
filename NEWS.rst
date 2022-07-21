@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+-----
+- repo-cd: don't fallback to fuzzy search if "exact" match was case insensitive
+
 iwdevtools-0.11.4 (2022-07-19)
 ==============================
 
