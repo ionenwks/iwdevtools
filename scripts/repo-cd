@@ -497,6 +497,7 @@ rcd-get_metadata_remote_urls() {
 			pypi) outref+=("https://pypi.org/project/${id}/");;
 			rubygems) outref+=("https://rubygems.org/gems/${id}/");;
 			sourceforge) outref+=("https://sourceforge.net/projects/${id}/");;
+			sourcehut) outref+=("https://sr.ht/${id}/");;
 			vim) outref+=("https://www.vim.org/scripts/script.php?script_id=${id}");;
 			*)
 				rcd-msg '!:b:a' "metadata.xml: unknown remote-id ${entry%% *}"
