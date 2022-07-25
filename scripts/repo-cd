@@ -488,6 +488,7 @@ rcd-get_metadata_remote_urls() {
 			github) outref+=("https://github.com/${id}/");;
 			gitlab) outref+=("https://gitlab.com/${id}/");;
 			google-code) outref+=("https://code.google.com/archive/p/${id}/");;
+			hackage) outref+=("https://hackage.haskell.org/package/${id}");;
 			heptapod) outref+=("https://foss.heptapod.net/${id}/");;
 			launchpad) outref+=("https://launchpad.net/${id}/");;
 			nimble) outref+=("https://nimble.directory/pkg/${id}/");;
