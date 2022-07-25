@@ -5,9 +5,14 @@ Release Notes
 iwdevtools-next
 ===============
 
+Changes
+-------
+- repo-cd: early support for upcoming ``hackage`` and ``sourcehut`` remote-ids
+
 Fixes
 -----
-- repo-cd: don't fallback to fuzzy search if "exact" match was case insensitive
+- repo-cd: don't fallback to fuzzy search if match was exact except for letter
+  case (e.g. ``rcd pyqt5`` will cd to ``PyQt5`` without ``PyQt5-sip`` prompt)
 
 iwdevtools-0.11.4 (2022-07-19)
 ==============================
