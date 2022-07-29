@@ -291,9 +291,10 @@ rcd-cd() {
 		local name=${atom[3]} # can be a category-only search
 
 		# search paths separately to sort each individually in REPOPATH order
-		local path search
+		local path
 		local -a choice=()
 		${O[exact]} && search=${name} || search="*${name}*"
+		search=${search//[_-]/[_-]} # "case" insensitive _ and -
 		for path in "${REPOPATH[@]}"; do
 			[[ ! ${userepo} || ${REPONAME[${path}/]} == "${userepo}" ]] || continue
 
@@ -317,7 +318,8 @@ rcd-cd() {
 			local -a exact=()
 			for path in "${choice[@]}"; do
 				base=${path##*/}
-				[[ ${base,,} == "${name,,}" ]] && exact+=("${path}")
+				base=${base//[_-]/[_-]}
+				[[ ${name,,} == ${base,,} ]] && exact+=("${path}") #!SC2053
 			done
 			(( ${#exact[@]} )) && choice=("${exact[@]}")
 		fi
@@ -533,12 +535,13 @@ rcd-msg() {
 rcd-print_compgen() {
 	# do nothing if no arguments rather print the rather slow full list
 	if (( ${#} )); then
+		local search=${1//[_-]/[_-]} # "case" insensitive _ and -
 		if [[ ${1} == */* ]]; then
-			rcd-find 2 2 "${REPOPATH[@]}" -ipath "*/${1}*" -printf '%P\n'
+			rcd-find 2 2 "${REPOPATH[@]}" -ipath "*/${search}*" -printf '%P\n'
 		else
 			# process categories separately to add /
-			rcd-find 1 1 "${REPOPATH[@]}" -iname "${1}*" -printf '%f/\n'
-			rcd-find 2 2 "${REPOPATH[@]}" -iname "${1}*" -printf '%f\n'
+			rcd-find 1 1 "${REPOPATH[@]}" -iname "${search}*" -printf '%f/\n'
+			rcd-find 2 2 "${REPOPATH[@]}" -iname "${search}*" -printf '%f\n'
 		fi
 	fi | sort | uniq
 }

@@ -15,6 +15,7 @@ expect '*/low/dev-test/test' -c1P "${REPOPATH}" dev-test/test
 expect '*/low/dev-test' -c1P "${REPOPATH}" dev-test
 expect '*/low/dev-test/test' -c1P "${REPOPATH}" test
 
+expect '*/low/dev-test/test-fuzzy' -c1P "${REPOPATH}" test_fuzzy
 expect '*/low/dev-test/test-fuzzy' -c1P "${REPOPATH}" fuzzy
 expect '*/low/dev-test' -c1P "${REPOPATH}" --fuzzy test
 xfail 104 expect -2 "*no non-excluded match found*" -c1P "${REPOPATH}" --exact fuzzy
