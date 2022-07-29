@@ -10,7 +10,7 @@ Changes
 - repo-cd: similarly to case insensitivity, consider ``_`` and ``-`` the same
   when searching (includes tab completion), e.g. ``SDL2_im<tab> -> sdl2-image``
 
-- repo-cd: early support for upcoming ``hackage`` and ``sourcehut`` remote-ids
+- repo-cd: support new ``hackage`` and ``sourcehut`` remote-ids
 
 Fixes
 -----
