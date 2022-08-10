@@ -2,6 +2,15 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- repo-cd: ``.`` can now be passed to ``--path/-P`` to search the repo
+  from current working directory without needing to explicitly add, new
+  default is ``--path="default:."``.
+
 iwdevtools-0.11.5 (2022-07-29)
 ==============================
 

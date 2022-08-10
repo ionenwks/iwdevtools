@@ -19,3 +19,6 @@ echo homey > home/homey/profiles/repo_name
 expect -2 "*invalid: ignored*missing: ignored*" -c1P "~/homey:~/invalid:default"
 expect -2 -! -e "(homey|gentoo|extra): ignored" -c1P "~/homey:~/invalid:default"
 expect -2 -! -e "(homey|gentoo|extra|missing): ignored" -c1P "~/homey:~/invalid"
+
+cd "${HOME}/homey"
+expect "${HOME}/homey" -c1P "."

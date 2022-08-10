@@ -170,7 +170,7 @@ with a few added perks like displaying ``metadata.xml``'s remote-ids.
 Here I have my work tree at ``~/gentoo`` that I want to use with ``:default``
 as fallback (adds all from ``repos.conf``), using a ``rcd`` alias::
 
-	~$ eval "$(command repo-cd --bash=rcd --path="~/gentoo:default")"
+	~$ eval "$(command repo-cd --bash=rcd --path="~/gentoo:default:.")"
 	~$ rcd speed-d<tab>
 	 > ~/gentoo/games-sports/speed-dreams
 	 D Fork of the famous open racing car simulator TORCS (2.2.3)

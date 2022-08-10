@@ -22,7 +22,8 @@ usage <<-EOU
 	Options:
 	  -P, --path=PATH     Colon-separated list of repos to search by priority,
 	                      special keyword "default" adds all from repos.conf
-	                      (e.g. --path="~/gentoo:default", see --dumpconfig
+	                      and "." will search current directory if it is a repo
+	                      (e.g. --path="~/gentoo:default:.", see --dumpconfig
 	                      or *Shell Integration* below to set permanently)
 	  -D, --duplicates    Allow multiple repos with the same profiles/repo_name
 	                      (e.g. keep /var/db/repos/gentoo even if have ~/gentoo)
@@ -97,7 +98,7 @@ EOU
 setmsg 2 # stdout only used to show cd path or shell integration
 
 optauto args "${@}" <<-EOO
-	P|path=str:default
+	P|path=str:default:.
 	D|duplicates=bool:false
 	1|first=bool:false
 	F|fuzzy=bool:false
@@ -785,6 +786,15 @@ rcd-set_repopath() {
 				_rcd-set_repopath_add_if_unique
 				:
 			done || die "failed to read repos.conf with q -Cqo"
+		elif [[ ${path} == . ]]; then
+			# check 2 leading directories for packages to packages switching
+			path=${PWD}
+			if [[ ! -e ${path}/profiles/repo_name ]]; then
+				path=${path%/*}
+				[[ ! -e ${path}/profiles/repo_name ]] && path=${path%/*}
+			fi
+			[[ -e ${path}/profiles/repo_name ]] &&
+				_rcd-set_repopath_add_if_unique
 		else
 			# allow tilde expansion for convenience
 			rcd-get_expand_tilde path "${path}"
