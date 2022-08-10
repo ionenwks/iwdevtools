@@ -233,7 +233,7 @@ optstart() {
 #	Set O[<key>] to <value> after sanity checks, die on error, see optstart().
 #	-c indicates set from a config file and will not override non-default/-c
 optset() {
-	local isset='%' type=${_COMMON_OPT[${1}]%:*} val
+	local isset='%' type=${_COMMON_OPT[${1}]%%:*} val
 
 	if [[ ${3:-} == -c ]]; then
 		[[ ${type} != %* ]] || return 0
