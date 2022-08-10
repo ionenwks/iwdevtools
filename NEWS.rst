@@ -11,6 +11,10 @@ Changes
   from current working directory without needing to explicitly add, new
   default is ``--path="default:."``.
 
+Fixes
+-----
+- qa-cmp: fix wrong error message occasionally being shown on files limit
+
 iwdevtools-0.11.5 (2022-07-29)
 ==============================
 

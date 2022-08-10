@@ -180,7 +180,9 @@ cmp-get_filelist() {
 							|| echo '(?)'
 					done
 				}
-			[[ ${PIPESTATUS[*]} == '0 0 '[01]' 0 0' ]] || die "qlist failed for '${2}'"
+			# 141 == likely SIGPIPE due to -n on mapfile
+			[[ ${PIPESTATUS[*]} == '0 0 '[01]' '@(0|141)' 0' ]] \
+				|| die "qlist failed for '${2}'"
 		else
 			cmp-get_image2atomf '%e\n' "${2}"
 
@@ -190,8 +192,8 @@ cmp-get_filelist() {
 					|| die "failed to read '${2%/image}/build-info/SIZE', failed build image?"
 			echo "${size}"
 
-			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P (%M %u:%g)\n' | sort \
-				|| die "find failed for '${2}'"
+			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P (%M %u:%g)\n' | sort
+			[[ ${PIPESTATUS[*]} == '0 '@(0|141) ]] || die "find failed for '${2}'"
 		fi
 	} | mapfile -t "${flimit[@]}" "${1}"
 
