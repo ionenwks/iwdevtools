@@ -167,8 +167,9 @@ Dependencies: portage-utils (q), libxml2 (xmllint)
 Can be used to jump to the repo directory (cd) of the specified atom,
 with a few added perks like displaying ``metadata.xml``'s remote-ids.
 
-Here I have my work tree at ``~/gentoo`` that I want to use with ``:default``
-as fallback (adds all from ``repos.conf``), using a ``rcd`` alias::
+Here I have my work tree at ``~/gentoo`` that I want to use with ``:default:.``
+as fallback (adds all from ``repos.conf``, and current directory if a repo),
+using a ``rcd`` alias::
 
 	~$ eval "$(command repo-cd --bash=rcd --path="~/gentoo:default:.")"
 	~$ rcd speed-d<tab>
