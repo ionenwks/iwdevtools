@@ -12,7 +12,12 @@ expect -c -s -2 "*'
 
 expect -c -2 "Error:*test message*" xfail -s 1 die test message
 
-hook_end() {
-	echo hook >&2
-}
-expect -c -2 "Error:*test*hook*" xfail -s 1 die test
+# subshell has a special meaning for hook_end, so prevent exit to run without
+end_func=$(declare -f end)
+eval "${end_func//exit/return}"
+testhook=
+hook_end() { testhook=y; }
+( die ) || :
+[[ ${testhook} != y ]] || fail "hook_end was ran when it shouldn't"
+die || :
+[[ ${testhook} == y ]] || fail "hook_end was not ran when it should"
