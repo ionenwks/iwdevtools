@@ -11,11 +11,6 @@ Fixes
   e.g. when using sed labels (unfortunately means this can't tell if each
   separate use of labels replaced something)
 
-- qa-sed: avoid occasional incorrect modification when expression testing
-  failed but normal sed command didn't resulting in sed being run multiple
-  times from the error handler in subshells (currently only known effected
-  case is ``sys-apps/shadow[pam]`` login.defs comments)
-
 iwdevtools-0.11.6 (2022-08-10)
 ==============================
 
