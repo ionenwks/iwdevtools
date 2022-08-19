@@ -13,8 +13,9 @@ Fixes
 
 - qa-sed: avoid occasional incorrect modification when expression testing
   failed but normal sed command didn't resulting in sed being run multiple
-  times by the error handler (currently only known effected case is
-  ``sys-apps/shadow[pam]`` login.defs comments, thankfully harmless).
+  times by the error handler (currently only known affected case is
+  ``sys-apps/shadow[pam]`` login.defs superfluous comments, this is further
+  fixed given doesn't error out with sed labels anymore)
 
 iwdevtools-0.11.6 (2022-08-10)
 ==============================
