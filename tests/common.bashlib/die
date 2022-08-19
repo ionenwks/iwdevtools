@@ -10,6 +10,12 @@ expect -c -s -2 "*'
   005:             false || die
   ^^^ testfunc:5'*" xfail -s 1 testfunc
 
+testret() { return 1; }
+testfunc() { testret || die; }
+expect -c -2 -! "*errno*" xfail -s 1 testfunc
+testret() { return 101; }
+expect -c -2 "Error:*errno:101*" xfail -s 1 testfunc
+
 expect -c -2 "Error:*test message*" xfail -s 1 die test message
 
 hook_end() {

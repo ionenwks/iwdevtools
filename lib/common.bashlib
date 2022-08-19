@@ -49,7 +49,10 @@ depend() {
 #	Exit with [message] by calling `end 1`.
 #	If no message, display generic error with failed line and backtrace.
 die() {
-	echo "Error: ${*:-unexpected issue happened at the following} (${0##*/}:${FUNCNAME[1]}:${BASH_LINENO[0]})" >&2
+	local errno=${?}
+	(( errno > 1 )) || errno=
+
+	echo "Error: ${*:-unexpected issue happened at the following} (${0##*/}:${FUNCNAME[1]}:${BASH_LINENO[0]})${errno:+ (errno:${errno})}" >&2
 
 	if (( ! ${#} )); then
 		local i
