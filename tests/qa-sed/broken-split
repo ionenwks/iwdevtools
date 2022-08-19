@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# test -e not working when split, can happen with labels
+printf 'a\nb\nc\n' > file
+expect -2 "''" -i -e "/b/b label" -e 'b exit' -e ': label; i\insert' -e ': exit' file
+cat file
+[[ $(<file) == $'a\ninsert\nb\nc' ]] || fail "file content mismatch"

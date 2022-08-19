@@ -7,6 +7,10 @@ iwdevtools-next
 
 Fixes
 -----
+- qa-sed: do not test ``-e`` individually if they can't function that way,
+  e.g. when using sed labels (unfortunately means this can't tell if each
+  separate use of labels replaced something)
+
 - qa-sed: avoid occasional incorrect modification when expression testing
   failed but normal sed command didn't resulting in sed being run multiple
   times from the error handler in subshells (currently only known effected

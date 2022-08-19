@@ -135,18 +135,21 @@ unset args
 #    3. sed -E --file=script file
 declare -i pass=1
 pass_1=(--sandbox)
+pass_all=("${pass_1[@]}")
 sed-pass_add() {
 	local -i i
 	for ((i=1; i<=pass; i++)); do
 		local -n ref=pass_${i}
 		ref+=("${1}")
 	done
+	pass_all+=("${1}")
 }
 sed-pass_fork() {
 	local -n prevref=pass_${pass}
 	local -n nextref=pass_$((++pass))
 	nextref=("${prevref[@]}") #!SC2034
 	prevref+=("${1}")
+	pass_all+=("${1}")
 }
 
 exps=()
@@ -189,6 +192,19 @@ elif (( ${#in[@]} )); then
 else
 	end # no expressions, sed will fail
 fi
+
+# sed labels and potentially other constructs may not function when
+# take each -e individually, perform a dry run and merge if needed
+declare -i ptest
+for ((ptest = 1; ptest <= pass; ptest++)); do
+	declare -n ptestref=pass_${ptest}
+	if ! sed "${ptestref[@]}" </dev/null &>/dev/null; then
+		pass=1
+		pass_1=("${pass_all[@]}")
+		exps=("${exps[*]}")
+		break
+	fi
+done
 
 # use stdin if pointing to a real file
 stdin=$(readlink -m /proc/self/fd/0) || die
