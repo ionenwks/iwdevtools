@@ -237,21 +237,21 @@ done
 sed-pass() {
 	if (( ${1} <= pass )); then
 		local -n ref=pass_${1} #!SC2178
-		tee >(cksum >&3) | sed "${ref[@]}" | sed-pass $((${1} + 1)) || die
+		tee >(cksum >&3) | sed "${ref[@]}" | sed-pass $((${1} + 1)) || return 1
 	else
-		cksum >&3 || die
+		cksum >&3 || return 1
 	fi
 }
 sed-unset_used_exps() {
 	local -a sums
 
-	sed-pass 1 3>&1 | map sums
+	sed-pass 1 3>&1 | map sums || return 101
 
-	(( ${#sums[@]} == pass + 1 )) || die # shouldn't happen
+	(( ${#sums[@]} == pass + 1 )) || return 102 # shouldn't happen
 
 	local -i i
 	for ((i=1; i<${#sums[@]}; i++)); do
-		[[ ${sums[i]} && ${sums[i-1]} ]] || die # no cksum output?
+		[[ ${sums[i]} && ${sums[i-1]} ]] || return 103 # no cksum output?
 		[[ ${sums[i]} == "${sums[i-1]}" ]] || unset "exps[i-1]" # did changes
 	done
 }
