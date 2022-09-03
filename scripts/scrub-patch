@@ -46,7 +46,7 @@ patches=()
 while (( ${#} )); do
 	[[ -f ${1} ]] || die "'${1}' is not a valid file"
 	if ${O[sanity]} && [[ $(file -bL -- "${1}") != 'unified diff output'* ]]; then
-		die "'${1}' does not appear to be a unified format patch"
+		die "'${1}' is not reported to be a unified format patch by file(1) -- if it is, can use -s/--no-sanity to bypass"
 	fi
 	patches+=("${1}")
 	shift
