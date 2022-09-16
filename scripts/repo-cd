@@ -502,6 +502,8 @@ rcd-get_metadata_remote_urls() {
 			pecl) outref+=("https://pecl.php.net/package/${id}/");;
 			pypi) outref+=("https://pypi.org/project/${id}/");;
 			rubygems) outref+=("https://rubygems.org/gems/${id}/");;
+			savannah) outref+=("https://savannah.gnu.org/projects/${id}/");;
+			savannah-nongnu) outref+=("https://savannah.nongnu.org/projects/${id}/");;
 			sourceforge) outref+=("https://sourceforge.net/projects/${id}/");;
 			sourcehut) outref+=("https://sr.ht/${id}/");;
 			vim) outref+=("https://www.vim.org/scripts/script.php?script_id=${id}");;
