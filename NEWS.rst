@@ -2,6 +2,16 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- repo-cd: support new ``freedesktop-gitlab``, ``gnome-gitlab``. ``savannah``
+  and ``savannah-nongnu`` remote-ids
+
+- scrub-patch: give a better error when file(1) did not recognize a patch
+
 iwdevtools-0.11.7 (2022-08-19)
 ==============================
 
