@@ -487,11 +487,11 @@ rcd-get_metadata_remote_urls() {
 			cpe) continue;; # unhandled
 			cran) outref+=("https://cran.r-project.org/web/packages/${id}/");;
 			ctan) outref+=("https://ctan.org/pkg/${id}/");;
-			freedesktop-gitlab) outref+=("https://gitlab.freedesktop.org.org/${id}.git/");;
+			freedesktop-gitlab) outref+=("https://gitlab.freedesktop.org/${id}/");;
 			gentoo) outref+=("https://gitweb.gentoo.org/${id}.git/");;
 			github) outref+=("https://github.com/${id}/");;
 			gitlab) outref+=("https://gitlab.com/${id}/");;
-			gnome-gitlab) outref+=("https://gitlab.gnome.org.org/${id}.git/");;
+			gnome-gitlab) outref+=("https://gitlab.gnome.org/${id}/");;
 			google-code) outref+=("https://code.google.com/archive/p/${id}/");;
 			hackage) outref+=("https://hackage.haskell.org/package/${id}");;
 			heptapod) outref+=("https://foss.heptapod.net/${id}/");;

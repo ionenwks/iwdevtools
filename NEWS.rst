@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- repo-cd: fix typo in ``freedesktop-gitlab`` and ``gnome-gitlab`` urls
+
 iwdevtools-0.11.8 (2022-09-16)
 ==============================
 
