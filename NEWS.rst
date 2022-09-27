@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+-----
+- repo-cd: for tab completion, do not give mismatching ``_`` and ``-`` results
+  to the shell as it will not know they are interchangeable and misbehave
+
 iwdevtools-0.11.9 (2022-09-19)
 ==============================
 

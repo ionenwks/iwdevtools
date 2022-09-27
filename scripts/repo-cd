@@ -539,8 +539,11 @@ rcd-msg() {
 #	Print possible words for tab completion based on REPOPATH.
 rcd-print_compgen() {
 	# do nothing if no arguments rather print the rather slow full list
-	if (( ${#} )); then
-		local search=${1//[_-]/[_-]} # "case" insensitive _ and -
+	(( ${#} )) || return 0
+
+	local -a gen
+	local search=${1//[_-]/[_-]} # "case" insensitive _ and -
+	{
 		if [[ ${1} == */* ]]; then
 			rcd-find 2 2 "${REPOPATH[@]}" -ipath "*/${search}*" -printf '%P\n'
 		else
@@ -548,7 +551,21 @@ rcd-print_compgen() {
 			rcd-find 1 1 "${REPOPATH[@]}" -iname "${search}*" -printf '%f/\n'
 			rcd-find 2 2 "${REPOPATH[@]}" -iname "${search}*" -printf '%f\n'
 		fi
-	fi | sort | uniq
+	} | sort | uniq | map gen
+
+	# if _ or - had an exact match, discard the mismatching ones as the shell
+	# will not know how to handle this
+	local exactmatch=false
+	if [[ ${1} == *[_-]* ]]; then
+		local match
+		for match in "${gen[@]}"; do
+			if [[ ${match} == "${1}"* ]]; then
+				exactmatch=true
+				echo "${match}"
+			fi
+		done
+	fi
+	${exactmatch} || printarray gen
 }
 
 # rcd-print_command
