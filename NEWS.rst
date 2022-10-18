@@ -10,6 +10,9 @@ Fixes
 - repo-cd: for tab completion, do not give mismatching ``_`` and ``-`` results
   to the shell as it will not know they are interchangeable and misbehave
 
+- qa-sed.bashrc: prevent portage from interpreting e.g. ``\r`` from sed
+  expressions in the log output
+
 iwdevtools-0.11.9 (2022-09-19)
 ==============================
 
