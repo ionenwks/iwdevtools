@@ -18,6 +18,8 @@ Changes
 - scrub-patch: -1/--p0p1 option to add a leading directory to every files,
   i.e. convert a -p0 patch to -p1
 
+- repo-cd: tentatively support upcoming ``kde-invent`` remote-id
+
 Fixes
 -----
 - repo-cd: for tab completion, do not give mismatching ``_`` and ``-`` results
