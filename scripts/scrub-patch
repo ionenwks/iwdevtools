@@ -15,6 +15,7 @@ usage <<-EOU
 	Options:
 	  -g, --git          Convert \`leading-1.0/file\` to git-style \`a/file\`
 	                     rather than warn (do not use if not a -p1 patch)
+	  -1, --p0p1         Add one directory level to every files (-p0 -> -p1)
 
 	  -q, --quiet        Don't nag about possible QA issues
 	  -n, --dry-run      Don't scrub and only nag about QA instead
@@ -38,6 +39,7 @@ setmsg 2 # stdout may be used to write the patch
 
 optauto args "${@}" <<-EOO
 	g|git=bool:false
+	1|p0p1=bool:false
 	q|quiet=bool:false
 	n|dry-run=bool:false
 	s|!sanity=bool:true
@@ -48,6 +50,7 @@ EOO
 set -- "${args[@]}"; unset args
 
 ${O[in-place]} && ${O[stdout]} && die "can't in-place and stdout at same time"
+${O[git]} && ${O[p0p1]} && O[git]=false # redundant
 
 # do basic sanity checks on supplied files, safety if going to use in-place
 patches=()
@@ -117,6 +120,13 @@ if ${O[git]}; then
 	sedexps+=(
 		-e 's:^--- [^/][^/]*/:--- a/:'
 		-e 's:^+++ [^/][^/]*/:+++ b/:'
+	)
+fi
+if ${O[p0p1]}; then
+	msg "Warning: adding a directory level to every files due to -1/--p0p1"
+	sedexps+=(
+		-e '/^--- [^/]/s:^--- :&a/:'
+		-e '/^+++ [^/]/s:^+++ :&b/:'
 	)
 fi
 

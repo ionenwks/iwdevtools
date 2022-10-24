@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # test a mostly normal patch using stdout, should not generate
-# any QA given the only issue is corrected by --git
+# any QA given the only issue is corrected by --git or --p0p1
 copydat normal.patch
 expect -2 "Success*39.68%*meaningful." -co --git normal.patch > output
 md5cmp 591c09716414b49f19836dd0bf02f388 output
+expect -2 "Success*35.09%*meaningful." -co --p0p1 normal.patch > output
+md5cmp d78aa50fbb205c036bb3c2aae14ce251 output

@@ -11,6 +11,9 @@ Changes
   git-style ``a/file`` (not default given would be harmful on a -p0 patch,
   but is safe to always use with -p1 patches)
 
+- scrub-patch: -1/--p0p1 option to add a leading directory to every files,
+  i.e. convert a -p0 patch to -p1
+
 Fixes
 -----
 - repo-cd: for tab completion, do not give mismatching ``_`` and ``-`` results
