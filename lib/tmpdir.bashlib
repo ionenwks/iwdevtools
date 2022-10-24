@@ -2,15 +2,15 @@
 # basic functions to use and cleanup a temporary directory
 [[ ! -v _TMPDIR_BASHLIB[1] ]] || return 0; _TMPDIR_BASHLIB[1]=
 
-# tmpinit [-E]
+# tmpinit [-n]
 #	Create a general purpose temporary directory using mktemp(1) (respects
-#	TMPDIR) and sets and EXIT trap for cleanup unless -E. Return 1 on issues.
+#	TMPDIR) and sets and EXIT trap for cleanup unless -n. Return 1 on issues.
 #	Directory will have ._tmpdir file for sanity checks, should not be deleted.
 unset _TMPDIR_PATH
 tmpinit() {
 	[[ ! -v _TMPDIR_PATH ]] || return 0
 
-	if [[ ${1:-} != -E ]]; then
+	if [[ ${1:-} != -n ]]; then
 		trap '
 			if [[ -d ${_TMPDIR_PATH} ]]; then
 				if [[ -e ${_TMPDIR_PATH}/._tmpdir ]]; then

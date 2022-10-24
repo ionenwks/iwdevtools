@@ -4,6 +4,6 @@ dir=$(TMPDIR=${PWD} tmpinit && tmppath dir && echo "${dir}" && [[ -d ${dir} ]]) 
 [[ ${dir} == "${PWD}"/* ]] || fail "'${dir}' was expected in '${PWD}'"
 [[ ! -d ${dir} ]] || fail "'${dir}' was not deleted on exit"
 
-dir=$(TMPDIR=${PWD} tmpinit -E && tmppath dir && echo "${dir}" && [[ -d ${dir} ]]) \
+dir=$(TMPDIR=${PWD} tmpinit -n && tmppath dir && echo "${dir}" && [[ -d ${dir} ]]) \
 	|| fail "failed to create '${dir}'"
 [[ -d ${dir} ]] || fail "'${dir}' was not supposed to be deleted on exit"
