@@ -91,32 +91,29 @@ for ((i=0; i < ${#patches[@]}; i++)); do
 done
 
 if ! ${O[dry-run]}; then
-	# Taken from vapier's clean patches howto (also in Gentoo's devmanual)
+	# taken from vapier's clean patches howto with small changes (see notes)
 	#  - https://dev.gentoo.org/~vapier/clean-patches
 	#  - https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html
-	#
-	# additions:
-	#  - discard after '---' in header (git noise, e.g. N files changed, N deletion)
-	#  - discard git version and empty lines '-- ' signature
-	# modifications:
-	#  - add space after ---/+++ and diff for extra safety
-	#   (patches patching patches sometimes have ---- ++++)
-	sed -e '/^index /d' \
-		-e '/^new file mode /d' \
-		-e '/^Index:/d' \
-		-e '/^=========/d' \
-		-e '/^RCS file:/d' \
-		-e '/^retrieving/d' \
-		-e '/^diff /d' \
-		-e '/^Files .* differ$/d' \
-		-e '/^Only in /d' \
-		-e '/^Common subdirectories/d' \
-		-e '/^deleted file mode [0-9]*$/d' \
-		-e '/^+++ /s:\t.*::' \
-		-e '/^--- /s:\t.*::' \
-		-e '/^---$/,/^--- /{/^--- /!d}' \
-		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}' \
-		"${inplace[@]}" -- "${patches[@]}" || die "scrubbed too hard"
+	sedexps=(
+		-e '/^index /d'
+		-e '/^new file mode /d'
+		-e '/^Index:/d'
+		-e '/^=========/d'
+		-e '/^RCS file:/d'
+		-e '/^retrieving/d'
+		-e '/^diff /d'
+		-e '/^Files .* differ$/d'
+		-e '/^Only in /d'
+		-e '/^Common subdirectories/d'
+		-e '/^deleted file mode [0-9]*$/d'
+		-e '/^--- /s:\t.*::' # original lacks space after ---, added for safety
+		-e '/^+++ /s:\t.*::'
+		# discard after '---' in header (git noise, e.g. N files changed)
+		-e '/^---$/,/^--- /{/^--- /!d}'
+		# discard git version and empty lines '-- ' signature
+		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}'
+	)
+	sed "${sedexps[@]}" "${inplace[@]}" -- "${patches[@]}" || die "scrubbed too hard"
 fi
 
 exec >&2 # done with stdout which may be a file
