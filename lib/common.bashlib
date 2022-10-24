@@ -175,10 +175,19 @@ map() {
 	fi
 }
 
-# msg <message>
-#	Echoes message based on setmsg() defaults.
+# msg <message> [extra-lines]
+#	Echoes message based on setmsg() defaults, multiple arguments
+#	will output on separate lines.
 msg() {
-	printf "${_COMMON_MSG_FMT:-%s\n}" "${@}" >&"${_COMMON_MSG_STD:-1}"
+	printf -- "${_COMMON_MSG_FMT}\n" "${@}" >&"${_COMMON_MSG_STD}"
+}
+
+# msgf <format> [args]
+#	Like msg(), but with a printf formatted string.
+msgf() {
+	local msg
+	printf -v msg -- "${@}"
+	printf -- "${_COMMON_MSG_FMT}" "${msg}" >&"${_COMMON_MSG_STD}"
 }
 
 # optstart
@@ -412,12 +421,13 @@ printarray() {
 }
 
 # setmsg [12] [format]
-#	Set how to output messages from msg()
-#	Default if not used: 1(stdout) '%s\n'
+#	Set how to output messages from msg() and msgf(), e.g. to add
+#	a prefix or always use stderr (default: 1(stdout) '%s').
 #	If IWCOMMON_MSG_STD_FORCE is set to 1 or 2, enforce over arguments
 #	Use enforcing with care, only intended for capturing usage/config
 #	without risking error messages and may break normal use.
-unset _COMMON_MSG_FMT _COMMON_MSG_STD
+_COMMON_MSG_FMT=%s
+_COMMON_MSG_STD=1
 setmsg() {
 	if [[ ${1} == [12] ]]; then
 		[[ ${IWCOMMON_MSG_STD_FORCE:-} == [12] ]] &&

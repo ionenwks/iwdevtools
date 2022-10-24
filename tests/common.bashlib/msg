@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 expect -c "'hello
 world'" msg hello world
+expect -c -s "'welcome hell!'" msgf '%s %s%c' welcome hell '!'
 setmsg 2 '@%s@'
 expect -c -2 "'@heaveno
 world@'" msg 'heaveno
