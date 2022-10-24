@@ -13,6 +13,9 @@ usage <<-EOU
 	and either modified in-place (i.e. sed(1)'s -i) or to stdout.
 
 	Options:
+	  -e, --edit         Open patch in \$EDITOR after scrubbing and before QA
+	                     (e.g. to add links before unnecessary warnings)
+
 	  -g, --git          Convert \`leading-1.0/file\` to git-style \`a/file\`
 	                     rather than warn (do not use if not a -p1 patch)
 	  -1, --p0p1         Add one directory level to every files (-p0 -> -p1)
@@ -38,6 +41,7 @@ EOU
 setmsg 2 # stdout may be used to write the patch
 
 optauto args "${@}" <<-EOO
+	e|edit=bool:false
 	g|git=bool:false
 	1|p0p1=bool:false
 	q|quiet=bool:false
@@ -51,14 +55,17 @@ set -- "${args[@]}"; unset args
 
 ${O[in-place]} && ${O[stdout]} && die "can't in-place and stdout at same time"
 ${O[git]} && ${O[p0p1]} && O[git]=false # redundant
+${O[edit]} && [[ ! ${EDITOR} ]] && die "-e/--edit given but \$EDITOR is not set"
 
 # do basic sanity checks on supplied files, safety if going to use in-place
+is_sane() {
+	${O[sanity]} || return 0
+	[[ $(file -bL -- "${1}") == 'unified diff output'* ]]
+}
 patches=()
 while (( ${#} )); do
 	[[ -f ${1} ]] || die "'${1}' is not a valid file"
-	if ${O[sanity]} && [[ $(file -bL -- "${1}") != 'unified diff output'* ]]; then
-		die "'${1}' is not reported to be a unified format patch by file(1) -- if it is, can use -s/--no-sanity to bypass"
-	fi
+	is_sane "${1}" || die "'${1}' is not reported to be a unified format patch by file(1) -- if it is, can use -s/--no-sanity to bypass"
 	patches+=("${1}")
 	shift
 done
@@ -274,6 +281,13 @@ for patch in "${patches[@]}"; do
 	msgf " - %s (%.2f%% reduction)\n" "${stdin:-${patch}}" \
 		$((10**4 - 10**4 * newsize / oldsize))e-2
 
+	if ${O[edit]}; then
+		${EDITOR} "${clean}" >&2 # ignore exit status, may be volatile
+
+		# warn if no longer a unified patch, but still proceed to keep work
+		is_sane "${clean}" || msg "Warning: after editing, '${clean}' is no longer seen as a unified format patch by file(1)"
+	fi
+
 	if ! ${O[quiet]}; then
 		qareport=$(inspect "${clean}" "${newsize}")
 		if [[ ${qareport} ]]; then
@@ -298,7 +312,7 @@ if ${hadqa}; then
 	msg "If patch is intended for the ::gentoo tree, would be good to review."
 	msg "Note that these checks are tentative and cannot consider everything."
 	msg "https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html"
-elif ! ${O[dry-run]}; then
+elif ! ${O[dry-run]} && ! ${O[edit]}; then
 	msg "Please verify that header(s) have not lost anything meaningful."
 fi
 

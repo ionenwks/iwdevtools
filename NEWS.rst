@@ -7,6 +7,10 @@ iwdevtools-next
 
 Changes
 -------
+- scrub-patch: -e/--edit option to open patch in $EDITOR after scrubbing,
+  primarily for those that prefer to view/edit the clean patch (e.g. to
+  add links) and have it verified for QA oversights only after
+
 - scrub-patch: -g/--git option to auto-convert e.g. ``leading-1.0/file`` to
   git-style ``a/file`` (not default given would be harmful on a -p0 patch,
   but is safe to always use with -p1 patches)
