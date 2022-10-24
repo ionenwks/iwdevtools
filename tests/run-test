@@ -322,6 +322,7 @@ export LC_ALL=C EPREFIX= XDG_CONFIG_HOME=${WORKDIR}
 
 # run test in work dir
 cd "${WORKDIR}"
+export TMPDIR=${PWD}
 [[ ! ${INCLUDE} ]] || . "${SCRIPT}"
 . "${TEST}"
 

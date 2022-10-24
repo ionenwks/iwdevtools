@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-TMPDIR=${PWD} tmpinit
+tmpinit
 tmppath dir
 :> "${dir}"/test
 mkdir "${dir}"/sub

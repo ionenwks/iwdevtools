@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-TMPDIR=${PWD} tmpinit
+tmpinit
 tmppath dir
 tmpcd
 [[ ${PWD} == ${dir} ]] || fail "'${PWD}' is not '${dir}'"
