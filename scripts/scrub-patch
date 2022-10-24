@@ -282,7 +282,8 @@ for patch in "${patches[@]}"; do
 		$((10**4 - 10**4 * newsize / oldsize))e-2
 
 	if ${O[edit]}; then
-		${EDITOR} "${clean}" >&2 # ignore exit status, may be volatile
+		# ignore exit status, may be volatile
+		command -- ${EDITOR} "${clean}" >&2 #!SC2086
 
 		# warn if no longer a unified patch, but still proceed to keep work
 		is_sane "${clean}" || msg "Warning: after editing, '${clean}' is no longer seen as a unified format patch by file(1)"
