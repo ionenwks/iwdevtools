@@ -258,6 +258,7 @@ shellcheck() {
 		-e SC2030 #(Modification of var is local)
 		-e SC2031 #(var was modified in a subshell)
 		-e SC2059 #(Don't use variables in the printf format string)
+		-e SC2119 #(Use foo "$@" if function's $1 should mean script's $1)
 
 		# widespread use of "func array" that sets array where SC can't know
 		# (use of `set -u` should pick these up in general)
