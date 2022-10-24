@@ -12,6 +12,9 @@ usage <<-EOU
 	and either modified in-place (i.e. sed(1)'s -i) or to stdout.
 
 	Options:
+	  -g, --git          Convert \`leading-1.0/file\` to git-style \`a/file\`
+	                     rather than warn (do not use if not a -p1 patch)
+
 	  -q, --quiet        Don't nag about possible QA issues
 	  -n, --dry-run      Don't scrub and only nag about QA instead
 
@@ -30,6 +33,7 @@ usage <<-EOU
 	      --version      Display version information and exit
 EOU
 optauto args "${@}" <<-EOO
+	g|git=bool:false
 	q|quiet=bool:false
 	n|dry-run=bool:false
 	s|!sanity=bool:true
@@ -113,6 +117,14 @@ if ! ${O[dry-run]}; then
 		# discard git version and empty lines '-- ' signature
 		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}'
 	)
+
+	# potentialy harmful expressions enabled only on-demand
+	${O[git]} && sedexps+=(
+		# don't match on leading / to keep e.g. /dev/null as-is
+		-e 's:^--- [^/][^/]*/:--- a/:'
+		-e 's:^+++ [^/][^/]*/:+++ b/:'
+	)
+
 	sed "${sedexps[@]}" "${inplace[@]}" -- "${patches[@]}" || die "scrubbed too hard"
 fi
 
