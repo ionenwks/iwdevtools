@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend cat file mktemp readlink rm stat
+depend cat cp file mktemp readlink rm stat
+include tmpdir
 usage <<-EOU
 	Usage: ${0##*/} [option]... [patch]...
 
@@ -20,8 +21,8 @@ usage <<-EOU
 
 	  -s, --no-sanity    Disable \`file\` check for if being misdetected
 
-	  -i, --in-place     Force using sed -i (no autodetect)
-	  -o, --stdout       Always output to stdout (no autodetect)
+	  -i, --in-place     Force \`sed -i\`-like behavior (no autodetect)
+	  -o, --stdout       Always output the modified patch to stdout (no autodetect)
 
 	  -c, --no-color     Disable use of colors
 
@@ -32,6 +33,9 @@ usage <<-EOU
 	  -h, --help         Display usage information and exit
 	      --version      Display version information and exit
 EOU
+
+setmsg 2 # stdout may be used to write the patch
+
 optauto args "${@}" <<-EOO
 	g|git=bool:false
 	q|quiet=bool:false
@@ -61,107 +65,60 @@ done
 if ${O[in-place]}; then
 	stdout=
 	stdin=
-	inplace=(-i)
 else
 	# maybe in-place, stdout, or force-stdout
 	stdin=$(readlink -m /proc/$$/fd/0) || die "readlink failed for stdin"
 	[[ -f ${stdin} || ${stdin##*/} == pipe:* ]] || stdin=
 	stdout=$(readlink -m /proc/$$/fd/1) || die "readlink failed for stdout"
 	[[ -f ${stdout} || ${stdout##*/} == pipe:* ]] || stdout=
-	inplace=(-i)
-	[[ ${stdin} || ${stdout} ]] || ${O[stdout]} && inplace=()
+	O[in-place]=true
+	[[ ${stdin} || ${stdout} ]] || ${O[stdout]} && O[in-place]=false
 fi
 
-# copy stdin to a temporary file, simplifies inspection and sed usage
+# use temporary directory to simplify inspection, editing, using stdin, etc..
+tmpinit
+tmppath tmp
 if [[ ${stdin} ]]; then
-	TMPIN=
-	trap '[[ -e ${TMPIN} ]] && rm "${TMPIN}"' EXIT
-	TMPIN=$(mktemp "/tmp/.${0##*/}-XXXXXXXX") || die "mktemp failed"
-	cat > "${TMPIN}" || die "writing to ${TMPIN} failed"
+	cat > "${tmp}/stdin" || die
 	exec <&-
-
-	patches+=("${TMPIN}")
+	patches+=("${tmp}/stdin")
 fi
 
 (( ${#patches[@]} )) || die "no patches given"
-(( ${#patches[@]} > 1 && ! ${#inplace[@]} )) \
+(( ${#patches[@]} > 1 )) && ! ${O[in-place]} \
 	&& die "no support for multiple files when using stdin/stdout"
 
-# save patch sizes for report
-declare -i i=0
-declare -ia oldsizes=() newsizes=()
-for ((i=0; i < ${#patches[@]}; i++)); do
-	oldsizes+=("$(stat -c %s "${patches[i]}")") || die "stat failed for '${patches[i]}'"
-done
+# taken from vapier's clean patches howto with small changes (see notes)
+#  - https://dev.gentoo.org/~vapier/clean-patches
+#  - https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html
+sedexps=(
+	-e '/^index /d'
+	-e '/^new file mode /d'
+	-e '/^Index:/d'
+	-e '/^=========/d'
+	-e '/^RCS file:/d'
+	-e '/^retrieving/d'
+	-e '/^diff /d'
+	-e '/^Files .* differ$/d'
+	-e '/^Only in /d'
+	-e '/^Common subdirectories/d'
+	-e '/^deleted file mode [0-9]*$/d'
+	-e '/^--- /s:\t.*::' # original lacks space after ---, added for safety
+	-e '/^+++ /s:\t.*::'
+	# discard after '---' in header (git noise, e.g. N files changed)
+	-e '/^---$/,/^--- /{/^--- /!d}'
+	# discard git version and empty lines '-- ' signature
+	-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}'
+)
 
-if ! ${O[dry-run]}; then
-	# taken from vapier's clean patches howto with small changes (see notes)
-	#  - https://dev.gentoo.org/~vapier/clean-patches
-	#  - https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html
-	sedexps=(
-		-e '/^index /d'
-		-e '/^new file mode /d'
-		-e '/^Index:/d'
-		-e '/^=========/d'
-		-e '/^RCS file:/d'
-		-e '/^retrieving/d'
-		-e '/^diff /d'
-		-e '/^Files .* differ$/d'
-		-e '/^Only in /d'
-		-e '/^Common subdirectories/d'
-		-e '/^deleted file mode [0-9]*$/d'
-		-e '/^--- /s:\t.*::' # original lacks space after ---, added for safety
-		-e '/^+++ /s:\t.*::'
-		# discard after '---' in header (git noise, e.g. N files changed)
-		-e '/^---$/,/^--- /{/^--- /!d}'
-		# discard git version and empty lines '-- ' signature
-		-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}'
-	)
-
-	# potentialy harmful expressions enabled only on-demand
-	${O[git]} && sedexps+=(
-		# don't match on leading / to keep e.g. /dev/null as-is
+# potentialy harmful expressions enabled only on-demand
+if ${O[git]}; then
+	# don't match on leading / to keep e.g. /dev/null as-is
+	sedexps+=(
 		-e 's:^--- [^/][^/]*/:--- a/:'
 		-e 's:^+++ [^/][^/]*/:+++ b/:'
 	)
-
-	sed "${sedexps[@]}" "${inplace[@]}" -- "${patches[@]}" || die "scrubbed too hard"
 fi
-
-exec >&2 # done with stdout which may be a file
-
-if ${O[dry-run]}; then
-	newsizes=("${oldsizes[@]}")
-	echo "Would scrub (dry-run):"
-	if [[ ${stdin} ]]; then
-		echo " - ${stdin}"
-	else
-		printf " - %s\n" "${patches[@]}"
-	fi
-else
-	# get new sizes and give a report at same time (newsizes re-used for QA later)
-	percent() {
-		(( ${1} && ${2} )) && echo $((10**4 - 10**4 * ${2} / ${1})) || echo NaN
-	}
-	echo "Successfully scrubbed:"
-	if (( ${#inplace[@]} )); then
-		for ((i=0; i < ${#patches[@]}; i++)); do
-			newsizes[i]=$(stat -c %s "${patches[i]}") || die "stat failed for '${patches[i]}'"
-			printf -- " - %s (%.2f%% reduction)\n" "${patches[i]}" "$(percent "${oldsizes[i]}" "${newsizes[i]}")e-2"
-		done
-	else
-		if [[ -f ${stdout} ]]; then
-			newsizes[0]=$(stat -c %s "${stdout}") || die "stat failed for '${stdout}'"
-			printf -- " - %s (%.2f%% reduction)\n" "${stdin:-${patches[0]}}" "$(percent "${oldsizes[0]}" "${newsizes[0]}")e-2"
-		else
-			newsizes[0]=${oldsizes[0]}
-			echo " - ${stdin:-${patches[0]}}"
-		fi
-	fi
-	echo "Please verify that header(s) have not lost anything meaningful."
-fi
-
-${O[quiet]} && end # nothing else to do
 
 inspect() {
 	qa() {
@@ -275,31 +232,64 @@ inspect() {
 	${crlf} && qanl "note that the patch seems to have some \\r\\n line terminators, use care"$'\n'"    so they aren't accidentally lost"
 }
 
-for ((i=0; i < ${#patches[@]}; i++)); do
-	qa=$(inspect "${patches[i]}" "${newsizes[i]}")
+${O[dry-run]} && msg "Would scrub (dry-run):" || msg "Successfully scrubbed:"
 
-	if [[ ${qa} ]]; then
-		# only ever 1 patch if stdin, display non-tmpfile name
-		if [[ ${stdin} ]]; then
-			if [[ -f ${stdout} ]]; then
-				patch=${stdout}
-			else
-				patch=${stdin}
-			fi
-		else
-			patch=${patches[i]}
+hadqa=false
+declare -i i oldsize newsize
+for patch in "${patches[@]}"; do
+	# get temporary path with same basename, always end in .patch to
+	# help syntax highlight in $EDITOR and to rename the stdin file
+	clean=${tmp}/${patch##*/}
+	clean=${clean%.diff}
+	clean=${clean%.patch}
+	# handle potentially same-named patches from different directories
+	if [[ -e ${clean}.patch ]]; then
+		i=2
+		while [[ -e ${clean}-${i}.patch ]]; do
+			i+=1
+		done
+		clean+=-${i}
+	fi
+	clean+=.patch
+
+	# scrub
+	sed "${sedexps[@]}" -- "${patch}" > "${clean}" || die
+
+	# get patch size before and after for report
+	oldsize=$(stat -c %s "${patch}") || die
+	(( oldsize )) || die "stat reports '${patch}' to be empty"
+	newsize=$(stat -c %s "${clean}") || die
+	(( newsize )) || die "stat reports '${clean}' to be empty"
+
+	msgf " - %s (%.2f%% reduction)\n" "${stdin:-${patch}}" \
+		$((10**4 - 10**4 * newsize / oldsize))e-2
+
+	if ! ${O[quiet]}; then
+		qareport=$(inspect "${clean}" "${newsize}")
+		if [[ ${qareport} ]]; then
+			msg
+			msg "QA: ${stdout:-${stdin:-${patch}}} has generated warnings:"
+			msg "${qareport}"
+			hadqa=true
 		fi
-		echo
-		echo "QA: ${patch} has generated warnings:"
-		echo "${qa}"
+	fi
+
+	if ! ${O[dry-run]}; then
+		if ${O[in-place]}; then
+			cp -f -- "${clean}" "${patch}" || die
+		else
+			cat -- "${clean}" || die
+		fi
 	fi
 done
 
-if [[ ${qa} ]]; then
-	echo
-	echo "If patch is intended for the ::gentoo tree, would be good to review."
-	echo "Note that these checks are tentative and cannot consider everything."
-	echo "https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html"
+if ${hadqa}; then
+	msg
+	msg "If patch is intended for the ::gentoo tree, would be good to review."
+	msg "Note that these checks are tentative and cannot consider everything."
+	msg "https://devmanual.gentoo.org/ebuild-writing/misc-files/patches/index.html"
+elif ! ${O[dry-run]}; then
+	msg "Please verify that header(s) have not lost anything meaningful."
 fi
 
 # vim: ts=4

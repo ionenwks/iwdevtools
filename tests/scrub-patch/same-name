@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+copydat {git,normal,mess}.patch
+mkdir alt1 alt2
+cp normal.patch same.patch
+mv git.patch alt1/same.patch
+mv mess.patch alt2/same.patch
+expect -2 "Success*normal.patch*same.patch*alt1/same.patch*alt2/same.patch*meaningful." \
+	-cqis normal.patch {,alt{1,2}/}same.patch
+# two should be identical, two different (aka not clobbered)
+count=$(cksum normal.patch {,alt{1,2}/}same.patch | cut -d' ' -f1 | sort | uniq | wc -l)
+(( count == 3 )) || fail "expected 3 unique result, got ${count}"
