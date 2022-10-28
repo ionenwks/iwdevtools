@@ -1,4 +1,4 @@
-# category/package dependencies to exclude from the missing binding := check
+# category/package dependencies to exclude from the possibly incorrect := check
 
 # subslot is unnecessary due to long-time stable interface
 app-arch/bzip2
@@ -7,3 +7,6 @@ sys-libs/zlib
 # subslot is only relevant when private API is used
 dev-qt/*
 kde-frameworks/*
+
+# binding to non-specific slot without a subslot can be meaningful
+sys-libs/db
