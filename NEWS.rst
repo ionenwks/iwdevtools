@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+-----
+- scrub-patch: fix -e/--edit to work with stdin, aka can do:
+  ``diff -Nur a b | scrub-patch --edit > edited-in-vim.patch``
+
 iwdevtools-0.12.0 (2022-10-24)
 ==============================
 

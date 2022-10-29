@@ -90,7 +90,7 @@ tmpinit
 tmppath tmp
 if [[ ${stdin} ]]; then
 	cat > "${tmp}/stdin" || die
-	exec <&-
+	exec </dev/tty
 	patches+=("${tmp}/stdin")
 fi
 
