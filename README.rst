@@ -216,7 +216,7 @@ Then in ``~/my-repo-cd-cmd`` (with ``chmod +x``):
 	#!/usr/bin/env bash
 	echo -e "\e[094mhttps://blue-extra-link/?search=${RCD_CATEGORY}%2F${RCD_PN}"
 
-	pkgdev showkw # from dev-util/pkgdev
+	pkgdev showkw --color=y # from dev-util/pkgdev
 
 	# use sed to show lines after 'package-name:' in red if starts with dash,
 	# could also use simple options like [[ -f path/${RCD_PACKAGE} ]] && cat ...
