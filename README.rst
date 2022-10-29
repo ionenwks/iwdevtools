@@ -216,12 +216,12 @@ Then in ``~/my-repo-cd-cmd`` (with ``chmod +x``):
 	#!/usr/bin/env bash
 	echo -e "\e[094mhttps://blue-extra-link/?search=${RCD_CATEGORY}%2F${RCD_PN}"
 
+	pkgdev showkw # from dev-util/pkgdev
+
 	# use sed to show lines after 'package-name:' in red if starts with dash,
 	# could also use simple options like [[ -f path/${RCD_PACKAGE} ]] && cat ...
 	red=$'\e[091m'
 	sed -n "/^${RCD_PN}:/,/^[^-].*:/{s/^-/${red}-/p}" ~/my-gentoo-notes
-
-	ls -1v *.ebuild
 
 In ``~/.config/iwdevtools/repo-cd.conf`` (also see ``--dumpconfig`` option)::
 
@@ -233,10 +233,16 @@ Results in::
 	 > /var/db/repos/gentoo/app-emulation/dxvk
 	 G https://bugs.gentoo.org/buglist.cgi?quicksearch=app-emulation%2Fdxvk
 	 + https://blue-extra-link/?search=app-emulation%2Fdxvk
+	 +         a a   a     l       p r   s
+	 +         l m   r h i o m m   p i s p   e s r
+	 +         p d a m p a o 6 i p c s 3 a x a l e
+	 +         h 6 r 6 p 6 n 8 p p 6 c 9 r 8 p o p
+	 +         a 4 m 4 a 4 g k s c 4 v 0 c 6 i t o
+	 + ------------------------------------------------
+	 +  1.10.3 * ~ * * * * * * * * * * * * ~ 8 0 gentoo
+	 +  9999   o o o o o o o o o o o o o o o 8 0 gentoo
 	 + - remember that thing next bump you silly goose
 	 + - also this, you always forget to do it
-	 + dxvk-1.10.1.ebuild
-	 + dxvk-9999.ebuild
 	/var/db/repos/gentoo/app-emulation/dxvk$ _
 
 Run ``repo-cd --help`` or see **repo-cd(1)** man page for details.
