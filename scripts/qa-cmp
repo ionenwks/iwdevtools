@@ -584,7 +584,7 @@ cmp-output_abi_diff() {
 	local -i fr fc fa vr vc va
 	for ((i=0; i < ${#old[@]}; i++)); do
 		output=$(
-			abidiff \
+			LC_MESSAGES=C abidiff \
 				--d1 "${debugold}" \
 				--d2 "${debugnew}" \
 				"${old[i]#* }" "${new[i]#* }" 2>&1)
