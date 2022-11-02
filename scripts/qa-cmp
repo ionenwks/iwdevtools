@@ -567,6 +567,8 @@ cmp-output_abi_diff() {
 		# ABIDIFF_ABI_CHANGE = 4
 		# ABIDIFF_ABI_INCOMPATIBLE_CHANGE = 8
 		if (( ${?} & 3 )); then
+			[[ ${output} == *"could not find the ELF symbols in the file"* ]] \
+				&& continue # likely a stub library, ignore
 			# give message for troubleshooting, but don't || die
 			err "${output}"
 			cmp-output_abi_diff_issue "FAIL" 1
@@ -594,6 +596,8 @@ cmp-output_abi_diff() {
 				"${old[i]#* }" "${new[i]#* }" 2>&1)
 		errno=${?}
 		if (( errno & 3 )); then
+			[[ ${output} == *"could not find the ELF symbols in the file"* ]] \
+				&& continue # likely a stub library, skip
 			msg "${output} (${FUNCNAME[0]})"
 			cmp-output_abi_diff_issue "FAIL" 1
 			return

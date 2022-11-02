@@ -7,6 +7,9 @@ iwdevtools-next
 
 Fixes
 -----
+- qa-cmp: ignore abidiff errors for stub libraries, prevents aborting
+  the entire process
+
 - scrub-patch: fix -e/--edit to work with stdin, aka can do:
   ``diff -Nur a b | scrub-patch --edit > edited-in-vim.patch``
 
