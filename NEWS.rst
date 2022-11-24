@@ -5,6 +5,11 @@ Release Notes
 iwdevtools-next
 ===============
 
+Changes
+-------
+- scrub-patch: no longer try to remove mbox signatures, this is fragile and
+  does not always give expected results
+
 Fixes
 -----
 - qa-cmp: ignore abidiff errors for stub libraries, prevents aborting

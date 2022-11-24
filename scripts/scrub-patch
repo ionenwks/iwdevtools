@@ -117,8 +117,6 @@ sedexps=(
 	-e '/^+++ /s:\t.*::'
 	# discard after '---' in header (git noise, e.g. N files changed)
 	-e '/^---$/,/^--- /{/^--- /!d}'
-	# discard git version and empty lines '-- ' signature
-	-e '/^-- $/,+3{/^-- $/d;/^[0-9]\.[0-9]/d;/^$/d}'
 )
 
 # potentialy harmful expressions enabled only on-demand
