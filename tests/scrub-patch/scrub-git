@@ -2,5 +2,5 @@
 # * 001: "From " suggestion
 # * 032: file rename attempt
 copydat git.patch
-expect -2 "Success*43.09%*001*032*" -ci git.patch
-md5cmp a2739dbb2d07787d709bf8e5cb2dc942 git.patch
+expect -2 "Success*41.25%*001*036*" -ci git.patch
+md5cmp 79e99ef35c857030c1948376a56e447d git.patch
