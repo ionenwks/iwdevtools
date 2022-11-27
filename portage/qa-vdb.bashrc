@@ -1,4 +1,4 @@
-# Integrates qa-cmp with portage, intended for use in /etc/portage/bashrc
+# Integrates qa-vdb with portage, intended for use in /etc/portage/bashrc
 # See `qa-vdb --help` or see qa-vdb(1) man page for details.
 
 : ${QA_VDB:=${IWDT_ALL:-y}}
