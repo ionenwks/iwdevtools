@@ -11,28 +11,28 @@ mkdir -p high/virtual/test # excluded by default
 mkdir -p low/{dev-test/test{,-fuzzy},dev-alt/alt}
 mkdir -p dup/dev-test/dup
 
-expect '*/low/dev-test/test' -c1P "${REPOPATH}" dev-test/test
-expect '*/low/dev-test' -c1P "${REPOPATH}" dev-test
-expect '*/low/dev-test/test' -c1P "${REPOPATH}" test
+expect '*/low/dev-test/test' -cr1P "${REPOPATH}" dev-test/test
+expect '*/low/dev-test' -cr1P "${REPOPATH}" dev-test
+expect '*/low/dev-test/test' -cr1P "${REPOPATH}" test
 
-expect '*/low/dev-test/test-fuzzy' -c1P "${REPOPATH}" test_fuzzy
-expect '*/low/dev-test/test-fuzzy' -c1P "${REPOPATH}" fuzzy
-expect '*/low/dev-test' -c1P "${REPOPATH}" --fuzzy test
-xfail 104 expect -2 "*no non-excluded match found*" -c1P "${REPOPATH}" --exact fuzzy
+expect '*/low/dev-test/test-fuzzy' -cr1P "${REPOPATH}" test_fuzzy
+expect '*/low/dev-test/test-fuzzy' -cr1P "${REPOPATH}" fuzzy
+expect '*/low/dev-test' -cr1P "${REPOPATH}" --fuzzy test
+xfail 104 expect -2 "*no non-excluded match found*" -cr1P "${REPOPATH}" --exact fuzzy
 
-expect '*/high/virtual/test' -c1P "${REPOPATH}" virtual/test
-expect '*/high/virtual/test' -c1P "${REPOPATH}" --exclude='' test
+expect '*/high/virtual/test' -cr1P "${REPOPATH}" virtual/test
+expect '*/high/virtual/test' -cr1P "${REPOPATH}" --exclude='' test
 
-expect '*/high/dev-alt/alt' -c1P "${REPOPATH}" alt
-expect '*/low/dev-alt/alt' -c1P "${REPOPATH}" alt::low
+expect '*/high/dev-alt/alt' -cr1P "${REPOPATH}" alt
+expect '*/low/dev-alt/alt' -cr1P "${REPOPATH}" alt::low
 
-expect "*/dup/dev-test/dup" -c1P "${REPOPATH}" --duplicates dup
-xfail 104 expect -2 "*no non-excluded match found*" -c1P "${REPOPATH}" dup
+expect "*/dup/dev-test/dup" -cr1P "${REPOPATH}" --duplicates dup
+xfail 104 expect -2 "*no non-excluded match found*" -cr1P "${REPOPATH}" dup
 
-xfail 104 expect "''" -c1P "${REPOPATH}" metadata
-xfail 1 expect -2 "*Error: invalid search*" -c1P "${REPOPATH}" .git
+xfail 104 expect "''" -cr1P "${REPOPATH}" metadata
+xfail 1 expect -2 "*Error: invalid search*" -cr1P "${REPOPATH}" .git
 
 cd low/dev-test/test
-expect '*/low/dev-test/test' -c1P "${REPOPATH}" .
-expect '*/low/dev-test/test' -c1P "." test
-xfail 104 expect -2 "*current directory is not a known repo*" -c1P "${REPOPATH/:*\/low/:}" .
+expect '*/low/dev-test/test' -cr1P "${REPOPATH}" .
+expect '*/low/dev-test/test' -cr1P "." test
+xfail 104 expect -2 "*current directory is not a known repo*" -cr1P "${REPOPATH/:*\/low/:}" .

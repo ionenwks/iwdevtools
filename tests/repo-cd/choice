@@ -4,7 +4,7 @@ REPOPATH=${DATADIR}/repo:${PWD}/alt
 mkdir -p alt/profiles
 echo alt > alt/profiles/repo_name
 
-expect "*/repo" -c1P "${REPOPATH}"
-echo junk | expect "*/repo" -cP "${REPOPATH}"
-echo 2 | expect "*/alt" -cP "${REPOPATH}"
-echo 3 | expect "*/repo" -cP "${REPOPATH}"
+expect "*/repo" -cr1P "${REPOPATH}"
+echo junk | expect "*/repo" -crP "${REPOPATH}"
+echo 2 | expect "*/alt" -crP "${REPOPATH}"
+echo 3 | expect "*/repo" -crP "${REPOPATH}"

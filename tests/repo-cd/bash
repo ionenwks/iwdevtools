@@ -3,8 +3,8 @@
 PATH=${SCRIPT%/*}:${PATH}
 func=${SCRIPT##*/}
 
-eval "$(command "${func}" -c1 --bash="${func}" --path="${DATADIR}/repo")"
-eval "$(command "${func}" -c1 --posix "${func}-posix" --path="${DATADIR}/repo")"
+eval "$(command "${func}" -cr1 --bash="${func}" --path="${DATADIR}/repo")"
+eval "$(command "${func}" -cr1 --posix "${func}-posix" --path="${DATADIR}/repo")"
 
 declare -f "${func}" "_${func}" "${func}-posix"
 

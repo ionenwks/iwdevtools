@@ -10,7 +10,7 @@ mkdir -p repo/dev-test/extra
 testcomp() {
 	local word=${1}
 	shift
-	expect -s "'$(printf %s "${@/%/$'\n'}")'" -c1P "${REPOPATH}" --compgen ${word}
+	expect -s "'$(printf %s "${@/%/$'\n'}")'" -cr1P "${REPOPATH}" --compgen ${word}
 }
 
 testcomp '' ''
