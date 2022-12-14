@@ -150,7 +150,7 @@ hasharray() {
 	declare -p "${!_c_outref}" &>/dev/null || declare -gA "${!_c_outref}"
 	[[ ${1::1} == + ]] || _c_outref=()
 	for _c_elem in "${_c_inref[@]}"; do
-		[[ ${_c_elem} ]] && _c_outref[${_c_elem}]= #!SC2034
+		[[ ${_c_elem} ]] && _c_outref[${_c_elem}]= #!SC2004,SC2034
 	done
 }
 
@@ -206,7 +206,7 @@ msgf() {
 #	Note: include c|!color=bool:true to enable C array / colormap
 optstart() {
 	_COMMON_OPT_SORT=()
-	declare -gA O C _COMMON_OPT{,_NO,_SHORT{,_R}}
+	declare -gA O C _COMMON_OPT _COMMON_OPT_NO _COMMON_OPT_SHORT _COMMON_OPT_SHORT_R
 
 	local l key opt
 	while IFS= read -r l; do
@@ -358,7 +358,7 @@ optend() {
 		fi
 	done
 
-	unset _COMMON_OPT{,_NO,_SHORT{,_R}}
+	unset _COMMON_OPT _COMMON_OPT_NO _COMMON_OPT_SHORT _COMMON_OPT_SHORT_R
 }
 
 # optauto <array> <args...> << (depend:getopt)

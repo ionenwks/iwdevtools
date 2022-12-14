@@ -169,7 +169,7 @@ vdb-get_expected_slot() {
 
 	[[ ${slot} == 0 ]] && slot=
 	[[ ${subslot} != 0 ]] && slot+='='
-	[[ ${slot} ]] && echo :${slot}
+	[[ ${slot} ]] && echo ":${slot}"
 }
 
 # vdb-get_libdiff <CATEGORY/PN>
