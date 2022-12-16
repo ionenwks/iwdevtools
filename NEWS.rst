@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- qa-cmp: add ``--timeout=[seconds]`` option to stop ``abidiff`` when taking
+  too long (defaults to 10 seconds, can set to 0 for the old behavior)
+
 iwdevtools-0.12.1 (2022-11-30)
 ==============================
 

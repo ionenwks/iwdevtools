@@ -28,6 +28,8 @@ usage <<-EOU
 
 	  -B, --full-abidiff    Show complete abidiff output
 	  -d, --quiet-nodebug   Do not warn if missing debug for abidiff (unless -W)
+	      --timeout=[SECS]  Terminate abidiff after SECS seconds, can be very slow
+	                        with some C++ libraries (default: 10, unlimited if 0)
 
 	  -I, --image-only      When guessing what to compare, ignore system's copy.
 	                        (simplifies comparing two images)
@@ -69,10 +71,6 @@ usage <<-EOU
 	revdeps without rebuilds, but it warrants testing them while built
 	against old version. Order matters, downgrading often breaks ABI.
 
-	Comparing can be very slow or semi-broken for large C++ libraries
-	(e.g. llvm), may want to selectively --no-abidiff or skip debug for
-	these. It is safe to \`killall abidiff\` to abort.
-
 	*Known Limitations*
 	May report incorrect changes if pkg_postinst or FEATURES performed live changes
 	on files or permissions that are missing from the image (e.g. fcaps.eclass).
@@ -104,6 +102,7 @@ optauto args "${@}" <<-EOO
 	T|size-thres=float:1000
 	B|full-abidiff=bool:false
 	d|quiet-nodebug=bool:false
+	timeout=int:10
 	I|image-only=bool:false
 	p|ignore-perms=bool:false
 	P|show-perms=bool:false
@@ -547,26 +546,45 @@ cmp-output_abi_diff() {
 		return
 	fi
 
+	local timeout=()
+	if (( O[timeout] > 0 )); then
+		# timeout is non-POSIX, albeit we technically require GNU coreutils
+		if ! type timeout &>/dev/null; then
+			cmp-output_abi_diff_issue "no-timeout" 0
+			return
+		fi
+
+		timeout=(timeout "${O[timeout]}")
+	fi
+
 	# abidiff has a tendency to output nothing and return 0 if no debug
 	# info and --fail-no-debug-info doesn't change this last checked, but
 	# --stats should always output something /if/ it's going to work
 	# (this include a few changes it can find without debug info)
-	# TODO?: do own check for debug to inform report may be incomplete
+	# TODO?: do own check for debug to inform report may be incomplete,
+	#        ideally want to get rid of this abidiff duplication
 	local output report
 	local debugold=${LIST_OLD[1]}usr/lib/debug
 	local debugnew=${LIST_NEW[1]}usr/lib/debug
+	local -i errno
 	for ((i=0; i < ${#old[@]}; i++)); do
 		output=$(
-			abidiff --stats \
+			"${timeout[@]}" abidiff --stats \
 				--d1 "${debugold}" \
 				--d2 "${debugnew}" \
 				"${old[i]#* }" "${new[i]#* }" 2>&1)
+		errno=${?}
+
+		if (( ${#timeout[@]} && errno >= 124 )); then
+			cmp-output_abi_diff_issue "TIMEOUT" 1
+			return
+		fi
 
 		# ABIDIFF_ERROR = 1
 		# ABIDIFF_USAGE_ERROR = 2
 		# ABIDIFF_ABI_CHANGE = 4
 		# ABIDIFF_ABI_INCOMPATIBLE_CHANGE = 8
-		if (( ${?} & 3 )); then
+		if (( errno & 3 )); then
 			[[ ${output} == *"could not find the ELF symbols in the file"* ]] \
 				&& continue # likely a stub library, ignore
 			# give message for troubleshooting, but don't || die
@@ -585,16 +603,22 @@ cmp-output_abi_diff() {
 		fi
 	done
 
-	local output errno line
+	local line
 	local -i add=0 chg=0 del=0 brk=0
 	local -i fr fc fa vr vc va
 	for ((i=0; i < ${#old[@]}; i++)); do
 		output=$(
-			LC_MESSAGES=C abidiff \
+			LC_MESSAGES=C "${timeout[@]}" abidiff \
 				--d1 "${debugold}" \
 				--d2 "${debugnew}" \
 				"${old[i]#* }" "${new[i]#* }" 2>&1)
 		errno=${?}
+
+		if (( ${#timeout[@]} && errno >= 124 )); then
+			cmp-output_abi_diff_issue "TIMEOUT" 1
+			return
+		fi
+
 		if (( errno & 3 )); then
 			[[ ${output} == *"could not find the ELF symbols in the file"* ]] \
 				&& continue # likely a stub library, skip
