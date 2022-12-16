@@ -548,7 +548,7 @@ cmp-output_abi_diff() {
 
 	local timeout=()
 	if (( O[timeout] > 0 )); then
-		# timeout is non-POSIX, albeit we technically require GNU coreutils
+		# we technically require GNU coreutils, but could be missing
 		if ! type timeout &>/dev/null; then
 			cmp-output_abi_diff_issue "no-timeout" 0
 			return
