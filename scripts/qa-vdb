@@ -67,6 +67,10 @@ usage <<-EOU
 	Missing slots won't be displayed when a binding operator (:=) is used as
 	portage records the slot even if it was missing from the ebuild.
 
+	No warning is given for libraries that are missing entirely or not associated
+	with an installed package. For the former, please use portage's default enabled
+ 	FEATURES="qa-unresolved-soname-deps" to be informed.
+
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
