@@ -62,7 +62,8 @@ Note that "unused" dependencies should be taken with a grain of salt, package
 may or may not still need it in some other way than ``DT_NEEDED``. ``dlopen()``,
 build time checks/headers, executables, and other potential non-library files.
 
-Run ``qa-vdb --help`` or see **qa-vdb(1)** man page for details.
+Run ``qa-vdb --help`` or see **qa-vdb(1)** man page for details and
+information about known limitations.
 
 qa-sed
 ------
@@ -143,7 +144,8 @@ want to use ``--ignore-perms``. After USE=-suid on util-linux::
     *  FILES:+bin/umount (-rwxr-xr-x root:root)
     * ------> FILES(+2,-2)
 
-Run ``qa-cmp --help`` or see **qa-cmp(1)** man page for details.
+Run ``qa-cmp --help`` or see **qa-cmp(1)** man page for details and
+information about known limitations.
 
 qa-openrc
 ---------
@@ -245,7 +247,8 @@ Results in::
 	 + - also this, you always forget to do it
 	/var/db/repos/gentoo/app-emulation/dxvk$ _
 
-Run ``repo-cd --help`` or see **repo-cd(1)** man page for details.
+Run ``repo-cd --help`` or see **repo-cd(1)** man page for details and
+information about known limitations.
 
 eoldnew
 -------
