@@ -69,7 +69,7 @@ usage <<-EOU
 
 	No warning is given for libraries that are missing entirely or not associated
 	with an installed package. For the former, please use portage's default enabled
- 	FEATURES="qa-unresolved-soname-deps" to be informed.
+	FEATURES="qa-unresolved-soname-deps" to be informed.
 
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
