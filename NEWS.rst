@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- qa-cmp: also omit ``/usr/src/debug/*`` from output alongside already ommitted
+  ``/usr/lib/debug/*`` to avoid ``FEATURES=installsources/splitdebug`` noise.
+
 iwdevtools-0.12.2 (2022-12-19)
 ==============================
 

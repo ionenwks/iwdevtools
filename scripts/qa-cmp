@@ -149,7 +149,7 @@ cmp-get_compare2readable() {
 #	Set <array> to sorted filelist from a cmp-get_tocompare value.
 #	First three lines are specially set to:
 #		1. ${PVR} 2. prefix/ 3. size in bytes
-#	usr/lib/debug/ excluded for simplification.
+#	usr/{lib,src}/debug/ excluded for simplification.
 #	" (-rw-r--r-- user:group)" will be set after paths, or
 #	" (?)" if unknown or O[ignore-perms] is set.
 cmp-get_filelist() {
@@ -169,7 +169,7 @@ cmp-get_filelist() {
 			echo "${size}"
 
 			Q_VDB=${vdb#"${ROOT}"} \
-				qlist -Cqe "${2}" | cut -d/ -f2- | grep -v '^usr/lib/debug/' | sort | {
+				qlist -Cqe "${2}" | cut -d/ -f2- | grep -Ev '^usr/(lib|src)/debug/' | sort | {
 					# Unlike find(1) below, qlist can't give file permissions.
 					local file
 					while read -r file; do
@@ -195,7 +195,8 @@ cmp-get_filelist() {
 					|| die "failed to read '${2%/image}/build-info/SIZE', failed build image?"
 			echo "${size}"
 
-			find "${2}" -path "${2}/usr/lib/debug" -prune -o -not -type d -printf '%P (%M %u:%g)\n' | sort
+			find "${2}" -regex "${2}/usr/\(lib\|src\)/debug" -prune -o \
+				-not -type d -printf '%P (%M %u:%g)\n' | sort
 			[[ ${PIPESTATUS[*]} == '0 '@(0|141) ]] || die "find failed for '${2}'"
 		fi
 	} | mapfile -t "${flimit[@]}" "${1}"
