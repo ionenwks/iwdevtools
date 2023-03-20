@@ -10,3 +10,6 @@ kde-frameworks/*
 
 # binding to non-specific slot without a subslot can be meaningful
 sys-libs/db
+
+# := is commonly kept in case the format changes despite no subslot (yet)
+dev-libs/gobject-introspection

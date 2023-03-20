@@ -2,6 +2,15 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- qa-vdb.exclude-bind(config): exclude gobject-introspection by default, been
+  common practice to keep the binding operator even if it has no subslot (yet)
+  in case the introspection format changes.
+
 iwdevtools-0.12.3 (2023-02-08)
 ==============================
 
