@@ -11,6 +11,9 @@ Changes
   common practice to keep the binding operator even if it has no subslot (yet)
   in case the introspection format changes.
 
+- qa-vdb.exclude-extra(config): exclude gobject-introspection by default, very
+  few packages actually link with the library.
+
 iwdevtools-0.12.3 (2023-02-08)
 ==============================
 

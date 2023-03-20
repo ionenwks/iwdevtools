@@ -1,9 +1,11 @@
 # category/package dependencies to exclude from the seems superfluous check
 # e.g. package use bin/openssl but not its libraries, or uses dlopen()
 
-# packages that provide libraries but usually not linked with
+# packages that provide libraries but usually not linked with,
+# will need manual attention if a package is using e.g. libperl.so
 dev-lang/perl
 dev-lang/python
+dev-libs/gobject-introspection
 sys-apps/kmod # for linux-mod.eclass
 virtual/perl-* # resolves as dev-lang/perl
 virtual/tmpfiles # systemd provider has libraries
