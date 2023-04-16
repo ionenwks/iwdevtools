@@ -7,7 +7,7 @@
 : ${QA_OPENRC_LOG:=${IWDT_LOG:-eqawarn}}
 
 qa-openrc_post_pkg_preinst() {
-	[[ ${QA_OPENRC} == y ]] || return 0
+	[[ ${QA_OPENRC} == y && ${MERGE_TYPE} != binary ]] || return 0
 
 	local output
 	output=$("${QA_OPENRC_CMD}" "${D}" "${@}" ${QA_OPENRC_ARGS} 2>&1) || \

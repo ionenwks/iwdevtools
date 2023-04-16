@@ -7,7 +7,7 @@
 : ${QA_VDB_LOG:=${IWDT_LOG:-eqawarn}}
 
 qa-vdb_post_pkg_postinst() {
-	[[ ${QA_VDB} == y ]] || return
+	[[ ${QA_VDB} == y && ${MERGE_TYPE} != binary ]] || return
 
 	local output
 	output=$("${QA_VDB_CMD}" ${CATEGORY}/${PF} "$@" ${QA_VDB_ARGS} 2>&1) || \

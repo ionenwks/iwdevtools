@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- portage: disable checks for binpkgs (only comes into effect for new binpkgs)
+
 iwdevtools-0.12.4 (2023-03-20)
 ==============================
 

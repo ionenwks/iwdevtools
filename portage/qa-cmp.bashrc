@@ -7,7 +7,7 @@
 : ${QA_CMP_LOG:=${IWDT_LOG:-eqawarn}}
 
 qa-cmp_post_pkg_preinst() {
-	[[ ${QA_CMP} == y ]] || return 0
+	[[ ${QA_CMP} == y && ${MERGE_TYPE} != binary ]] || return 0
 
 	local output
 	output=$("${QA_CMP_CMD}" -M ${CATEGORY}/${PN}:${SLOT} "${D}" "${@}" ${QA_CMP_ARGS} 2>&1) || \

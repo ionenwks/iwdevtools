@@ -7,7 +7,7 @@
 : ${QA_SED_LOG:=${IWDT_LOG:-eqawarn}}
 
 sed() {
-	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} ]]; then
+	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} || ${MERGE_TYPE} == binary ]]; then
 		command sed "${@}"
 		return ${?}
 	fi
