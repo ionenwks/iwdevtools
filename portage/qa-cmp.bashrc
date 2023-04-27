@@ -10,8 +10,9 @@ qa-cmp_post_pkg_preinst() {
 	[[ ${QA_CMP} == y && ${MERGE_TYPE} != binary ]] || return 0
 
 	local output
-	output=$("${QA_CMP_CMD}" -M ${CATEGORY}/${PN}:${SLOT} "${D}" "${@}" ${QA_CMP_ARGS} 2>&1) || \
-		eerror "qa-cmp: running '${QA_CMP_CMD}' failed (disable with QA_CMP=n)"
+	output=$(
+		"${QA_CMP_CMD}" -M ${CATEGORY}/${PN}:${SLOT} "${D}" "${@}" ${QA_CMP_ARGS} 2>&1
+	) || eerror "qa-cmp: running '${QA_CMP_CMD}' failed (disable with QA_CMP=n)"
 
 	[[ ${output} ]] && ${QA_CMP_LOG} "${output}"
 }

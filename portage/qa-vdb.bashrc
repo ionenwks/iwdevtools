@@ -10,8 +10,9 @@ qa-vdb_post_pkg_postinst() {
 	[[ ${QA_VDB} == y && ${MERGE_TYPE} != binary ]] || return
 
 	local output
-	output=$("${QA_VDB_CMD}" ${CATEGORY}/${PF} "$@" ${QA_VDB_ARGS} 2>&1) || \
-		eerror "qa-vdb: running '${QA_VDB_CMD}' failed (disable with QA_VDB=n)"
+	output=$(
+		"${QA_VDB_CMD}" ${CATEGORY}/${PF} "$@" ${QA_VDB_ARGS} 2>&1
+	) || eerror "qa-vdb: running '${QA_VDB_CMD}' failed (disable with QA_VDB=n)"
 
 	[[ ${output} ]] && ${QA_VDB_LOG} "${output}"
 }
