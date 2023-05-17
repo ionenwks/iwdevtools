@@ -495,7 +495,7 @@ usage() {
 }
 
 # version
-#	Show version using std outupt from setmsg() then exit
+#	Show version using std output from setmsg() then exit
 version() {
 	echo "${0##*/} @version@" >&"${_COMMON_MSG_STD:-1}"
 	exit 0
