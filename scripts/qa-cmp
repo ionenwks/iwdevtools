@@ -21,7 +21,7 @@ usage <<-EOU
 	  -z, --no-size         Do not print size differences when above threshold
 	  -r, --no-report       Do not report statistics at the end
 	  -x, --no-compare      Short for all of the above (intended for --single-*)
-	(unless -r/-x, report will still have statitics for disabled options)
+	(unless -r/-x, report will still have statistics for disabled options)
 
 	  -T, --size-thres=%    Size difference percentage at which to display it
 	                        (default: 10.0%, 0 to always display)
@@ -958,7 +958,7 @@ cmp-output_soname_diff() {
 	cmp-get_shared new "${new[@]/#/${LIST_NEW[1]}}"
 	cmp-get_shared old "${old[@]/#/${LIST_OLD[1]}}"
 
-	# replace lists with scanelf output, do three runs to differenciate
+	# replace lists with scanelf output, do three runs to differentiate
 	# 32bit/64bit without guessing what the libdir may be, and one more
 	# if got nothing (to handle potential exotic arches)
 	# TODO?: lacks further awareness of different versions with same soname
