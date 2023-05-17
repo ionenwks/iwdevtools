@@ -119,7 +119,7 @@ sedexps=(
 	-e '/^---$/,/^--- /{/^--- /!d}'
 )
 
-# potentialy harmful expressions enabled only on-demand
+# potentially harmful expressions enabled only on-demand
 if ${O[git]}; then
 	# don't match on leading / to keep e.g. /dev/null as-is
 	sedexps+=(
