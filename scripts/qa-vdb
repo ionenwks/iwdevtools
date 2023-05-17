@@ -187,7 +187,7 @@ vdb-get_libdiff() {
 	f1=("${VDB_LIBDEPS[@]}")
 	f2=("${VDB_LIBNEED[@]}")
 
-	# insert blank line if a line isn't indentical minus slot
+	# insert blank line if a line isn't identical minus slot
 	# same | same
 	# diff <
 	#      > diff
