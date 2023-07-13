@@ -54,6 +54,9 @@ usage <<-EOU
 	                           (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
 	      --dumpconfig         Display config and exit (> ${0##*/}.conf)
 
+	      --root=PATH          Set ROOT (command-line-only, default: '${ROOT}')
+	      --eprefix=PATH       Set EPREFIX (likewise, default: '${EPREFIX}')
+
 	  -h, --help               Display usage information and exit
 	      --version            Display version information and exit
 

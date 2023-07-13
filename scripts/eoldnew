@@ -35,6 +35,8 @@ usage <<-EOU
 EOU
 
 # do crude option parsing not to have to figure out emerge's options
+# TODO?: this does not recognize --root/--eprefix unlike
+# other scripts, albeit it is not very important here
 skip_new=
 skip_old=
 declare -i old=1
