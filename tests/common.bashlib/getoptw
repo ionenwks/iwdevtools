@@ -5,7 +5,7 @@ getoptw arg args abc: dee,eee,eff: x1 -aa x2 -c 1 -bc2 x3 --dee --eee --eff=3 x4
 while getoptw; do
 	case ${arg} in
 		-a|-b|--dee|--eee) match+=1;;
-        -c|--eff) getoptw; extra+=("${arg}"); match+=2;;
+		-c|--eff) getoptw; extra+=("${arg}"); match+=2;;
 	esac
 done
 (( match == 11 )) || fail "expected 11 argument match, got '${match}'"

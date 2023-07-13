@@ -16,13 +16,13 @@ EOO
 
 testopt() {
 	optauto args 1 2 3 </dev/null &&
-	echo "${args[*]}"
+		echo "${args[*]}"
 }
 expect -c "1 2 3" testopt
 
 testopt() {
 	usage <<<"test" &&
-	optauto args -h </dev/null
+		optauto args -h </dev/null
 }
 expect -c "test" testopt
 
