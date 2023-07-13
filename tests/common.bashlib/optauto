@@ -33,3 +33,9 @@ cat > ${conf} <<-EOF
 EOF
 expect -c -s "'# ${conf} '*'
 mystr = new'" optauto args --confdir=. --dumpconfig <<<"mystr=str:text"
+
+unset EPREFIX EROOT ROOT
+optauto args --root=/root --eprefix=/eprefix/ </dev/null
+[[ ${ROOT} == /root ]] || fail "ROOT='${ROOT}' is not '/root'"
+[[ ${EPREFIX} == /eprefix ]] || fail "EPREFIX='${EPREFIX}' is not '/eprefix'"
+[[ ${EROOT} == /root/eprefix ]] || fail "EROOT='${EROOT}' is not '/root/eprefix'"

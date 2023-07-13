@@ -365,13 +365,15 @@ optend() {
 #	Combines opt* and getoptw(), see optstart().
 #	Named [array] will store remaining arguments, see getoptw().
 #	On top of defined options, will add:
-#		-h|--help, --version, --confdir=PATH, --dumpconfig
+#		-h|--help, --version, --confdir=PATH, --dumpconfig,
+#		--root=PATH, and --eprefix=PATH
 #	Options prefixed by ! (i.e. s|!long=) will add --no-*
 optauto() {
 	optstart
 
 	# need to be more careful with namespaces not to mask ${1} array
-	local _c_key _c_hasarg _c_short=h _c_long=help,version,confdir:,dumpconfig
+	local _c_key _c_hasarg _c_short=h
+	local _c_long=help,version,confdir:,dumpconfig,root:,eprefix:
 	for _c_key in "${_COMMON_OPT_SORT[@]}"; do
 		# note: undocumented but no reason to skip --colormap if enabled
 		[[ ${_c_key} != colormap || ${_COMMON_OPT[color]:-} ]] || continue
@@ -380,7 +382,7 @@ optauto() {
 		_c_short+=${_COMMON_OPT_SHORT[${_c_key}]:+${_COMMON_OPT_SHORT[${_c_key}]}${_c_hasarg}}
 	done
 
-	local _c_arg _c_prev
+	local _c_arg _c_prev _c_update_eroot
 	getoptw _c_arg "${1}" "${_c_short}" "${_c_long}" "${@:2}"
 	while getoptw; do
 		case "${_c_arg}" in
@@ -388,6 +390,8 @@ optauto() {
 			--version) version;;
 			--confdir) getoptw; optsetconf "${_c_arg}";;
 			--dumpconfig) optend -d;;
+			--root) getoptw; ROOT=${_c_arg%/}; _c_update_eroot=1;;
+			--eprefix) getoptw; EPREFIX=${_c_arg%/}; _c_update_eroot=1;;
 			-?) _c_arg=${_COMMON_OPT_SHORT_R[${_c_arg#-}]};&
 			*)
 				_c_arg=${_c_arg#--}
@@ -409,6 +413,9 @@ optauto() {
 			;;
 		esac
 	done
+
+	[[ -v _c_update_eroot ]] &&
+		EROOT=${ROOT:-}${EPREFIX:-}
 
 	optend
 }
