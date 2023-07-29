@@ -117,9 +117,13 @@ sedexps=(
 	-e '/^+++ /s:\t.*::'
 	# discard after '---' in header (git noise, e.g. N files changed)
 	-e '/^---$/,/^--- /{/^--- /!d}'
-	# shorten bug urls in header
+	# standardize (https+shorten) "some" common bugzilla urls in header
 	-e '0,/^--- /{
-		s:\(//bugs.gentoo.org/\)show_bug.cgi?id=\([0-9]*\):\1\2:
+		s|http://\(bugs\.gentoo\.org\|bugzilla\.redhat\.com\|gcc\.gnu\.org\|sourceware\.org\)/|https://\1/|g
+		s|\(://bugs\.gentoo\.org/\)show_bug\.cgi?id=\([0-9]*\)|\1\2|g
+		s|\(://bugzilla\.redhat\.com/\)show_bug\.cgi?id=\([0-9]*\)|\1\2|g
+		s|\(://gcc\.gnu\.org/\)bugzilla/show_bug\.cgi?id=\([0-9]*\)|\1PR\2|g
+		s|\(://sourceware\.org/\)bugzilla/show_bug\.cgi?id=\([0-9]*\)|\1PR\2|g
 	}'
 )
 

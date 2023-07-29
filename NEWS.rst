@@ -7,7 +7,7 @@ iwdevtools-next
 
 Changes
 -------
-- scrub-patch: auto-shorten gentoo bugzilla urls in patch headers
+- scrub-patch: standardize gentoo's bugzilla urls (and few others) in headers
 
 iwdevtools-0.12.5 (2023-05-26)
 ==============================
