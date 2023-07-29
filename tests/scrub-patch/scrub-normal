@@ -2,12 +2,12 @@
 # test a mostly normal patch using stdout, should not generate any QA
 # given the only issue is corrected by --git/--p0p1 or is silenced
 copydat normal.patch
-expect -2 "Success*39.68%*meaningful." -co --git normal.patch > output1
+expect -2 "Success*42.68%*meaningful." -co --git normal.patch > output1
 md5cmp 591c09716414b49f19836dd0bf02f388 output1
-expect -2 "Warning*35.09%*meaningful." -co --p0p1 normal.patch > output2
+expect -2 "Warning*38.32%*meaningful." -co --p0p1 normal.patch > output2
 md5cmp d78aa50fbb205c036bb3c2aae14ce251 output2
 export EDITOR="echo --" # echo the file path rather than edit
-expect -2 "Success*36.40%*/normal.patch" \
+expect -2 "Success*39.57%*/normal.patch" \
 	-co --quiet --edit normal.patch > output3
 md5cmp 3d269f4a252dbd355d1d659514db8eeb output3
 export EDITOR="sed -i -e /^/d --" # truncate into an invalid patch

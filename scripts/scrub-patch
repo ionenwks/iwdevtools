@@ -117,6 +117,10 @@ sedexps=(
 	-e '/^+++ /s:\t.*::'
 	# discard after '---' in header (git noise, e.g. N files changed)
 	-e '/^---$/,/^--- /{/^--- /!d}'
+	# shorten bug urls in header
+	-e '0,/^--- /{
+		s:\(//bugs.gentoo.org/\)show_bug.cgi?id=\([0-9]*\):\1\2:
+	}'
 )
 
 # potentially harmful expressions enabled only on-demand

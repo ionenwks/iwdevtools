@@ -1,5 +1,5 @@
 Header mentioning adding return value for main()
-https://bugs.gentoo.org/1
+https://bugs.gentoo.org/show_bug.cgi?id=1
 
 Index: heaveno.c
 ===================================================================

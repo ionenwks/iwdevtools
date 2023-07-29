@@ -4,4 +4,4 @@ copydat normal.patch
 expect -2 "Would*" -c --in-place --dry-run normal.patch
 xfail 1 expect -2 "*Error:*invalid arguments*" -c --in-place --unrecognized-option normal.patch
 expect "Header*" -c --stdout normal.patch
-md5cmp 1cca06ceed7e531cff11f246f2f828f2 normal.patch
+md5cmp 93034dc9e991b20e6cba008583fb14d0 normal.patch
