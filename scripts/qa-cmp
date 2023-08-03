@@ -37,7 +37,7 @@ usage <<-EOU
 	  -p, --ignore-perms    Do not show file permissions differences in filelist
 	                        (needed if system has special permission handling)
 	  -P, --show-perms      Always show file permissions even if no differences
-	  -K, --ver-keep        Do not replace filelist's versions in names by *
+	  -K, --ver-keep        Do not replace filelist's versions+slots in names by *
 	  -O, --ver-dironly     Limit filelist version replacements to directories
 	(default is to try to prevent showing uninteresting version-only changes)
 
@@ -151,7 +151,7 @@ cmp-get_compare2readable() {
 # cmp-get_filelist <array> <compare>
 #	Set <array> to sorted filelist from a cmp-get_tocompare value.
 #	First three lines are specially set to:
-#		1. ${PVR} 2. prefix/ 3. size in bytes
+#		1. ${PVR}:${SLOT} 2. prefix/ 3. size in bytes
 #	usr/{lib,src}/debug/ excluded for simplification.
 #	" (-rw-r--r-- user:group)" will be set after paths, or
 #	" (?)" if unknown or O[ignore-perms] is set.
@@ -159,16 +159,21 @@ cmp-get_filelist() {
 	local flimit=()
 	${O[skip-large]} && flimit=(-n 10001)
 	{
+		local slot
 		local -i size
 		if [[ ${2::1} == = ]]; then
-			atomf '%e\n' "${2}" || die
+			local vdb
+			vdb=$(cmp-get_vdb)
+
+			size=$(<"${vdb}/${2#=}"/SIZE) \
+				|| die "failed to read '${vdb}/${2#=}/SIZE'"
+			slot=$(<"${vdb}/${2#=}"/SLOT) \
+				|| die "failed to read '${vdb}/${2#=}/SLOT'"
+
+			atomf "%e:${slot%/*}\n" "${2}" || die
 
 			echo "${ROOT}"/
 
-			local vdb
-			vdb=$(cmp-get_vdb)
-			size=$(<"${vdb}/${2#=}"/SIZE) \
-				|| die "failed to read '$(cmp-get_vdb)/${2#=}/SIZE'"
 			echo "${size}"
 
 			Q_VDB=${vdb#"${ROOT}"} \
@@ -190,12 +195,15 @@ cmp-get_filelist() {
 			[[ ${PIPESTATUS[*]} == '0 0 '[01]' '@(0|141)' 0' ]] \
 				|| die "qlist failed for '${2}'"
 		else
-			cmp-get_image2atomf '%e\n' "${2}"
+			size=$(<"${2%/image}"/build-info/SIZE) \
+					|| die "failed to read '${2%/image}/build-info/SIZE', failed build image?"
+			slot=$(<"${2%/image}"/build-info/SLOT) \
+					|| die "failed to read '${2%/image}/build-info/SLOT', failed build image?"
+
+			cmp-get_image2atomf "%e:${slot%/*}\n" "${2}"
 
 			echo "${2}/"
 
-			size=$(<"${2%/image}"/build-info/SIZE) \
-					|| die "failed to read '${2%/image}/build-info/SIZE', failed build image?"
 			echo "${size}"
 
 			find "${2}" -regex "${2}/usr/\(lib\|src\)/debug" -prune -o \
@@ -868,7 +876,8 @@ _cmp-output_filelist_diff-replace_versions() {
 			# shouldn't happen, but infinite guard in case of bad data
 			[[ ! ${ver} || ${ver} == '*' ]] && continue
 
-			while [[ ${path} =~ (^|[^0-9.])("${ver}")([^0-9.]|\.[^0-9]|$) ]]; do
+			# sub out all seemingly exact version or slots not near other numbers
+			while [[ ${path} =~ (^|[^0-9.])("${ver%:*}"|"${ver#*:}")([^0-9.]|\.[^0-9]|$) ]]; do
 				path=${path//"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]}*${BASH_REMATCH[3]}}
 			done
 		done

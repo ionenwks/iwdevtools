@@ -2,6 +2,15 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+-------
+- qa-cmp: replace SLOT in paths alongside versions with ``*`` to allow
+  ignoring in file lists differences (only relevant when emerging a new
+  SLOT or else same-SLOT is compared when using portage hooks)
+
 iwdevtools-0.12.6 (2023-07-30)
 ==============================
 
