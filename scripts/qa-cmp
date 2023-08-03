@@ -877,7 +877,7 @@ _cmp-output_filelist_diff-replace_versions() {
 			[[ ! ${ver} || ${ver} == '*' ]] && continue
 
 			# sub out all seemingly exact version or slots not near other numbers
-			while [[ ${path} =~ (^|[^0-9.])("${ver%:*}"|"${ver#*:}")([^0-9.]|\.[^0-9]|$) ]]; do
+			while [[ ${path} =~ (^|[^0-9.]|[^0-9]\.)("${ver%:*}"|"${ver#*:}")([^0-9.]|\.[^0-9]|$) ]]; do
 				path=${path//"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]}*${BASH_REMATCH[3]}}
 			done
 		done

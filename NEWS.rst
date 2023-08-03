@@ -11,6 +11,10 @@ Changes
   ignoring in file lists differences (only relevant when emerging a new
   SLOT or else same-SLOT is compared when using portage hooks)
 
+- qa-cmp: also replace versions for, e.g. ``.so.<slot|version>`` as these
+  should be compared using the SONAME lists instead (note that this will
+  replace the common ``.so.0`` with SLOT=0 but is not considered an issue)
+
 iwdevtools-0.12.6 (2023-07-30)
 ==============================
 
