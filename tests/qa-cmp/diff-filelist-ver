@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 set_portroot
-ebuild "$(get_ebuild test 1.5_p1-r1 : cmd:'
+ebuild "$(get_ebuild test 1.5_p1-r1 : SLOT:old cmd:'
 	keepdir /usr/share/dir-{1.5,1.5-r1,1.5_p1-r1}
 	newbin - file1.5 <<<""
+	insinto /usr/lib/${SLOT}
+	newins - oldfile <<<""
+	insinto /usr/no-replace-a${SLOT}a
+	newins - file <<<""
 	insinto /usr/share/dir-1.5')" install
-ebuild "$(get_ebuild test 2.5_p1-r1 : cmd:'
+ebuild "$(get_ebuild test 2.5_p1-r1 : SLOT:new cmd:'
 	keepdir /usr/share/dir-{2.5,2.5-r1,2.5_p1-r1}
 	newbin - file2.5 <<<""
+	insinto /usr/lib/${SLOT}
+	newins - oldfile <<<""
+	newins - newfile <<<""
+	insinto /usr/no-replace-aolda
+	newins - file <<<""
 	insinto /usr/share/dir-2.5')" install
-expect "*'FILES(+0,-0)'*" -cIW dev-test/test
-expect "*'FILES(+1,-1)'*" -cIW --ver-dironly dev-test/test
-expect "*'FILES(+4,-4)'*" -cIW --ver-keep dev-test/test
+expect "*'FILES(+1,-0)'*" -cIW dev-test/test
+expect "*'FILES(+5,-4)'*" -cIW --ver-dironly dev-test/test
+expect "*'FILES(+6,-5)'*" -cIW --ver-keep dev-test/test
 
 # test simple versions not replacing file12->file1*, but still do file1->file*
 touch 1 2 file{1,2,-1-,-2-,12,-2.1} file-1.20
