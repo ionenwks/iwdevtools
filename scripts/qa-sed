@@ -41,6 +41,7 @@ usage <<-EOU
 	 *  can't do detection if stdin is used and isn't a file
 	    e.g. \`cat file | sed\` rather than \`sed < file\` (latter works)
 	    this is due to a precaution to ensure input will not be mangled
+	 *  can't handle e/r/w sed commands (will abort with a sandbox error)
 
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
