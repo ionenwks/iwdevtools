@@ -7,4 +7,11 @@
 # implicit core libraries
 sys-devel/gcc
 sys-libs/glibc
+sys-libs/libcxx
+sys-libs/libcxxabi
+sys-libs/libomp
 sys-libs/musl
+
+# similar, albeit packages that use directly do need it as dependency
+sys-libs/libunwind
+sys-libs/llvm-libunwind
