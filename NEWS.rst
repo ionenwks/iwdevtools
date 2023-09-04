@@ -2,6 +2,16 @@
 Release Notes
 =============
 
+iwdevtools-next (xxxx-xx-xx)
+=============================
+
+New
+---
+- workdir-cd: new tool to jump to the packages workdir in PORTAGE_TMPDIR and
+  then run a command in that directory such as listing its contents. (can
+  search for a partial atom, and use tab completion with bash/fish/zsh after
+  setting up shell integration)
+
 iwdevtools-0.12.7 (2023-08-04)
 ==============================
 

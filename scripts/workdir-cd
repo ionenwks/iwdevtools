@@ -1,0 +1,564 @@
+#!/usr/bin/env bash
+. "${0%/*}"/../lib/common.bashlib || exit 1 #C#
+init
+depend find q sort uniq xmllint portageq
+include atomf shellparse
+usage <<-EOU
+	Usage: ${0##*/} [option]... [atom]
+
+	Print directory location (or change directory with *Shell Integration*
+	below) corresponding to an atom either using portageq or a tmpdir list
+	given using the -P or --path option.
+
+	atom can be partial or missing, e.g. from dev-category/example
+	 > dev-category : print the category directory location
+	 > example      : lookup matches in all categories
+	 > (nothing)    : find the latest directory in all tmpdirs
+	 > -            : list all the workdirs in tmpdir
+	In all cases, will ask if multiple results unless -1 or --first is specified.
+
+	If an atom is found, the directory is changed to the first dir of the workdir
+	of the package. If a category is found, the directory is changed to the category's
+	dir in PORTAGE_TMPDIR.
+
+	Options:
+	  -P, --path=PATH     Colon-separated list of tmpdirs to search by priority,
+	                      special keyword "default" adds PORTAGE_TMPDIR from portageq.
+						  (usually set in make.conf)
+	                      (e.g. --path="/var/tmp/portage", see --dumpconfig
+	                      or *Shell Integration* below to set permanently)
+	  -D, --duplicates    Allow multiple tempdirs with the same path
+
+	  -1, --first         Disable interactive prompts and always pick first choice
+
+	  -F, --fuzzy         Always enable fuzzy search (e.g. 'gcc' matches both 'gcc'
+	                      and 'gcc-config'), used by default if no exact name match
+	  -f, --exact         Do not return fuzzy matches even if no exact name match
+	                      (this still allows matching in multiple categories)
+
+	  -e, --exclude=LIST  Comma-separated list of categories to exclude from
+	                      searches unless explicitly specified
+
+	  -q, --quiet         Do not display non-error informational messages
+	                      (to be further quiet, also set --no-command)
+
+	  -R, --run=COMMAND   If atom matches a package, run COMMAND then exit with
+	                      its status, see *Running Commands* for details
+	                      (default: ls -1v --color=always)
+	  -s, --no-capture    Redirect COMMAND's output to stderr rather than capture
+	  -r, --no-command    Do not run COMMAND even if defined
+
+	      --posix=ALIAS   Print posix sh integration, see *Shell Integration* below
+	      --bash=ALIAS    Print bash integration with atom completion support
+	      --fish=ALIAS    Print fish integration with atom completion support
+	      --zsh=ALIAS     Print zsh integration with atom completion support
+	      --compgen       Print words for completion with a partial [atom] and exit
+
+	  -c, --no-color      Disable use of colors
+
+	      --confdir=PATH  Configuration dir to use instead of defaults
+	                      (@confdir@ + ${XDG_CONFIG_HOME:-~/.config}/@package@)
+	      --dumpconfig    Display config and exit (2> ${0##*/}.conf)
+
+	  -h, --help          Display usage information and exit
+	      --version       Display version information and exit
+
+	*Known Limitations*
+	If PORTAGE_TMPDIR is set by package.env, ${0##*/} can not find the tmpdir of
+	the package, since it can only get the standard PORTAGE_TMPDIR from portageq.
+	In this case, users can set the --path variable manually.
+
+	*Running Commands*
+	If match a valid workdir, --run's COMMAND will be executed inside the directory
+	allowing to e.g. show directory contents (default), git status/log,
+	and/or display notes/reminders based on the package
+	name for some ideas. The variables WCD_CATEGORY, WCD_P and WCD_PACKAGE (cat/p)
+	are exported for use with external scripts.
+
+	Note can set "run = eshowkw -C" in
+	${XDG_CONFIG_HOME:-~/.config}/@package@/${0##*/}.conf,
+	or pass --run= to the eval command in *Shell Integration* below to be permanent.
+
+	*Shell Integration*
+	To be able to change the directory of an interactive shell, a higher level
+	helper is required, i.e. if ${0##*/} prints a path, then cd to it.
+
+	For convenience, can use one of the shell integration option, e.g. --bash=wcd
+	outputs code to enable \`wcd [atom]\` with atom tab completion support using
+	bash. Intended to be added to ~/.bashrc and/or ~/.bash_profile (can also run
+	in current shell to use immediately):
+
+	    eval "\$(command ${0##*/} --bash=wcd)"
+
+	Can also pass other options like --path or --run to the above for per-aliases
+	effects. The above eval works the same for each supported shells, except e.g.
+	swap --bash for --zsh and use ~/.zshrc, or --fish and ~/.config/fish/conf.d
+EOU
+
+setmsg 2 # stdout only used to show cd path or shell integration
+
+optauto args "${@}" <<-EOO
+	P|path=str:default:
+	D|duplicates=bool:false
+	1|first=bool:false
+	F|fuzzy=bool:false
+	f|exact=bool:false
+	e|exclude=str:
+	q|quiet=bool:false
+	R|run=str:ls -1v --color=always
+	s|!capture=bool:true
+	r|!command=bool:true
+	posix=str:
+	bash=str:
+	fish=str:
+	zsh=str:
+	compgen=bool:false
+	c|!color=bool:true
+EOO
+
+# wcd-shell_integration <args>
+#	Print shell integration code using <args> after stripping
+#	integration options.
+wcd-shell_integration() {
+	local -a args=()
+	while (( ${#} )); do
+		case ${1} in
+			--bash|--fish|--posix|--zsh) shift 2; continue;;
+			--bash=*|--fish=*|--posix=*|--zsh=*) shift; continue;;
+		esac
+		args+=("${1}")
+		shift
+	done
+
+	local pargs=(
+		"${WCD_SHELL}" "${0##*/}" "${args[0]+ }${args[*]@Q}"
+		"${WCD_SHELL}" "${0##*/}" "${args[0]+ }${args[*]@Q}"
+		"${WCD_SHELL}" "${WCD_SHELL}"
+	)
+
+	# pass words so that `workdir-cd --path=...` adds new paths / rules
+	# to compgen, may however silently fail if options are wrong
+	if [[ ${O[bash]} ]]; then
+		#!SC2016
+		printf \
+'%s() {
+	local d
+	d=$(command %q%s "${@}") && [[ -n ${d} ]] && cd "${d}"
+}
+_%s() {
+	mapfile -t COMPREPLY < <(command %q%s "${COMP_WORDS[@]:1:COMP_CWORD-1}" --compgen -- "${2}" 2>/dev/null)
+}
+complete -F _%s %s\n' "${pargs[@]}"
+	elif [[ ${O[fish]} ]]; then
+		#!SC2016
+		printf \
+'function %s
+	set --local d (command %q%s $argv) && [ -n "$d" ] && cd $d
+end
+function _%s
+	set --local w (commandline -op)
+	command %q%s $w[2..-2] --compgen -- $w[-1] 2>/dev/null
+end
+complete -e %s
+complete -fa "(_%s)" %s\n' "${pargs[@]}" "${WCD_SHELL}"
+	elif [[ ${O[posix]} ]]; then
+		#!SC2016
+		printf \
+'%s() {
+	_workdir_cd="$(command %q%s "${@}")" && [ -n "${_workdir_cd}" ] && cd "${_workdir_cd}"
+	unset _workdir_cd
+}\n' "${pargs[@]:0:3}"
+	elif [[ ${O[zsh]} ]]; then
+		#!SC2016
+		printf \
+'%s() {
+	local d
+	d=$(command %q%s "${@}") && [[ -n ${d} ]] && cd "${d}"
+}
+_%s() {
+	local w
+	read -cA w
+	reply=(${(f)"$(command %q%s "${w[@]:1:-1}" --compgen -- "${w[-1]}" 2>/dev/null)"})
+}
+compctl -K _%s %s\n' "${pargs[@]}"
+	fi
+}
+
+WCD_SHELL=${O[bash]:-${O[fish]:-${O[posix]:-${O[zsh]}}}}
+if [[ ${WCD_SHELL} ]]; then
+	[[ ${O[bash]:+x}${O[fish]:+x}${O[posix]:+x}${O[zsh]:+x} > x ]] &&
+		die "cannot specify more than one shell integration option"
+	wcd-shell_integration "${@}"
+	exit
+fi
+
+set -- "${args[@]}"; unset args
+(( ${#} <= 1 )) || die "too many atoms given, see \`${0##*/} --help\`"
+
+[[ ${O[exclude]} =~ ^[,A-Za-z0-9+_.-]*$ ]] \
+	|| die "--exclude list has invalid characters for categories"
+
+${O[fuzzy]} && ${O[exact]} \
+	&& die "-F/--fuzzy and -f/--exact cannot be specified together"
+
+[[ ${O[run]} ]] || O[command]=false
+
+# wcd-ask <variable> <choice>...
+#	Ask to pick from <choices> and store result in <variable>.
+#	If only one choice, do nothing beside set <variable> to it.
+#	If choice starts with ${HOME}, replaces with ~ only when displaying.
+wcd-ask() {
+	local -n outref=${1}
+	shift
+	if ${O[first]} || (( ${#} == 1 )); then
+		outref=${1}
+		return 0
+	fi
+	local default=" ${C[a]}(default)${C[n]}"
+	local display
+	local -i i
+	for ((i=1; i<=${#}; i++)); do
+		wcd-get_display_path display c lr "${!i}"
+		wcd-msg '?:m' "${C[y]}${i}${C[a]}:${display}${default}"
+		default=
+	done
+
+	wcd-msg -n '?:y' "Choice? "
+
+	local REPLY
+	read -ren ${##}
+	printf -v i %u "${REPLY}" 2>/dev/null
+	(( i <= 1 || i > ${#} )) && i=1 # default if non-integer / invalid reply
+
+	outref=${!i} #!SC2034
+}
+
+# wcd-cd [atom]
+#	Print directory for atom and change directory.
+#	If no atom, search for latest workdir in all tmpdirs.
+#	If atom is ., list all workdirs in tmpdir and let user choose.
+#	Exit with value 104 if failed to find a directory to use.
+#	Return 1 if resulting directory is not a package directory.
+wcd-cd() {
+	local cd
+	if (( ! ${#} )); then
+		# if no atom, search for latest workdir in all tmpdirs
+		set +f # enable globbing
+		#!SC2068
+		#!SC2012
+		wcd-ask cd "$(ls -td ${TEMPDIRPATH[@]/%/"/*/*"} 2>/dev/null | head -n1)"
+		set -f # disable globbing
+	elif [[ ${1} == - ]]; then
+		# list all workdirs in tmpdir and let user choose
+		cd=
+		set +f # enable globbing
+		#!SC2068
+		#!SC2046
+		#!SC2012
+		wcd-ask cd $(ls -td ${TEMPDIRPATH[@]/%/"/*/*"} 2>/dev/null)
+		set -f # disable globbing
+	else
+		local search=${1%/} # trim / in case did tab-complete on a directory
+
+		# most atom elements are unused, but atomsp can sanitize input
+		local atom
+		atomsp atom "${search}" && [[ ${atom[3]} ]] \
+			|| die "invalid search '${search}'"
+
+		local cat=${atom[2]:-}
+		local name=${atom[3]} # can be a category-only search
+
+		# search paths separately to sort each individually in TEMPDIRPATH order
+		local path
+		local -a choice=()
+		${O[exact]} && search=${name} || search="*${name}*"
+		search=${search//[_-]/[_-]} # "case" insensitive _ and -
+		for path in "${TEMPDIRPATH[@]}"; do
+			if [[ ${cat} && -d ${path}/${cat}/${name} ]] && ! ${O[fuzzy]}; then
+				# exact match and no fuzzy, print as-is ignoring exceptions
+				printf '%s\0' "${path}/${cat}/${name}"
+			else
+				wcd-find 1 2 "${path}" -iname "${search}" -print0 | sort -z || die
+			fi
+		done | mapfile -td '' choice
+
+		if (( ! ${#choice[@]} )); then
+			wcd-msg '!:r' "no non-excluded match found for '${C[m]}${name}${C[n]}'"
+			exit 104
+		fi
+
+		if ! ${O[fuzzy]} && ! ${O[exact]}; then
+			# only do fuzzy if no exact name matches when fuzziness is
+			# undefined, and post-process to avoid running find(1) twice
+			local base
+			local -a exact=()
+			for path in "${choice[@]}"; do
+				base=${path##*/}
+				base=${base//[_-]/[_-]}
+				[[ ${name,,} == ${base,,} ]] && exact+=("${path}") #!SC2053
+			done
+			(( ${#exact[@]} )) && choice=("${exact[@]}")
+		fi
+
+		wcd-ask cd "${choice[@]}"
+	fi
+
+	cd "${cd}" || die "failed to cd '${cd}'"
+	if ${O[command]} || ! ${O[quiet]}; then
+		wcd-set_atom
+	fi
+	# if we ended up in a tempdir, cd into work and the first thing ls returns
+	if [[ -e work ]]; then
+		cd="${cd}"/work
+		cd "${cd}" || die "failed to cd '${cd}'"
+		local firstdir
+		#!SC2012
+		firstdir="$(ls -1 | head -n1)"
+		if [[ -e "${firstdir}" ]]; then # normally work should not be empty, but just in case
+			cd="${cd}/${firstdir}"
+			cd "${cd}" || die "failed to cd '${cd}'"
+		fi
+	fi
+	echo "${cd}" # for the interactive shell to use
+
+	# return true if we successfully changed dir
+	[[ "${cd}" == "${PWD}" ]];
+}
+
+# wcd-find <mindepth> <maxdepth> <path>... <extra-find-args>
+#	Run find(1) with preset exclusion/depth/directory rules on paths.
+#	<extra-find-args> should contain the action and optionally extra rules,
+#	e.g. -ipath '*/category/package' -print0
+wcd-find() {
+	local depth=(-mindepth "${1}" -maxdepth "${2}")
+	shift 2
+
+	local -a paths=()
+	while (( ${#} )); do
+		[[ ${1::1} == - ]] && break
+		paths+=("${1}")
+		shift
+	done
+
+	local omitdirs
+	split omitdirs "${O[exclude]}" ','
+
+	local omit=( -name '.*' ) # .git and other hidden files
+
+	local dir path
+	for path in "${paths[@]}"; do
+		# add path to ensure doesn't match on packages themselves
+		# (loop over given can't safely rely on word splitting to /#/-o -path})
+		for dir in "${omitdirs[@]}"; do
+			omit+=(-o -path "${path}/${dir}")
+		done
+	done
+
+	# not trying to use pquery/portage/bashglobs given find(1) is faster
+	# and makes this simpler for ordering and custom --path tmpdirs
+	find -H "${paths[@]}" "${depth[@]}" \
+		-type d \( "${omit[@]}" \) -prune -o -type d "${@}" || die
+}
+
+# wcd-get_display_path <variable> <base-color> <cat/pkg-color> <path>
+#	Set <variable> with <path> adjusted for display with mixed colors
+#	for cat/pkg to stand out and ${HOME} be replaced by ~.
+wcd-get_display_path() {
+	local -n outref=${1}
+
+	local path_cat path_pn path_base
+	path_cat=${4%/*}
+	path_cat=${path_cat##*/}
+	path_pn=${4##*/}
+	path_base=${4%"${path_cat}/${path_pn}"}
+
+	if [[ ! ${TEMPDIRNAME[${path_base%/}/]+x} ]]; then
+		path_cat=${path_pn}
+		path_pn=
+		path_base=${4%"${path_cat}"}
+		if [[ ! ${TEMPDIRNAME[${path_base%/}/]+x} ]]; then
+			path_cat=
+			path_base=${4}
+		fi
+	fi
+
+	outref=${C[${2}]}${path_base/#"${HOME}"/\~}${path_cat:+${C[${3}]}${path_cat}${path_pn:+/${path_pn}}}${C[n]}
+}
+
+# wcd-get_expand_tilde <variable> <string>
+#	Expand ~ in <string> then store back in <variable>
+wcd-get_expand_tilde() {
+	local -n outref=${1}
+	if [[ ${2::1} == '~' ]]; then
+		# use printf %q to escape anything potentially harmful then unescape ~
+		# and let the shell handle all use-cases, e.g. ~user/ ~+/ etc...
+		# Not that there's a real need for safety here, but it doesn't hurt.
+		printf -v outref %q "${2}"
+		eval "outref=${outref/#\\\~/\~}"
+	else
+		outref=${2}
+	fi
+}
+
+# wcd-msg [-n] <char>[:<prefix-color-id>:[message-color-id]] <message>...
+#	Print message with <char> prefix, e.g. msg '!:r' "prefixed by red !".
+#	Multiple arguments will result in multiple lines with same prefix.
+#	Skip trailing newline if -n.
+#	More complex coloring can be used in the message itself.
+wcd-msg() {
+	local trail=1
+	if [[ ${1} == -n ]]; then
+		trail=
+		shift
+	fi
+
+	local -a m
+	split m "${1}" ':'
+	shift
+
+	printf " ${m[1]+${C[${m[1]}]}}${m[0]}${m[1]+${C[n]}} ${m[2]+${C[${m[2]}]}}%s${m[2]+${C[n]}}${trail:+\n}" \
+		"${@}" >&2
+}
+
+# wcd-print_compgen [current]
+#	Print possible words for tab completion based on TEMPDIRPATH.
+wcd-print_compgen() {
+	# do nothing if no arguments rather print the rather slow full list
+	(( ${#} )) || return 0
+
+	local -a gen
+	local search=${1//[_-]/[_-]} # "case" insensitive _ and -
+	{
+		if [[ ${1} == */* ]]; then
+			wcd-find 2 2 "${TEMPDIRPATH[@]}" -ipath "*/${search}*" -printf '%P\n'
+		else
+			# process categories separately to add /
+			wcd-find 1 1 "${TEMPDIRPATH[@]}" -iname "${search}*" -printf '%f/\n'
+			wcd-find 2 2 "${TEMPDIRPATH[@]}" -iname "${search}*" -printf '%f\n'
+		fi
+	} | sort | uniq | map gen
+
+	# if _ or - had an exact match, discard the mismatching ones as the shell
+	# will not know how to handle this
+	local exactmatch=false
+	if [[ ${1} == *[_-]* ]]; then
+		local match
+		for match in "${gen[@]}"; do
+			if [[ ${match} == "${1}"* ]]; then
+				exactmatch=true
+				echo "${match}"
+			fi
+		done
+	fi
+	${exactmatch} || printarray gen
+}
+
+# wcd-print_command
+#	Run ${O[run]}, output through wcd-msg, and return its exit status
+wcd-print_command() {
+	local -x WCD_CATEGORY=${PWD%/*/*}
+	WCD_CATEGORY=${WCD_CATEGORY##*/}
+	local -x WCD_P=${PWD%/*}
+	WCD_P=${WCD_P##*/}
+	local -x WCD_PACKAGE=${WCD_CATEGORY}/${WCD_P}
+
+	# roughly allow tilde expansion for any arguments
+	local arg
+	local -a cmd=()
+	for arg in ${O[run]}; do
+		wcd-get_expand_tilde arg "${arg}"
+		cmd+=("${arg}")
+	done
+
+	if ${O[capture]}; then
+		command -- "${cmd[@]}" |& map output
+		(( ret=PIPESTATUS[0] )) && mod='-:r' || mod='+:g'
+		(( ${#output[@]} )) && wcd-msg "${mod}" "${output[@]}"
+		return ${ret}
+	fi
+
+	"${cmd[@]}" >&2
+}
+
+# wcd-set_atom
+#	Fill ATOM array for all valid packages in the current directory.
+#	(if any). Each element has a atomsp()
+declare -a ATOM=()
+wcd-set_atom() {
+	local category
+	local atom
+	atom=$(basename "${PWD}")
+	category=$(basename "${PWD%/*}")
+
+	ATOM+=( "${category}/${atom/%-*/}" )
+}
+
+# wcd-set_tempdirpath
+#	Set TEMPDIRPATH array based on O[path] string. Also sets TEMPDIRNAME[${path%/}/]
+#	for name lookup
+declare -A TEMPDIRNAME
+declare -a TEMPDIRPATH=()
+wcd-set_tempdirpath() {
+	local -A nameindex
+	local -a paths
+	split paths "${O[path]}" ':'
+
+	local path
+	local found_default
+	found_default="false"
+	for path in "${paths[@]}"; do
+		[[ ${path} ]] || continue
+
+		if [[ ${path} == default ]]; then
+			path="$(portageq envvar PORTAGE_TMPDIR)/portage"
+			if [[ ${path} ]]; then
+				_wcd-set_tempdirpath_add_if_unique
+				found_default="true"
+			fi
+			if ! "${found_default}"; then
+				path="/var/tmp/portage" # if nothing was found using portageq, use the default
+				_wcd-set_tempdirpath_add_if_unique
+			fi
+		else
+			# allow tilde expansion for convenience
+			wcd-get_expand_tilde path "${path}"
+			_wcd-set_tempdirpath_add_if_unique
+		fi
+	done
+
+
+	(( ${#TEMPDIRPATH[@]} )) || die "no valid tmpdir paths found, see \`${0##*/} --help\`"
+}
+
+_wcd-set_tempdirpath_add_if_unique() {
+	if absdir path; then
+			name=${path}
+			if [[ ! ${nameindex[${name}]+x} ]] || ${O[duplicates]}; then
+				TEMPDIRNAME[${path%/}/]=${name}
+				TEMPDIRPATH+=("${path}")
+				nameindex[${name}]=
+			fi
+	else
+		wcd-msg '!:b:a' "${path}: ignored path (not a directory)"
+	fi
+}
+
+cd / # for running in a removed directory
+wcd-set_tempdirpath
+if ${O[compgen]}; then
+	wcd-print_compgen "${@}"
+elif wcd-cd "${@}"; then
+	# avoid doing some slower operations if not needed
+	if ${O[command]} || ! ${O[quiet]}; then
+		if (( ${#ATOM[@]} )); then
+			if ${O[command]}; then
+				wcd-print_command
+				exit ${?}
+			fi
+		fi
+	fi
+fi
+
+:
+
+# vim: ts=4

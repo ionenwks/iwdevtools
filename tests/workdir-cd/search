@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+func=${SCRIPT##*/}
+TEMPDIRPATH=${PWD}/high:${PWD}/low
+mkdir -p {high,low,dup}/profiles
+
+mkdir -p high/dev-alt/alt-1.0/work
+mkdir -p high/virtual/test-1.0/work/upstream-dir-1.1
+mkdir -p low/{dev-test/test{-1.0,-fuzzy-1.0}/work,dev-alt/alt-1.0/work}
+
+expect '*/high/virtual/test-1.0/work/upstream-dir-1.1' -cr1P "${TEMPDIRPATH}" dev-test/test
+expect '*/low/dev-test' -cr1P "${TEMPDIRPATH}" dev-test
+expect '*/high/virtual/test-1.0/work/upstream-dir-1.1' -cr1P "${TEMPDIRPATH}" test
+
+expect '*/low/dev-test/test-fuzzy-1.0/work' -cr1P "${TEMPDIRPATH}" test_fuzzy
+expect '*/low/dev-test/test-fuzzy-1.0/work' -cr1P "${TEMPDIRPATH}" fuzzy
+expect '*/high/virtual/test-1.0/work/upstream-dir-1.1' -cr1P "${TEMPDIRPATH}" --fuzzy test
+xfail 104 expect -2 "*no non-excluded match found*" -cr1P "${TEMPDIRPATH}" --exact fuzzy
+
+expect '*/high/virtual/test-1.0/work/upstream-dir-1.1' -cr1P "${TEMPDIRPATH}" virtual/test
+expect '*/high/virtual/test-1.0/work/upstream-dir-1.1' -cr1P "${TEMPDIRPATH}" --exclude='' test
+
+expect '*/high/dev-alt' -cr1P "${TEMPDIRPATH}" alt
+
+xfail 104 expect "''" -cr1P "${TEMPDIRPATH}" --exclude='metadata' metadata
+xfail 1 expect -2 "*Error: invalid search*" -cr1P "${TEMPDIRPATH}" .git
+
+mkdir -p low/dev-alt/alt-2.0/work
+expect '*dev-alt/alt-2.0*' -cr1P "${TEMPDIRPATH}" -
+mkdir -p high/dev-alt/alt-3.0/work
+expect '*dev-alt/alt-3.0*' -cr1P "${TEMPDIRPATH}" -
