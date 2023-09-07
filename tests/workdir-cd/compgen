@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+TEMPDIRPATH=${PWD}/tempdir
+mkdir -p tempdir/profiles
+
+mkdir -p tempdir/dev-{test,alt}/{a,b}{a,b}test
+mkdir -p tempdir/dev-test/extra
+
+testcomp() {
+	local word=${1}
+	shift
+	expect -s "'$(printf %s "${@/%/$'\n'}")'" -cr1P "${TEMPDIRPATH}" --compgen ${word}
+}
+
+testcomp '' ''
+testcomp a aatest abtest
+testcomp aa aatest
+testcomp dev dev-alt/ dev-test/
+testcomp dev-t dev-test/
+testcomp dev-test/ex dev-test/extra

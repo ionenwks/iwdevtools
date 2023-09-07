@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+PATH=${SCRIPT%/*}:${PATH}
+func=${SCRIPT##*/}
+
+eval "$(command "${func}" -cr1 --bash="${func}" --path="${DATADIR}/tempdir/portage")"
+eval "$(command "${func}" -cr1 --posix "${func}-posix" --path="${DATADIR}/tempdir/portage")"
+
+declare -f "${func}" "_${func}" "${func}-posix"
+
+rm -rf ${DATADIR}/tempdir/portage/dev-test/newest-1.0
+mkdir -p ${DATADIR}/tempdir/portage/dev-test/newest-1.0/work
+
+"${func}"
+[[ ${PWD} == */newest-1.0/work ]] || fail "${PWD} is not in */tempdir/portage/dev-test/newest-1.0/work"
+rm -rf ${DATADIR}/tempdir/portage/dev-test/newest
+
+"${func}-posix" test
+[[ ${PWD} == */portage/dev-test/test/work ]] || fail "${PWD} is not in */portage/dev-test/test"
+
+COMP_WORDS=("${func}" -c -1 te)
+COMP_CWORD=3
+COMPREPLY=()
+_"${func}" '' te
+[[ ${COMPREPLY[0]:-} == test ]] || fail "COMPREPLY is not 'test'"

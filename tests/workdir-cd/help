@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+expect -2 "Usage: ${SCRIPT##*/} *" --help

@@ -9,6 +9,7 @@ Overview
 * `qa-openrc`_ tries to find a few common mistakes in OpenRC init scripts
 
 + `repo-cd`_ facilitates navigating Gentoo repos' directories with some perks
++ `workdir-cd`_ facilitates navigating Portage temp' directories with some perks
 + `eoldnew`_ emerges the previous version then newest, useful with `qa-cmp`_
 + `scrub-patch`_ removes dirt from patches and may suggest improvements
 + `find-unresolved`_ helps find missing libraries on a stripped embedded system
@@ -248,6 +249,78 @@ Results in::
 	/var/db/repos/gentoo/app-emulation/dxvk$ _
 
 Run ``repo-cd --help`` or see **repo-cd(1)** man page for details and
+information about known limitations.
+
+workdir-cd
+-------
+Dependencies:  portage (portageq), libxml2 (xmllint)
+
+Can be used to jump to the working directory (cd) of the specified atom.
+
+If ``--path=default`` workdir-cd will try to get the path from ``protageq``.
+If nothing is set as PORTAGE_TMPDIR in make.conf, the usual location of
+TMPDIR is ``/var/tmp/portage``.
+
+I unpack two packages using the ``ebuild`` command and then use the workcd
+alias without an argument to navigate to the latest workdir in PORTAGE_TMPDIR::
+
+  ~/dev/gentoo/app-admin/entr $ eval "$(command workdir-cd --bash=workcd --path="default")"
+  ~/dev/gentoo/app-admin/entr $ ebuild entr-5.3-r1.ebuild unpack
+  Appending /home/pascal/dev/gentoo to PORTDIR_OVERLAY...
+  * entr-5.3.tar.gz BLAKE2B SHA512 size ;-) ...                                                                 [ ok ]
+  >>> Unpacking source...
+  >>> Unpacking entr-5.3.tar.gz to /var/tmp/portage/app-admin/entr-5.3-r1/work
+  >>> Source unpacked in /var/tmp/portage/app-admin/entr-5.3-r1/work
+  ~/dev/gentoo/app-admin/entr $ ebuild entr-5.4.ebuild unpack
+  Appending /home/pascal/dev/gentoo to PORTDIR_OVERLAY...
+  * entr-5.4.tar.gz BLAKE2B SHA512 size ;-) ...                                                                 [ ok ]
+  >>> Unpacking source...
+  >>> Unpacking entr-5.4.tar.gz to /var/tmp/portage/app-admin/entr-5.4/work
+  >>> Source unpacked in /var/tmp/portage/app-admin/entr-5.4/work
+  + LICENSE
+  + Makefile.bsd
+  + Makefile.linux
+  + Makefile.macos
+  + NEWS
+  + README.md
+  + configure
+  + data.h
+  + entr.c
+  + entr.1
+  + missing
+  + system_test.sh
+  /var/tmp/portage/app-admin/entr-5.4/work/entr-5.4 $
+
+If it is given a string other than '-' as the argument, workdir-cd will list
+the found workdirs matching that argument::
+
+ / $ workcd entr
+ ? 1:/var/tmp/portage/app-admin/entr-5.3-r1 (default)
+ ? 2:/var/tmp/portage/app-admin/entr-5.4
+ ? Choice?
+
+When the alias is ran with '-' as the argument, it will list all available workdirs
+in tmpdir and ask for which one to cd into::
+
+ / $ workcd -
+ ? 1:/var/tmp/portage/app-admin/entr-5.4 (default)
+ ? 2:/var/tmp/portage/app-admin/entr-5.3-r1
+ ? 3:/var/tmp/portage/x11-misc/xscreensaver-6.06-r2
+ ? 4:/var/tmp/portage/x11-misc/xscreensaver-6.07
+ ? 5:/var/tmp/portage/sys-apps/systemd-253.6
+ ? Choice?
+
+Has some customization options, like hiding fields and running commands in
+the directory (in the above case it ran ``ls`` by default), and these can
+be saved in a ``workdir-cd.conf`` or like ``--path`` was above::
+
+ /  $ workcd entr --run="echo hello world"
+ ? 1:/var/tmp/portage/app-admin/entr-5.3-r1 (default)
+ ? 2:/var/tmp/portage/app-admin/entr-5.4
+ ? Choice? 1
+ + hello world
+
+Run ``workdir-cd --help`` or see **workdir-cd(1)** man page for details and
 information about known limitations.
 
 eoldnew

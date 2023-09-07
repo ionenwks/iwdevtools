@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set_portroot
+
+
+mkdir -p root/tmp/portage/dev-default/test/work/test-1.0
+
+expect '*/tmp/portage/dev-default/test/work/test-1.0' -cr1P "default" dev-test/test
+expect '*/tempdir/portage/dev-test/test/work' -cr1P "${DATADIR}/tempdir/portage" dev-test/test

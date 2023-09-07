@@ -7,6 +7,7 @@ scripts = {
 	'qa-sed' : 'sed wrapper to detect if a call did no change',
 	'qa-vdb' : 'use portage VDB information to detect RDEPEND issues among others',
 	'repo-cd' : 'change directory based on atom then perform actions',
+	'workdir-cd' : 'change directory to workdir in PORTAGE_TMPDIR then perform actions',
 	'scrub-patch' : 'strip patches of useless cruft and suggest improvements'
 }
 
