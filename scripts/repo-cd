@@ -492,6 +492,7 @@ rcd-get_metadata_remote_urls() {
 		# see https://wiki.gentoo.org/wiki/Project:Quality_Assurance/Upstream_remote-id_types
 		case ${entry%% *} in
 			bitbucket) outref+=("https://bitbucket.org/${id}/");;
+			codeberg) outref+=("https://codeberg.org/${id}");;
 			cpan-module) outref+=("https://metacpan.org/pod/${id}");;
 			cpan) outref+=("https://metacpan.org/dist/${id}");;
 			cpe) continue;; # unhandled
