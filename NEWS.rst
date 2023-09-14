@@ -2,6 +2,17 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+=======
+- qa-vdb: default configs now exclude libcxx, libcxxabi, and llvm-libunwind
+  from being a missing dependency candidate (but note that llvm-libunwind
+  may still be needed if used directly by the package)
+
+- repo-cd: support codeberg remote-id
+
 iwdevtools-0.12.7 (2023-08-04)
 ==============================
 
