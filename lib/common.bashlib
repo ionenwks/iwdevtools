@@ -89,6 +89,7 @@ esanitize() {
 	unset DEBUG
 
 	# remove */ebuild-helpers* from PATH to ensure functioning portageq
+	# TODO: cleanup eventually, unnecessary with >=portage-3.0.54-r1
 	while [[ ${PATH} =~ (:|^)([^:]+/ebuild-helpers[^:]*)(:|$) ]]; do
 		PATH=${PATH/"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]:+${BASH_REMATCH[3]:+:}}}
 	done
