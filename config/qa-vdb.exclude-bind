@@ -8,6 +8,9 @@ sys-libs/zlib
 dev-qt/*
 kde-frameworks/*
 
+# fairly rare := should be used, refer to metadata.xml
+app-text/poppler
+
 # binding to non-specific slot without a subslot can be meaningful
 sys-libs/db
 
