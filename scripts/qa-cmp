@@ -767,7 +767,12 @@ cmp-output_filelist_diff() {
 		old=("${old[@]% (*}")
 		new=("${new[@]% (*}")
 	else
-		# hack1: use search index to know why a line is different after
+		# hack: normalize/fake permissions for symlinks, some filesystems
+		# seem to handle these differently and it generates noise
+		old=("${old[@]/ \(l[r-][w-][x-][r-][w-][x-][r-][w-][x-] / \(lrwxrwxrwx }") #!SC2180
+		new=("${new[@]/ \(l[r-][w-][x-][r-][w-][x-][r-][w-][x-] / \(lrwxrwxrwx }") #!SC2180
+
+		# hack: use search index to know why a line is different after
 		# diff and to avoid checking permission differences if unknown.
 		# TODO?: could use refactoring and self-diffing for conditions
 		# rather than call diff(1) with bad hacks, would also allow for
@@ -789,7 +794,7 @@ cmp-output_filelist_diff() {
 				if [[ ${oldindex[${file}]} != '(?)' && ${newindex[${file}]} == '(?)' ]]; then
 					line="${file} (?)"
 				elif [[ ${oldindex[${file}]:1:10} =~ s && ${newindex[${file}]:1:10} =~ s ]]; then
-					# hack2: FEATURES=sfperms (default) cause portage to do
+					# hack: FEATURES=sfperms (default) cause portage to do
 					# chmod go-r /during/ merge which mismatches with the image
 					# and we have no way to tell if this is ebuild-intended.
 					# Not right but if 's' exists on both, pretend same g/o+r.

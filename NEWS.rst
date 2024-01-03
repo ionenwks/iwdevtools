@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+=====
+- qa-cmp: prevent permission differences from being displayed with symbolic
+  links, what is reported can vary between filesystems and causes noise
+
 iwdevtools-0.12.8 (2023-09-22)
 ==============================
 
