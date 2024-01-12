@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+=====
+- repo-cd: allow usage even when the current directory was deleted
+
 iwdevtools-0.12.9 (2024-01-03)
 ==============================
 

@@ -32,11 +32,20 @@ init() {
 #	trailing slash. If [dir] is unspecified, read path from <variable>.
 #	Return 1 if not a dir or can't cd to it, die on unexpected issues.
 absdir() {
-	[[ -d ${PWD} ]] || die "working directory '${PWD}' is invalid, can't resolve relative paths"
 	local -n outref=${1}
-	[[ -d ${2-${outref}} ]] && pushd "${2-${outref}}" >/dev/null || return 1
-	outref=${PWD}
-	popd >/dev/null || die
+	if [[ -d ${PWD} ]]; then
+		# shell-only version to avoid forking
+		[[ -d ${2-${outref}} ]] && pushd "${2-${outref}}" >/dev/null || return 1
+		outref=${PWD}
+		popd >/dev/null || die
+	else
+		# fallback when the current directory is invalid
+		local _c_realpath
+		_c_realpath=$(realpath -- "${2-${outref}}") ||
+			die "working directory '${PWD}' is invalid, and realpath failed"
+		[[ -d ${_c_realpath} ]] || return 1
+		outref=${_c_realpath}
+	fi
 }
 
 # depend <executables...>
