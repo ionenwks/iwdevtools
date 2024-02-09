@@ -16,3 +16,8 @@ sys-libs/db
 
 # := is commonly kept in case the format changes despite no subslot (yet)
 dev-libs/gobject-introspection
+
+# llvm-r1.eclass pins to a specific slot making := unnecessary, avoids noise
+sys-devel/clang
+sys-devel/lld
+sys-devel/llvm

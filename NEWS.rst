@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+=======
+- qa-vdb.exclude-bind(config): exclude sys-devel/clang, sys-devel/lld, and
+  sys-devel/llvm by default to avoid noise with the upcoming llvm-r1.eclass
+
 iwdevtools-0.12.10 (2024-01-12)
 ===============================
 
