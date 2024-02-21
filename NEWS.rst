@@ -2,6 +2,15 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+=======
+- qa-vdb.exclude-bind(config): revert addition of clang/lld/llvm given
+  llvm-r1.eclass now suggests to add the binding operator with the
+  prospect of using subslots properly if ever needed
+
 iwdevtools-0.12.11 (2024-02-09)
 ===============================
 
