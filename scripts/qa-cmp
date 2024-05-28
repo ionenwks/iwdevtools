@@ -267,7 +267,8 @@ cmp-get_images() {
 		set +f
 		for dir in "$(cmp-get_tmp)/${atom[2]}"/*; do
 			# need to atomf the directory too, ${PN} can contain -
-			match=$(atomf '%n' "${atom[2]}/${dir##*/}") || die
+			# (skip if fails, directory likely not created by the PM)
+			match=$(atomf '%n' "${atom[2]}/${dir##*/}") || continue
 
 			[[ ${atom[3]} == "${match}" ]] || continue # mismatch
 
