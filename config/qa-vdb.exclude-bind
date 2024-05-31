@@ -16,3 +16,11 @@ sys-libs/db
 
 # := is commonly kept in case the format changes despite no subslot (yet)
 dev-libs/gobject-introspection
+
+# supposedly only relevant in very rare cases (e.g freecad)
+dev-python/pyside2
+dev-python/pyside6
+dev-python/pyside2-tools
+dev-python/pyside6-tools
+dev-python/shiboken2
+dev-python/shiboken6
