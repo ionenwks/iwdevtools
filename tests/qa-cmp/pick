@@ -10,10 +10,13 @@ ebuild "$(get_ebuild alt 1.5 :)" merge
 ebuild "$(get_ebuild alt 1.5 :)" install
 expect "*test-3.5*test-4.5*" -cW dev-test/test
 expect "*test-1.5*test-3.5*" -cW dev-test/test:2
-expect "*test-4.5*test-3.5*" -cW test =test-3.5
+expect "*test-4.5*test-3.5*" -cW dev-test/test =dev-test/test-3.5 # *1
 expect "*test-1.5*test-3.5*" -cW dev-test/test:2 =dev-test/test-3.5
-expect "*test-2.5*test-4.5*" -cW test:0 =test-4.5
-expect "*alt-1.5/image*test-4.5*" -cW alt test # nonsense but allowed
-expect "*=dev-test/alt-1.5*alt-1.5/image*" -cW alt
+expect "*test-2.5*test-4.5*" -cW dev-test/test:0 =dev-test/test-4.5 # *1
+expect "*alt-1.5/image*test-4.5*" -cW dev-test/alt dev-test/test # nonsense but allowed, *1
+expect "*=dev-test/alt-1.5*alt-1.5/image*" -cW dev-test/alt # *1
+# *1: meant to have these tests with unspecified category to test the category
+#     logic, but portage gets confused by ::gentoo (https://bugs.gentoo.org/939721)
+
 # FIXME:
 #expect "*test-4.5*test-2.5*" -cW =dev-test/test-4.5 =dev-test/test-2.5

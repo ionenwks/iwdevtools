@@ -6,5 +6,5 @@ export EOLDNEW_EMERGE_ARGS="--all {} --more {}"
 export EOLDNEW_EMERGE_ARGS_OLD="--old {}"
 export EOLDNEW_EMERGE_ARGS_NEW="--new {}"
 export EOLDNEW_EMERGE_CMD=:
-expect -s "*'running: : =dev-test/test-1.5 --all test --more test --old test
-running: : test --all test --more test --new test'*" test
+expect -s "*'running: : =dev-test/test-1.5 --all dev-test/test --more dev-test/test --old dev-test/test
+running: : dev-test/test --all dev-test/test --more dev-test/test --new dev-test/test'*" dev-test/test

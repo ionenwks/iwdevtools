@@ -4,9 +4,9 @@ touch file{1,2}
 ebuild "$(get_ebuild test 1.5 bin:file1 cmd:"insinto /usr/bin; doins '${PWD}'/file2")" merge
 expect -s "*'
  FILES: usr/bin/file1 (-rwxr-xr-x '*:*')
- FILES: usr/bin/file2 (-rw-r--r-- '*:*')'*" -c --single-all --show-perms test
+ FILES: usr/bin/file2 (-rw-r--r-- '*:*')'*" -c --single-all --show-perms dev-test/test
 
 rm "${ROOT}"/usr/bin/file2
 expect -s "*'
  FILES: usr/bin/file1 (-rwxr-xr-x '*:*')
- FILES: usr/bin/file2 (?)'*" -c --single-all --show-perms test
+ FILES: usr/bin/file2 (?)'*" -c --single-all --show-perms dev-test/test

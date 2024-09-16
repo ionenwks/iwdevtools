@@ -7,18 +7,18 @@ expect -s "*'
  FILES:-usr/bin/file2 (-rwxr-xr-x '*:*')
  FILES:-usr/bin/file3
  FILES:+usr/bin/file2 (-rw-r--r-- '*:*')
-'*'FILES(+1,-2)'*" -c test
+'*'FILES(+1,-2)'*" -c dev-test/test
 expect -s "*'
  FILES:-usr/bin/file3
-'*'FILES(-1)'*" -c --ignore-perms test
+'*'FILES(-1)'*" -c --ignore-perms dev-test/test
 expect -s "*'
  FILES:-usr/bin/file2 (-rwxr-xr-x '*:*')
  FILES:-usr/bin/file3 (-rwxr-xr-x '*:*')
  FILES:+usr/bin/file2 (-rw-r--r-- '*:*')
-'*'FILES(+1,-2)'*" -c --show-perms test
+'*'FILES(+1,-2)'*" -c --show-perms dev-test/test
 
 # should become like --ignore-perms if system's files are not readable/missing
 rm "${ROOT}"/usr/bin/file2
 expect -s "*'
  FILES:-usr/bin/file3
-'*'FILES(-1)'*" -c test
+'*'FILES(-1)'*" -c dev-test/test
