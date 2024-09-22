@@ -97,6 +97,9 @@ esanitize() {
 	# some ebuilds set this and cause q* tools to emit debug messages
 	unset DEBUG
 
+	# exported by dev-lang/python and can break portageq depending on slot
+	unset GENTOO_CPYTHON_BUILD
+
 	# remove */ebuild-helpers* from PATH to ensure functioning portageq
 	# TODO: cleanup eventually, unnecessary with >=portage-3.0.54-r1
 	while [[ ${PATH} =~ (:|^)([^:]+/ebuild-helpers[^:]*)(:|$) ]]; do
