@@ -2,6 +2,16 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+=====
+- tests: work around a potential(?) portage bug that lead to tests being
+  confused by dev-python/test newly existing in the Gentoo tree
+- general: unset GENTOO_CPYTHON_BUILD to prevent potential failure of portageq
+  invocations when emerging dev-lang/python
+
 iwdevtools-0.12.12 (2024-05-31)
 ===============================
 
