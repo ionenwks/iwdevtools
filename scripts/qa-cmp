@@ -78,6 +78,9 @@ usage <<-EOU
 	May report incorrect changes if pkg_postinst or FEATURES performed live changes
 	on files or permissions that are missing from the image (e.g. fcaps.eclass).
 
+	May wrongly report file differences with a wildcard when PV mismatches the real
+	version (e.g. 9999 live ebuilds) while comparing with one that does match.
+
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
