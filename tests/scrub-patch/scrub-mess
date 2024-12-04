@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# * 006,007,017,018,047,055: not using git-style a/ b/
-# * 043: over 20 lines removed in a row
-# * 048: removed file
-# * 055: configure file
-# * 064: flat pkg-config
-# * 065: top level path
-# * 065: library dir
+# * 014,015,025,026,055,063: not using git-style a/ b/
+# * 051: over 20 lines removed in a row
+# * 056: removed file
+# * 063: configure file
+# * 072: flat pkg-config
+# * 073: top level path
+# * 073: library dir
 # * >>>: no links in header
 # * >>>: use of CRLF
 copydat mess.patch
-expect -2 "Success*34.19%*006*007*017*018*043*047*048*055*055*064*065*065*'>>>'*links*'>>>'*term*" -csi mess.patch
-md5cmp 70906bdeb95aa51f8f73acaf60364216 mess.patch
+expect -2 "Success*30.01%*014*015*025*026*051*055*056*063*063*072*073*073*'>>>'*links*'>>>'*term*" -csi mess.patch
+md5cmp eb90cd3f8a3529218677eb04bc799cdd mess.patch

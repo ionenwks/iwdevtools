@@ -1,4 +1,12 @@
-#!/bin/sh
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "uri://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>user@host</email>
+		<name>Hereby I swear that I am metadata.xml</name>
+	</maintainer>
+</pkgmetadata>
+
 Changelog:
 * implement hand-crafted configure script to build the project
 * remove Makefile

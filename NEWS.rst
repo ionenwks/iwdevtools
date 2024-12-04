@@ -10,6 +10,7 @@ Fixes
 - scrub-patch: do not abort and suggest ``-s/--no-sanity`` when file(1) version
   5.46 newly recognizes patches with a ``From`` line as an mbox file rather
   than a patch.
+- tests: adjust scrub-patch tests for file-5.46
 
 iwdevtools-0.12.13 (2024-09-22)
 ===============================
