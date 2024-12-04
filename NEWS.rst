@@ -9,7 +9,7 @@ Fixes
 =====
 - scrub-patch: do not abort and suggest ``-s/--no-sanity`` when file(1) version
   5.46 newly recognizes patches with a ``From`` line as an mbox file rather
-  than a patch.
+  than a patch
 - tests: adjust scrub-patch tests for file-5.46
 
 iwdevtools-0.12.13 (2024-09-22)
@@ -99,10 +99,10 @@ Changes
 -------
 - qa-vdb.exclude-bind(config): exclude gobject-introspection by default, been
   common practice to keep the binding operator even if it has no subslot (yet)
-  in case the introspection format changes.
+  in case the introspection format changes
 
 - qa-vdb.exclude-extra(config): exclude gobject-introspection by default, very
-  few packages actually link with the library.
+  few packages actually link with the library
 
 iwdevtools-0.12.3 (2023-02-08)
 ==============================
@@ -110,7 +110,7 @@ iwdevtools-0.12.3 (2023-02-08)
 Changes
 -------
 - qa-cmp: also omit ``/usr/src/debug/*`` from output alongside already omitted
-  ``/usr/lib/debug/*`` to avoid ``FEATURES=installsources/splitdebug`` noise.
+  ``/usr/lib/debug/*`` to avoid ``FEATURES=installsources/splitdebug`` noise
 
 iwdevtools-0.12.2 (2022-12-19)
 ==============================
@@ -201,7 +201,7 @@ Changes
 -------
 - repo-cd: ``.`` can now be passed to ``--path/-P`` to search the repo
   from current working directory without needing to explicitly add, new
-  default is ``--path="default:."``.
+  default is ``--path="default:."``
 
 Fixes
 -----
@@ -229,7 +229,7 @@ Changes
 -------
 - repo-cd: fallback to fuzzy search if no exact name match (e.g. ``rcd sdl2-``
   gives a list of choices even without tab completion), and add -f/-F options
-  to control the behavior like forcing fuzzy even if an exact match.
+  to control the behavior like forcing fuzzy even if an exact match
 
 - qa-vdb: print warning about QML for dev-qt/ and kde-frameworks/ when
   suggesting removal as it's often incorrect if using qtdeclarative
