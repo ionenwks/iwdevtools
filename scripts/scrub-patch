@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "${0%/*}"/../lib/common.bashlib || exit 1 #C#
 init
-depend cat cp file mktemp readlink rm stat
+depend cat cp head file mktemp readlink rm stat
 include tmpdir
 usage <<-EOU
 	Usage: ${0##*/} [option]... [patch]...
@@ -60,7 +60,7 @@ ${O[edit]} && [[ ! ${EDITOR} ]] && die "-e/--edit given but \$EDITOR is not set"
 # do basic sanity checks on supplied files, safety if going to use in-place
 is_sane() {
 	${O[sanity]} || return 0
-	[[ $(file -bL -- "${1}") == 'unified diff output'* ]]
+	[[ $(LC_ALL=C file -bkLr -- "${1}" | head -n 2) == *'unified diff output'* ]]
 }
 patches=()
 while (( ${#} )); do
