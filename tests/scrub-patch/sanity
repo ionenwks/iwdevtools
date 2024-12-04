@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 # patch is not recognized as unified format and requires --no-sanity
+# (may be flaky depending on file(1) version given deep down this
+# is still a patch, could test a non-patch but then it makes using
+# --no-sanity in the scrub-mess' test meaningless)
 copydat mess.patch
 xfail 1 expect -2 "Error:*unified format*" -ci mess.patch
