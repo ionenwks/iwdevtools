@@ -4,11 +4,5 @@
 # (i.e. cosmetic-only, or long lived unnecessary placeholder, not exhaustive)
 dev-libs/libpcre
 dev-libs/libxml2
-dev-python/pyside2
-dev-python/pyside6
-dev-python/pyside2-tools
-dev-python/pyside6-tools
-dev-python/shiboken2
-dev-python/shiboken6
 media-libs/fontconfig
 media-libs/freetype

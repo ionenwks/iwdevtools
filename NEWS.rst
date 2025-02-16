@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+=====
+- qa-vdb.*: update pkgmoved packages in default configs
+
 iwdevtools-0.12.14 (2024-12-04)
 ===============================
 

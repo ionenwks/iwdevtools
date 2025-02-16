@@ -5,13 +5,11 @@
 #   e.g. category/my-package = dev-libs/openssl (no wildcards on left side)
 
 # implicit core libraries
+llvm-runtimes/*
 sys-devel/gcc
 sys-libs/glibc
-sys-libs/libcxx
-sys-libs/libcxxabi
-sys-libs/libomp
 sys-libs/musl
 
 # similar, albeit packages that use directly do need it as dependency
+# (this also includes llvm-runtimes/libunwind from the wildcard above)
 sys-libs/libunwind
-sys-libs/llvm-libunwind
