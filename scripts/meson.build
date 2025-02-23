@@ -15,7 +15,9 @@ nodumpconfig = [
 ]
 
 sed = find_program('sed')
-help2man = find_program('help2man', required : false)
+if get_option('man')
+	help2man = find_program('help2man')
+endif
 
 run_script = {}
 foreach script, desc : scripts
@@ -67,7 +69,7 @@ foreach script, desc : scripts
 		)
 	endif
 
-	if help2man.found()
+	if get_option('man')
 		custom_target(
 			script + '.1',
 			input : run_script.get(script),

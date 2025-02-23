@@ -4,6 +4,8 @@ option('eprefix', type : 'string', value : '',
 	description : 'EPREFIX value to use by default if unset for Gentoo Prefix')
 option('getopt', type : 'string', value : 'getopt',
 	description : 'getopt executable to use, must support long options')
+option('man', type : 'boolean', value : true,
+       description : 'Build & install man pages')
 option('test', type : 'boolean', value : true,
 	description : 'Build tests (requires a C compiler unlike the rest of the project)')
 option('shellcheck', type : 'boolean', value : true,
