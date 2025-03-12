@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Fixes
+=====
+- qa-vdb: try to recognize media-video/ffmpeg-compat properly, albeit
+  will still be messy if same-version media-video/ffmpeg is installed
+
 iwdevtools-0.12.15 (2025-02-16)
 ===============================
 

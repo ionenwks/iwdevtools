@@ -472,6 +472,9 @@ vdb-is_prebuilt() {
 vdb-is_providing() {
 	[[ -e ${VDB}/${1}/PROVIDES ]] || return 1
 
+	# special exception that relies on .pc rpath injection
+	[[ ${1} == */ffmpeg-compat-* ]] && return 0
+
 	# This file can contain modules and executables we aren't
 	# interested in and modules sometime have "lib*.so" names.
 	# To rule them out, check if exists in LDPATH
