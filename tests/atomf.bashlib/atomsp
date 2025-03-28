@@ -22,8 +22,10 @@ tcmp '    1.0    ' '1.0'
 tcmp '! ~ c      ' '!~c/'
 tcmp '   n 0 1   ' 'n-0-r1'
 tcmp '      a b =' ':a/b='
+# note <no-slot>/<sub> may not be valid by the PM spec, but is handled anyway
 tcmp ' ~ c  0 1  0 ' '~c/-0-r1:/0'
 tcmp '  cat name 0.1.2 3   ' 'cat/name-0.1.2-r3'
+# likewise, */<sub> is also questionable, but atom should be valid beside that
 tcmp \
 	'!! >= _.+-0- _-test-T-123_beta1_-4a-6+-_p- 1.00.02b_alpha3_pre_p4 5 * _-+6-9 =' \
 	'!!>=_.+-0-/_-test-T-123_beta1_-4a-6+-_p--1.00.02b_alpha3_pre_p4-r5:*/_-+6-9=[test(+),test(-)]'
