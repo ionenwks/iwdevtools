@@ -2,7 +2,7 @@ project(
 	'iwdevtools',
 	license : 'BSD-2-Clause',
 	version : '0.12.16',
-	meson_version : '>=0.57.0'
+	meson_version : '>=1.1'
 )
 
 prefix = get_option('prefix')
