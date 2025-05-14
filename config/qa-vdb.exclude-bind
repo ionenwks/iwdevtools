@@ -19,3 +19,7 @@ dev-libs/gobject-introspection
 
 # supposedly only relevant in very rare cases (e.g freecad)
 dev-python/pyside
+
+# except (at most) for libXNVCtrl.a, rebuilding on bumps means nothing
+# given this lacks development files (that is nvidia-cuda-toolkit)
+x11-drivers/nvidia-drivers
