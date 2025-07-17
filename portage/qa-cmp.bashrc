@@ -1,10 +1,10 @@
 # Integrates qa-cmp with portage, intended for use in /etc/portage/bashrc.
 # See `qa-cmp --help` or see qa-cmp(1) man page for details.
 
-: ${QA_CMP:=${IWDT_ALL:-y}}
-: ${QA_CMP_CMD:=qa-cmp}
-: ${QA_CMP_ARGS:=""}
-: ${QA_CMP_LOG:=${IWDT_LOG:-eqawarn}}
+: "${QA_CMP:=${IWDT_ALL:-y}}"
+: "${QA_CMP_CMD:=qa-cmp}"
+: "${QA_CMP_ARGS:=""}"
+: "${QA_CMP_LOG:=${IWDT_LOG:-eqawarn}}"
 
 qa-cmp_post_pkg_preinst() {
 	[[ ${QA_CMP} == y && ${MERGE_TYPE} != binary ]] || return 0

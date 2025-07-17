@@ -1,10 +1,10 @@
 # Integrates qa-sed with portage, intended for use in /etc/portage/bashrc.
 # See `qa-sed --help` or see qa-sed(1) man page for details.
 
-: ${QA_SED:=${IWDT_ALL:-y}}
-: ${QA_SED_CMD:=qa-sed}
-: ${QA_SED_ARGS:=""}
-: ${QA_SED_LOG:=${IWDT_LOG:-eqawarn}}
+: "${QA_SED:=${IWDT_ALL:-y}}"
+: "${QA_SED_CMD:=qa-sed}"
+: "${QA_SED_ARGS:=""}"
+: "${QA_SED_LOG:=${IWDT_LOG:-eqawarn}}"
 
 sed() {
 	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} || ${MERGE_TYPE} == binary ]]; then

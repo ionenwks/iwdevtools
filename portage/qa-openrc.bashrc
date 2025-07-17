@@ -1,10 +1,10 @@
 # Integrates qa-cmp with portage, intended for use in /etc/portage/bashrc.
 # See `qa-cmp --help` or see qa-cmp(1) man page for details.
 
-: ${QA_OPENRC:=${IWDT_ALL:-y}}
-: ${QA_OPENRC_CMD:=qa-openrc}
-: ${QA_OPENRC_ARGS:=""}
-: ${QA_OPENRC_LOG:=${IWDT_LOG:-eqawarn}}
+: "${QA_OPENRC:=${IWDT_ALL:-y}}"
+: "${QA_OPENRC_CMD:=qa-openrc}"
+: "${QA_OPENRC_ARGS:=""}"
+: "${QA_OPENRC_LOG:=${IWDT_LOG:-eqawarn}}"
 
 qa-openrc_post_pkg_preinst() {
 	[[ ${QA_OPENRC} == y && ${MERGE_TYPE} != binary ]] || return 0
