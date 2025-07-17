@@ -2,6 +2,19 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Breaking changes
+================
+- qa-sed: ``-A/--all`` argument was removed and its effect can be
+  replicated by exporting ``QA_SED_PHASEONLY=n`` instead if wanted
+  (this was re-arranged to prevent future issues in EAPI=9)
+- qa-sed: ``--func`` argument was removed, this was intended for
+  private use and has become unnecessary (if get errors about this,
+  may be because portage is using an old version of this package's
+  qa-sed.bashrc)
+
 iwdevtools-0.12.16 (2025-03-16)
 ===============================
 

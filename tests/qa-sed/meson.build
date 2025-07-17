@@ -11,7 +11,6 @@ tests = [
 	'lineno',
 	'multiple-expressions',
 	'multiple-files',
-	'phase-only',
 	'sed-args',
 	'shellcheck',
 	'stdin-to-stdout'

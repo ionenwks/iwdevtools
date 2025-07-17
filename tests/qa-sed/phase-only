@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-echo text > file
-export DEFINED_PHASES="prepare"
-expect -2 "SED:*" -i s/kept// file --qa-sed-args --func=src_prepare
-expect -2 "SED:*" -i s/kept// file --qa-sed-args --func=src_undefined --all
-expect -2 "''" -i s/kept// file --qa-sed-args --func=src_undefined

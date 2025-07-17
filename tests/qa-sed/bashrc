@@ -5,6 +5,8 @@ export QA_SED=y
 export QA_SED_ARGS=
 export QA_SED_CMD="${SCRIPT}"
 export QA_SED_LOG='echo :test-output:'
+export QA_SED_PHASEONLY=y
+
 expect -c "*:test-output:*sed -i s/kept//*" \
 	ebuild "$(get_ebuild test 1.5 : cmd:'
 		echo text > text || die
@@ -13,3 +15,24 @@ expect -c "*:test-output:*sed -i s/kept//*" \
 		dobin text new')" merge
 [[ $(<"${ROOT}"/usr/bin/text) == text ]] || fail mismatch1
 [[ $(<"${ROOT}"/usr/bin/new) == new ]] || fail mismatch2
+
+# ideally this test would pass, the goal of preventing usage in
+# non-phase functions is to silence eclasses and not functions
+# in general but this is the only method this has right now
+# (if ever changed, this test will need use a dummy eclass)
+expect -c -! "*:test-output:*" \
+	ebuild "$(get_ebuild test 2.0 : cmd:'
+		echo text > text || die
+		not_phase_func() {
+			sed -i s/kept// text || die
+		}
+		not_phase_func')" install
+
+QA_SED_PHASEONLY=n
+expect -c "*:test-output:*" \
+	ebuild "$(get_ebuild test 2.5 : cmd:'
+		echo text > text || die
+		not_phase_func() {
+			sed -i s/kept// text || die
+		}
+		not_phase_func')" install

@@ -5,9 +5,12 @@
 : "${QA_SED_CMD:=qa-sed}"
 : "${QA_SED_ARGS:=""}"
 : "${QA_SED_LOG:=${IWDT_LOG:-eqawarn}}"
+: "${QA_SED_PHASEONLY:=y}"
 
 sed() {
-	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} || ${MERGE_TYPE} == binary ]]; then
+	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} || ${MERGE_TYPE} == binary ]] ||
+		[[ ${QA_SED_PHASEONLY} == y && ${FUNCNAME[1]} != ${EBUILD_PHASE_FUNC} ]]
+	then
 		command sed "${@}"
 		return ${?}
 	fi
@@ -15,7 +18,7 @@ sed() {
 	local output errno
 	{
 		output=$(
-			"${QA_SED_CMD}" "${@}" --qa-sed-args --func=${FUNCNAME[1]} \
+			"${QA_SED_CMD}" "${@}" --qa-sed-args \
 				--lineno=${BASH_LINENO[0]} --source="${BASH_SOURCE[1]}" \
 				${QA_SED_ARGS} 2>&1 1>&3-
 		)
