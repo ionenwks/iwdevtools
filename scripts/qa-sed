@@ -57,6 +57,8 @@ usage <<-EOU
 	  QA_SED_PHASEONLY=y | =n By default QA will only be shown for seds ran
 	                          directly in phase functions (e.g. src_prepare) to
 	                          suppress noise coming from eclasses
+	  (a known limitation of PHASEONLY=y is that using a non-eclass ebuild
+	  function also ignores the sed except for the python_prepare_all function)
 	Note: eqawarn post-emerge log needs "qa" in make.conf's PORTAGE_ELOG_CLASSES
 EOU
 
