@@ -9,7 +9,8 @@
 
 sed() {
 	if [[ ${QA_SED} != y || ! ${EBUILD_PHASE} || ${MERGE_TYPE} == binary ]] ||
-		[[ ${QA_SED_PHASEONLY} == y && ${FUNCNAME[1]} != ${EBUILD_PHASE_FUNC} ]]
+		[[ ${QA_SED_PHASEONLY} == y &&
+			${FUNCNAME[1]} != @(${EBUILD_PHASE_FUNC}|python_prepare_all) ]]
 	then
 		command sed "${@}"
 		return ${?}

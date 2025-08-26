@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Changes
+=======
+- qa-sed.bashrc: add an exception to verify seds in ``python_prepare_all``
+  regardless of the ``QA_SED_PHASEONLY`` setting
+
 iwdevtools-0.13.0 (2025-07-17)
 ==============================
 
