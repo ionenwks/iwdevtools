@@ -2,6 +2,18 @@
 Release Notes
 =============
 
+iwdevtools-next
+===============
+
+Removed
+=======
+- qa-openrc: some concerns were raised about some bits but I have
+  little interest in maintaining this (or reviewing PRs for it) as
+  it was contributed and I do not really keep up with correct openrc
+  usage -- this did not check a whole lot either way and I feel it
+  would be better implemented as a normal install-qa-check.d if
+  someone really wants this
+
 iwdevtools-0.13.1 (2025-08-26)
 ==============================
 

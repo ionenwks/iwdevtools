@@ -1,6 +1,5 @@
 bashrcs = [
 	'qa-cmp.bashrc',
-	'qa-openrc.bashrc',
 	'qa-sed.bashrc',
 	'qa-vdb.bashrc'
 ]

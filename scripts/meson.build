@@ -3,7 +3,6 @@ scripts = {
 	'eoldnew' : 'emerge wrapper to merge the older then newest version',
 	'find-unresolved' : 'find unresolved soname dependencies',
 	'qa-cmp' : 'compare portage install images',
-	'qa-openrc' : 'find mistakes in installed OpenRC services',
 	'qa-sed' : 'sed wrapper to detect if a call did no change',
 	'qa-vdb' : 'use portage VDB information to detect RDEPEND issues among others',
 	'repo-cd' : 'change directory based on atom then perform actions',
