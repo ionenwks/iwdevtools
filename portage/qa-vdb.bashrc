@@ -9,6 +9,11 @@
 qa-vdb_post_pkg_postinst() {
 	[[ ${QA_VDB} == y && ${MERGE_TYPE} != binary ]] || return
 
+	# nothing to compare without DT_NEEDED (virtuals, static-only); skip
+	# rather than spawn qa-vdb + portageq for nothing. portage only writes
+	# build-info/NEEDED when ELF is present (cf. vdb-skip_unneeded).
+	[[ -s ${PORTAGE_BUILDDIR}/build-info/NEEDED ]] || return
+
 	local output
 	output=$(
 		"${QA_VDB_CMD}" --root="${ROOT}" --eprefix="${EPREFIX}" \

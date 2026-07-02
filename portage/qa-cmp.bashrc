@@ -9,6 +9,11 @@
 qa-cmp_post_pkg_preinst() {
 	[[ ${QA_CMP} == y && ${MERGE_TYPE} != binary ]] || return 0
 
+	# nothing to compare without DT_NEEDED (virtuals, static-only); skip
+	# rather than spawn qa-cmp + portageq for nothing. portage only writes
+	# build-info/NEEDED when ELF is present.
+	[[ -s ${PORTAGE_BUILDDIR}/build-info/NEEDED ]] || return 0
+
 	local output
 	output=$(
 		"${QA_CMP_CMD}" --root="${ROOT}" --eprefix="${EPREFIX}" \
