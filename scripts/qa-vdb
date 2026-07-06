@@ -640,7 +640,7 @@ vdb-set_libneed() {
 	for entry in "${providers[@]}"; do
 		dep=$(atomf %p "${entry}") || die
 
-		# check rdepend for virtuals and the the virtual's rdepend for this dep
+		# check rdepend for virtuals and the virtual's rdepend for this dep
 		vdb-get_deps "${1}" "virtual/*" | while split- vrdep; do
 			# special exception for packages using virtual/jack and pipewire at once
 			# i.e. virtual/jack "can" provide pipewire making it look superfluous
