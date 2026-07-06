@@ -10,7 +10,7 @@
 #			-> safe to eval "local -a array=( ${assoc[name@a]} )"
 #		assoc[assoc_name@A]='index1 "first" index2 "has spaces"' (with -A)
 #
-#	Uses `set +r` (restricted shell) and empty PATH+env to reduce odds of
+#	Uses `set -r` (restricted shell) and empty PATH+env to reduce odds of
 #	performing unintended potentially harmful actions or picking up wrong
 #	variables (read files still need to be generally trusted, better in
 #	conjunction with the package manager's sandbox).
