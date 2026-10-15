@@ -74,6 +74,9 @@ usage <<-EOU
 	with an installed package. For the former, please use portage's default enabled
 	FEATURES="qa-unresolved-soname-deps" to be informed.
 
+	Suggestions to add dependencies do not know about virtuals, e.g. whether should
+	use virtual/zlib rather than sys-libs/zlib.
+
 	*Portage Integration*
 	Can be integrated by using ${EROOT}/etc/portage/bashrc, either by using the
 	example ${ROOT}@datadir@/bashrc or by manually adding:
